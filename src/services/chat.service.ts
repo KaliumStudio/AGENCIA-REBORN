@@ -1,7 +1,7 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
-  query, where, orderBy, serverTimestamp, onSnapshot, addDoc 
+  query, where, orderBy, serverTimestamp, onSnapshot, addDoc, getDocs 
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 
@@ -65,5 +65,3 @@ export const chatService = {
     });
   }
 };
-
-import { getDocs } from 'firebase/firestore';

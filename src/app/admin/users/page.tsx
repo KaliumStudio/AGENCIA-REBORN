@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { UserPlus, Shield, User, Edit } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -96,5 +97,3 @@ export default function AdminUsersPage() {
     </RoleGuard>
   );
 }
-
-import { cn } from '@/lib/utils';

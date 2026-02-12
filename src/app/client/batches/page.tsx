@@ -9,7 +9,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, MessageSquare } from 'lucide-react';
+import { Plus, Eye, MessageSquare, FolderKanban } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -92,5 +92,3 @@ export default function ClientBatchesPage() {
     </RoleGuard>
   );
 }
-
-import { FolderKanban } from 'lucide-react';
