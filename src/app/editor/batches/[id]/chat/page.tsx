@@ -33,9 +33,18 @@ export default function EditorChatPage() {
         if (b) {
           setBatch(b);
           try {
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid, b.assignedEditorUids, profile.uid);
+            // clientUserUid can be undefined if batch was created by admin
+            const cid = await chatService.getOrCreateChat(
+              b.id, 
+              b.clientId, 
+              b.clientUserUid, 
+              b.assignedEditorUids, 
+              profile.uid
+            );
             setChatId(cid);
-          } catch (err) { console.error("Chat init error:", err); }
+          } catch (err) { 
+            console.error("Chat init error:", err); 
+          }
         }
         setLoadingChat(false);
       });

@@ -7,8 +7,17 @@ import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+/**
+ * Utility to remove undefined properties from an object for Firestore safety.
+ */
+const stripUndefined = (obj: any) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null)
+  );
+};
+
 export const chatService = {
-  async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
+  async getOrCreateChat(batchId: string, clientId: string, clientUserUid?: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
     if (!batchId) throw new Error("Batch ID is required");
 
     const chatRef = doc(db, 'chats', batchId);
@@ -22,7 +31,13 @@ export const chatService = {
 
     const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
     const safeEditorUids = Array.isArray(editorUids) ? editorUids : [editorUids];
-    const memberUids = Array.from(new Set([safeClientUserUid, ...safeEditorUids])).filter(uid => !!uid && typeof uid === 'string');
+    
+    // Create initial members list filtering out any undefined/null
+    const memberUids = Array.from(new Set([
+      safeClientUserUid, 
+      ...safeEditorUids, 
+      currentUid
+    ])).filter((uid): uid is string => !!uid && typeof uid === 'string');
 
     if (snap?.exists()) {
       const data = snap.data() as Chat;
@@ -34,15 +49,16 @@ export const chatService = {
       return snap.id;
     }
 
-    const chatData = {
+    // Prepare chat data with stripUndefined for safety
+    const chatData = stripUndefined({
       batchId,
       clientId,
-      clientUserUid: safeClientUserUid,
+      clientUserUid: safeClientUserUid || null,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp(),
       lastReadAtByUid: {}
-    };
+    });
 
     try {
       await setDoc(chatRef, chatData);
@@ -110,6 +126,12 @@ export const chatService = {
     });
 
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
+  },
+
+  async syncChatMembers(chatId: string, memberUids: string[]) {
+    const chatRef = doc(db, 'chats', chatId);
+    const safeMembers = memberUids.filter(uid => !!uid && typeof uid === 'string');
+    await updateDoc(chatRef, { memberUids: safeMembers }).catch(() => {});
   },
 
   subscribeToMessages(chatId: string, currentUid: string, role: UserRole, clientId: string | undefined, callback: (messages: Message[]) => void) {
