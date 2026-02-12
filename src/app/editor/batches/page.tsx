@@ -9,10 +9,11 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Eye, MessageSquare, ExternalLink, Sparkles } from 'lucide-react';
+import { Eye, MessageSquare, FolderKanban } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function EditorBatchesPage() {
   const { profile } = useAuth();
@@ -27,6 +28,12 @@ export default function EditorBatchesPage() {
       });
     }
   }, [profile]);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Pendiente';
+    const d = new Date(dateStr);
+    return isValid(d) ? format(d, 'dd MMM', { locale: es }) : 'Inválida';
+  };
 
   return (
     <RoleGuard allowedRoles={['editor']}>
@@ -54,7 +61,7 @@ export default function EditorBatchesPage() {
                   <div className="flex justify-between items-start">
                     <StatusBadge status={batch.status} />
                     <span className="text-xs text-muted-foreground">
-                      Entrega: {format(new Date(batch.dueDate), 'dd MMM', { locale: es })}
+                      Entrega: {formatDate(batch.dueDate)}
                     </span>
                   </div>
                   <CardTitle className="text-xl mt-3 line-clamp-1">{batch.title}</CardTitle>
@@ -82,5 +89,3 @@ export default function EditorBatchesPage() {
     </RoleGuard>
   );
 }
-
-import { FolderKanban } from 'lucide-react';

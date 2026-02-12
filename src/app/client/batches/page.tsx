@@ -11,7 +11,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Eye, MessageSquare, FolderKanban } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function ClientBatchesPage() {
@@ -27,6 +27,12 @@ export default function ClientBatchesPage() {
       });
     }
   }, [profile]);
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return 'Pendiente';
+    const d = new Date(dateStr);
+    return isValid(d) ? format(d, 'dd MMM', { locale: es }) : 'Pendiente';
+  };
 
   return (
     <RoleGuard allowedRoles={['client']}>
@@ -64,7 +70,7 @@ export default function ClientBatchesPage() {
                   <div className="flex justify-between items-start">
                     <StatusBadge status={batch.status} />
                     <span className="text-xs text-muted-foreground">
-                      Vence: {format(new Date(batch.dueDate), 'dd MMM', { locale: es })}
+                      Vence: {formatDate(batch.dueDate)}
                     </span>
                   </div>
                   <CardTitle className="text-xl mt-3 line-clamp-1">{batch.title}</CardTitle>

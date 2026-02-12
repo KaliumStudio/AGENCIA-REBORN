@@ -12,8 +12,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, MessageSquare, ArrowLeft, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function ClientBatchDetailPage() {
   const { id } = useParams();
@@ -40,6 +41,12 @@ export default function ClientBatchDetailPage() {
     }
   };
 
+  const formatDate = (date: any, formatStr: string) => {
+    if (!date) return 'N/A';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
+  };
+
   if (!batch) return null;
 
   return (
@@ -55,7 +62,7 @@ export default function ClientBatchDetailPage() {
               <StatusBadge status={batch.status} />
             </div>
             <p className="text-muted-foreground mt-1">
-              Creado el {format(new Date(batch.createdAt.toDate()), "PPP", { locale: es })}
+              Creado el {formatDate(batch.createdAt, "PPP")}
             </p>
           </div>
           <Button asChild>
@@ -127,7 +134,7 @@ export default function ClientBatchDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Fecha de Entrega</p>
-                  <p className="font-medium text-lg">{format(new Date(batch.dueDate), "PPP", { locale: es })}</p>
+                  <p className="font-medium text-lg">{formatDate(batch.dueDate, "PPP")}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Editores Asignados</p>
@@ -141,5 +148,3 @@ export default function ClientBatchDetailPage() {
     </RoleGuard>
   );
 }
-
-import { cn } from '@/lib/utils';
