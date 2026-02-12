@@ -26,13 +26,12 @@ export const chatService = {
     try {
       snap = await getDoc(chatRef);
     } catch (e) {
-      console.warn("Silent fetch error during chat init");
+      console.warn("Chat fetch error, might not exist yet");
     }
 
     const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
     const safeEditorUids = Array.isArray(editorUids) ? editorUids : [editorUids];
     
-    // Create initial members list filtering out any undefined/null
     const memberUids = Array.from(new Set([
       safeClientUserUid, 
       ...safeEditorUids, 
@@ -49,7 +48,6 @@ export const chatService = {
       return snap.id;
     }
 
-    // Prepare chat data with stripUndefined for safety
     const chatData = stripUndefined({
       batchId,
       clientId,
@@ -139,7 +137,10 @@ export const chatService = {
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
     let q;
-    if (role === 'client' && clientId) {
+    if (role === 'admin') {
+      // Admins can see all messages in the chat without filtering
+      q = query(messagesRef);
+    } else if (role === 'client' && clientId) {
       q = query(messagesRef, where('clientId', '==', clientId));
     } else {
       q = query(messagesRef, where('memberUids', 'array-contains', currentUid));
