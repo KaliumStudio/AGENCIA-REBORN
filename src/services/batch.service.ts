@@ -35,12 +35,13 @@ export const batchService = {
       createdAt: serverTimestamp(),
     });
     
-    setDoc(newDoc, batchData).catch(e => {
+    await setDoc(newDoc, batchData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: newDoc.path,
         operation: 'create',
         requestResourceData: batchData
       }));
+      throw e;
     });
     
     return newDoc.id;
@@ -71,6 +72,35 @@ export const batchService = {
     });
   },
 
+  async assignEditors(id: string, editorUids: string[]) {
+    const batchRef = doc(db, 'batches', id);
+    const batchSnap = await getDoc(batchRef);
+    if (!batchSnap.exists()) return;
+
+    const batchData = batchSnap.data() as Batch;
+    const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
+    
+    // Actualizar tanda
+    updateDoc(batchRef, { 
+      assignedEditorUids: editorUids,
+      status
+    }).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: batchRef.path,
+        operation: 'update',
+        requestResourceData: { assignedEditorUids: editorUids, status }
+      }));
+    });
+
+    // Actualizar miembros del chat para que los editores tengan acceso por seguridad
+    const chatRef = doc(db, 'chats', id);
+    const chatSnap = await getDoc(chatRef).catch(() => null);
+    if (chatSnap?.exists()) {
+      const memberUids = Array.from(new Set([batchData.clientId, ...editorUids]));
+      updateDoc(chatRef, { memberUids }).catch(() => {});
+    }
+  },
+
   async submitDelivery(id: string, driveLink: string, uid: string) {
     const docRef = doc(db, 'batches', id);
     const updateData = { 
@@ -78,37 +108,6 @@ export const batchService = {
       status: 'delivered',
       deliveredAt: serverTimestamp(),
       deliveredBy: uid
-    };
-    
-    updateDoc(docRef, updateData).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'update',
-        requestResourceData: updateData
-      }));
-    });
-  },
-
-  async updateDriveLink(id: string, driveLink: string) {
-    const docRef = doc(db, 'batches', id);
-    updateDoc(docRef, { 
-      driveLink,
-      status: 'delivered'
-    }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'update',
-        requestResourceData: { driveLink, status: 'delivered' }
-      }));
-    });
-  },
-
-  async assignEditors(id: string, editorUids: string[]) {
-    const docRef = doc(db, 'batches', id);
-    const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
-    const updateData = { 
-      assignedEditorUids: editorUids,
-      status
     };
     
     updateDoc(docRef, updateData).catch(e => {

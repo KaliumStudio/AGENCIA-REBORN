@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Send, ArrowLeft, ShieldAlert, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default function EditorChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingChat, setLoadingChat] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,24 +33,27 @@ export default function EditorChatPage() {
       batchService.getBatch(id as string).then(async (b) => {
         if (b) {
           setBatch(b);
-          // CRITICAL FIX: Pass profile.uid as the 4th argument to identify the current member
-          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
-          setChatId(cid);
+          try {
+            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
+            setChatId(cid);
+          } catch (err) {
+            console.error("Chat init error:", err);
+          }
         }
-        setLoading(false);
+        setLoadingChat(false);
       }).catch(err => {
-        console.error(err);
-        setLoading(false);
+        console.error("Batch load error:", err);
+        setLoadingChat(false);
       });
     }
   }, [id, profile]);
 
   useEffect(() => {
-    if (chatId) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, setMessages);
+    if (chatId && profile) {
+      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, setMessages);
       return () => unsubscribe();
     }
-  }, [chatId]);
+  }, [chatId, profile]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -63,13 +66,35 @@ export default function EditorChatPage() {
     if (!newMessage.trim() || !chatId || !profile) return;
     
     const text = newMessage;
-    setNewMessage(''); // Clear immediately for UI responsiveness
+    setNewMessage('');
     
-    await chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
   };
 
-  if (loading || authLoading) return <DashboardLayout>Cargando chat...</DashboardLayout>;
-  if (!batch) return <DashboardLayout>Error: Tanda no encontrada.</DashboardLayout>;
+  if (authLoading || loadingChat) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Iniciando canal seguro...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!batch || !chatId) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center bg-white rounded-xl border border-dashed">
+          <h2 className="text-xl font-bold text-destructive mb-2">Error de Conexión</h2>
+          <p className="text-muted-foreground mb-4">No se pudo inicializar el chat para esta tanda.</p>
+          <Button asChild variant="outline">
+            <Link href="/editor/batches">Volver al listado</Link>
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <RoleGuard allowedRoles={['editor']}>
@@ -85,7 +110,7 @@ export default function EditorChatPage() {
                   <h3 className="font-bold text-lg">{batch.title}</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <ShieldAlert className="h-3 w-3 text-amber-500" />
-                    Modo Anónimo Activo (El cliente no ve tu nombre real)
+                    Modo Anónimo Activo
                   </p>
                 </div>
               </div>
@@ -93,6 +118,11 @@ export default function EditorChatPage() {
 
             <ScrollArea className="flex-1 p-4 bg-slate-50/50">
               <div className="space-y-4">
+                {messages.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground italic text-sm">
+                    No hay mensajes todavía. Comienza la conversación con el cliente.
+                  </div>
+                )}
                 {messages.map((m) => (
                   <div key={m.id} className={cn("flex flex-col", m.senderUid === profile?.uid ? "items-end" : "items-start")}>
                     <div className="flex items-center gap-2 mb-1">
@@ -100,7 +130,7 @@ export default function EditorChatPage() {
                         {m.senderUid === profile?.uid ? "Tú" : m.senderAlias}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {m.createdAt?.toDate ? format(m.createdAt.toDate(), 'HH:mm') : '...'}
+                        {m.createdAt?.toDate ? format(m.createdAt.toDate(), 'HH:mm') : 'Enviando...'}
                       </span>
                     </div>
                     <div className={cn(
@@ -138,8 +168,8 @@ export default function EditorChatPage() {
                 <CardTitle className="text-sm font-bold text-amber-900">Privacidad</CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-amber-800 leading-relaxed">
-                Tu identidad está protegida. El cliente solo verá tu alias (ej: Editor #A1B2). 
-                Por favor, evita compartir información personal en el chat.
+                Tu identidad está protegida. El cliente solo verá tu alias. 
+                Evita compartir información personal.
               </CardContent>
             </Card>
           </div>

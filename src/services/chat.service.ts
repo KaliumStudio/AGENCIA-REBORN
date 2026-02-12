@@ -1,51 +1,44 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
-  query, where, orderBy, serverTimestamp, onSnapshot, addDoc, getDocs 
+  query, where, serverTimestamp, onSnapshot, addDoc 
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
+  /**
+   * Obtiene o crea un chat para una tanda.
+   * Usamos el batchId como el ID del documento del chat para que sea determinista.
+   */
   async getOrCreateChat(batchId: string, clientId: string, editorUids: string[] = [], currentUid: string): Promise<string> {
-    if (!batchId || !currentUid) {
-      console.error("Missing required parameters for getOrCreateChat:", { batchId, currentUid });
-      throw new Error("Faltan parámetros obligatorios para inicializar el chat.");
+    if (!batchId) throw new Error("Batch ID is required");
+
+    const chatRef = doc(db, 'chats', batchId);
+    let snap;
+    
+    try {
+      snap = await getDoc(chatRef);
+    } catch (e) {
+      // Si falla por permisos, es probable que el usuario no sea miembro aún.
+      // Pero como estamos en el flujo de creación/obtención, intentaremos crearlo si no existe.
     }
 
-    const chatsRef = collection(db, 'chats');
-    // Buscamos si ya existe un chat para esta tanda
-    const q = query(chatsRef, where('batchId', '==', batchId));
-    
-    let snap;
-    try {
-      snap = await getDocs(q);
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: chatsRef.path,
-        operation: 'list'
-      }));
-      throw e;
-    }
-    
     const memberUids = Array.from(new Set([clientId, ...editorUids, currentUid]));
 
-    if (!snap.empty) {
-      const existingChat = snap.docs[0];
-      const chatData = existingChat.data() as Chat;
-      
-      // Si el usuario actual no está en la lista de miembros, lo añadimos (importante para nuevos editores asignados)
+    if (snap?.exists()) {
+      const chatData = snap.data() as Chat;
+      // Si el usuario actual no está en la lista de miembros (ej: editor recién asignado), lo añadimos.
       if (!chatData.memberUids.includes(currentUid)) {
-        updateDoc(existingChat.ref, {
+        updateDoc(chatRef, {
           memberUids: memberUids
         }).catch(() => {});
       }
-      
-      return existingChat.id;
+      return snap.id;
     }
 
-    const newChatRef = doc(chatsRef);
+    // Si no existe, lo creamos usando el batchId como ID
     const chatData = {
       batchId,
       clientId,
@@ -54,33 +47,26 @@ export const chatService = {
       lastMessageAt: serverTimestamp()
     };
 
-    setDoc(newChatRef, chatData).catch(e => {
+    try {
+      await setDoc(chatRef, chatData);
+    } catch (e: any) {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: newChatRef.path,
+        path: chatRef.path,
         operation: 'create',
         requestResourceData: chatData
       }));
-    });
+      throw e;
+    }
     
-    return newChatRef.id;
+    return batchId;
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
     if (!chatId || !senderUid) return;
 
     const chatRef = doc(db, 'chats', chatId);
-    let chatSnap;
-    try {
-      chatSnap = await getDoc(chatRef);
-    } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: chatRef.path,
-        operation: 'get'
-      }));
-      return;
-    }
-
-    if (!chatSnap.exists()) return;
+    const chatSnap = await getDoc(chatRef).catch(() => null);
+    if (!chatSnap?.exists()) return;
 
     const chatData = chatSnap.data() as Chat;
     let senderAlias = 'Cliente';
@@ -98,13 +84,14 @@ export const chatService = {
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const messageData = {
+      chatId, // Denormalización útil
       senderUid,
       senderRole: role,
       senderAlias,
       type,
       text,
       createdAt: serverTimestamp(),
-      memberUids: chatData.memberUids 
+      memberUids: chatData.memberUids // CRÍTICO para reglas de seguridad
     };
 
     addDoc(messagesRef, messageData).catch(e => {
@@ -118,18 +105,22 @@ export const chatService = {
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
-  subscribeToMessages(chatId: string, callback: (messages: Message[]) => void) {
-    if (!chatId) return () => {};
+  subscribeToMessages(chatId: string, currentUid: string, callback: (messages: Message[]) => void) {
+    if (!chatId || !currentUid) return () => {};
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    // NO usamos orderBy('createdAt') aquí porque filtraría los mensajes locales que aún no tienen timestamp del servidor.
-    // En su lugar, ordenamos en memoria en el callback.
-    const q = query(messagesRef);
+    
+    // Para cumplir con las reglas de seguridad "resource.data.memberUids", 
+    // la consulta debe incluir obligatoriamente el filtro de membresía.
+    const q = query(
+      messagesRef, 
+      where('memberUids', 'array-contains', currentUid)
+    );
     
     return onSnapshot(q, 
       (snap) => {
         const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        // Ordenar en memoria por fecha (los nulos van al final o se manejan como "ahora")
+        // Ordenamos en memoria para manejar timestamps nulos (optimistic updates)
         const sortedMessages = messages.sort((a, b) => {
           const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
           const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
@@ -138,6 +129,7 @@ export const chatService = {
         callback(sortedMessages);
       },
       (e) => {
+        console.error("Snapshot error:", e);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: messagesRef.path,
           operation: 'list'

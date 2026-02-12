@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, RefreshCw, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Send, ArrowLeft, RefreshCw, Sparkles, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -21,11 +21,12 @@ import { cn } from '@/lib/utils';
 
 export default function ClientChatPage() {
   const { id } = useParams();
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [batch, setBatch] = useState<Batch | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
+  const [loadingChat, setLoadingChat] = useState(true);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -33,21 +34,26 @@ export default function ClientChatPage() {
   useEffect(() => {
     if (id && profile) {
       batchService.getBatch(id as string).then(async (b) => {
-        setBatch(b);
         if (b) {
-          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
-          setChatId(cid);
+          setBatch(b);
+          try {
+            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
+            setChatId(cid);
+          } catch (err) {
+            console.error("Chat init error:", err);
+          }
         }
+        setLoadingChat(false);
       });
     }
   }, [id, profile]);
 
   useEffect(() => {
-    if (chatId) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, setMessages);
+    if (chatId && profile) {
+      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, setMessages);
       return () => unsubscribe();
     }
-  }, [chatId]);
+  }, [chatId, profile]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -58,8 +64,10 @@ export default function ClientChatPage() {
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!newMessage.trim() || !chatId || !profile) return;
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', newMessage);
+    
+    const text = newMessage;
     setNewMessage('');
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
   };
 
   const requestRevision = async () => {
@@ -88,7 +96,25 @@ export default function ClientChatPage() {
     }
   };
 
-  if (!batch) return null;
+  if (authLoading || loadingChat) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Conectando con el equipo...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!batch || !chatId) return (
+    <DashboardLayout>
+      <div className="p-8 text-center bg-white rounded-xl border border-dashed">
+        <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
+        <p className="text-muted-foreground">No se pudo cargar el chat. Por favor reintenta.</p>
+      </div>
+    </DashboardLayout>
+  );
 
   return (
     <RoleGuard allowedRoles={['client']}>
@@ -185,7 +211,7 @@ export default function ClientChatPage() {
               <CardContent className="space-y-3">
                 <div className="flex gap-2 text-xs">
                   <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
-                  <p>Recuerda que los nombres de los editores son anónimos por seguridad.</p>
+                  <p>Los nombres de los editores son anónimos.</p>
                 </div>
                 <div className="flex gap-2 text-xs">
                   <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
