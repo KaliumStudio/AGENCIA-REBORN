@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -35,8 +34,13 @@ export default function EditorChatPage() {
         if (b) {
           setBatch(b);
           try {
-            // Parámetros: batchId, clientId, clientUserUid, editorUids
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid, b.assignedEditorUids);
+            const cid = await chatService.getOrCreateChat(
+              b.id, 
+              b.clientId, 
+              b.clientUserUid, 
+              b.assignedEditorUids,
+              profile.uid
+            );
             setChatId(cid);
           } catch (err) {
             console.error("Chat init error:", err);
@@ -52,7 +56,13 @@ export default function EditorChatPage() {
 
   useEffect(() => {
     if (chatId && profile) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, setMessages);
+      const unsubscribe = chatService.subscribeToMessages(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        profile.clientId, 
+        setMessages
+      );
       return () => unsubscribe();
     }
   }, [chatId, profile]);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -38,8 +37,13 @@ export default function ClientChatPage() {
         if (b) {
           setBatch(b);
           try {
-            // Parámetros: batchId, clientId, clientUserUid, editorUids
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, profile.uid, b.assignedEditorUids);
+            const cid = await chatService.getOrCreateChat(
+              b.id, 
+              b.clientId, 
+              b.clientUserUid || profile.uid, 
+              b.assignedEditorUids,
+              profile.uid
+            );
             setChatId(cid);
           } catch (err) {
             console.error("Chat init error:", err);
@@ -52,7 +56,13 @@ export default function ClientChatPage() {
 
   useEffect(() => {
     if (chatId && profile) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, setMessages);
+      const unsubscribe = chatService.subscribeToMessages(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        profile.clientId, 
+        setMessages
+      );
       return () => unsubscribe();
     }
   }, [chatId, profile]);
@@ -148,7 +158,7 @@ export default function ClientChatPage() {
                 {messages.map((m) => (
                   <div key={m.id} className={cn("flex flex-col", m.senderUid === profile?.uid ? "items-end" : "items-start")}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold">{m.senderAlias}</span>
+                      <span className="text-xs font-bold">{m.senderUid === profile?.uid ? "Tú" : m.senderAlias}</span>
                       <span className="text-[10px] text-muted-foreground">
                         {m.createdAt?.toDate ? format(m.createdAt.toDate(), 'HH:mm') : '...'}
                       </span>

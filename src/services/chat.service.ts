@@ -8,7 +8,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
-  async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = []): Promise<string> {
+  async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
     if (!batchId) throw new Error("Batch ID is required");
 
     const chatRef = doc(db, 'chats', batchId);
@@ -24,9 +24,10 @@ export const chatService = {
 
     if (snap?.exists()) {
       const data = snap.data() as Chat;
-      // Si el usuario actual no está en el chat pero tiene el mismo clientId, lo añadimos
-      if (clientUserUid && !data.memberUids.includes(clientUserUid)) {
-        const newMembers = Array.from(new Set([...data.memberUids, clientUserUid]));
+      // Asegurarnos de que el usuario actual (si se pasa) esté en los miembros si pertenece al batch
+      const userToSync = currentUid || clientUserUid;
+      if (userToSync && !data.memberUids.includes(userToSync)) {
+        const newMembers = Array.from(new Set([...data.memberUids, userToSync]));
         updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
       }
       return snap.id;
@@ -92,7 +93,7 @@ export const chatService = {
       text,
       createdAt: serverTimestamp(),
       memberUids: chatData.memberUids,
-      clientId: chatData.clientId // Denormalización para reglas de seguridad
+      clientId: chatData.clientId
     };
 
     addDoc(messagesRef, messageData).catch(e => {
@@ -106,17 +107,25 @@ export const chatService = {
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
-  subscribeToMessages(chatId: string, currentUid: string, callback: (messages: Message[]) => void) {
+  subscribeToMessages(chatId: string, currentUid: string, role: UserRole, clientId: string | undefined, callback: (messages: Message[]) => void) {
     if (!chatId || !currentUid) return () => {};
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
-    // El onSnapshot escuchará mensajes donde el usuario sea miembro explícito
-    // Las reglas de seguridad ahora permiten el listado basado en membresía o clientId
-    const q = query(
-      messagesRef, 
-      where('memberUids', 'array-contains', currentUid)
-    );
+    let q;
+    if (role === 'client' && clientId) {
+      // Para clientes, usamos el clientId para asegurar que vean todos los mensajes de su empresa
+      q = query(
+        messagesRef, 
+        where('clientId', '==', clientId)
+      );
+    } else {
+      // Para editores y otros, usamos membresía directa
+      q = query(
+        messagesRef, 
+        where('memberUids', 'array-contains', currentUid)
+      );
+    }
     
     return onSnapshot(q, 
       (snap) => {
