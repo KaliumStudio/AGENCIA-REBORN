@@ -6,11 +6,19 @@ import {
 import { Batch, BatchStatus } from '@/types';
 
 export const batchService = {
-  async createBatch(data: Omit<Batch, 'id' | 'createdAt' | 'status'>) {
+  async createBatch(data: {
+    clientId: string;
+    title: string;
+    brief: string;
+    dueDate?: string;
+    assignedEditorUids: string[];
+    createdBy: string;
+  }) {
     const newDoc = doc(collection(db, 'batches'));
     const batchData = {
       ...data,
       status: 'new',
+      driveLink: null,
       createdAt: serverTimestamp(),
     };
     await setDoc(newDoc, batchData);
@@ -34,9 +42,10 @@ export const batchService = {
   },
 
   async assignEditors(id: string, editorUids: string[]) {
+    const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     await updateDoc(doc(db, 'batches', id), { 
       assignedEditorUids: editorUids,
-      status: 'in_progress'
+      status
     });
   },
 
