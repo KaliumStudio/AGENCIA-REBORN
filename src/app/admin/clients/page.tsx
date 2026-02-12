@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Building2, Search, Edit, Power, PowerOff, RefreshCw } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Phone } from 'lucide-react';
 import { NewClientDialog } from '@/components/clients/new-client-dialog';
 import { EditClientDialog } from '@/components/clients/edit-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,20 +29,13 @@ export default function AdminClientsPage() {
       const data = await clientService.getAllClients();
       setClients(data);
     } catch (error: any) {
-      console.error("Error loading clients:", error);
-      toast({ 
-        title: "Error de carga", 
-        description: error.message || "No se pudieron obtener los clientes de Firestore.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error de carga", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchClients();
-  }, []);
+  useEffect(() => { fetchClients(); }, []);
 
   const handleToggleStatus = async (client: Client) => {
     try {
@@ -49,44 +43,40 @@ export default function AdminClientsPage() {
       toast({ title: client.active ? "Cliente desactivado" : "Cliente activado" });
       fetchClients();
     } catch (error: any) {
-      console.error("Error toggling status:", error);
       toast({ title: "Error al cambiar estado", variant: "destructive" });
     }
   };
 
-  const filteredClients = clients.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <RoleGuard allowedRoles={['admin']}>
       <DashboardLayout>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-headline">Clientes</h1>
-            <p className="text-muted-foreground">Gestiona las empresas y organizaciones clientes.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clientes</h1>
+            <p className="text-sm md:text-base text-muted-foreground">Gestiona las empresas y organizaciones clientes.</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={fetchClients} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" size="icon" onClick={fetchClients} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <NewClientDialog onClientCreated={fetchClients} />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="p-4 border-b bg-muted/20">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                className="pl-9" 
-                placeholder="Buscar cliente..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
+        <div className="mb-6 relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            className="pl-9 h-11 md:h-10" 
+            placeholder="Buscar cliente..." 
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
 
+        {/* Desktop View */}
+        <div className="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -106,47 +96,58 @@ export default function AdminClientsPage() {
                     <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : filteredClients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">
-                    No se encontraron clientes activos o registrados.
+              ) : filteredClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-semibold">{client.name}</TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{client.contact}</div>
+                    <div className="text-xs text-muted-foreground">{client.contactEmail || "Sin email"}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={client.active ? "default" : "secondary"}>{client.active ? "Activo" : "Inactivo"}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" className={client.active ? "text-destructive" : "text-green-600"} onClick={() => handleToggleStatus(client)}>
+                        {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-semibold text-slate-800">{client.name}</TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">{client.contact}</div>
-                      <div className="text-xs text-muted-foreground">{client.contactEmail || "Sin email"}</div>
-                    </TableCell>
-                    <TableCell>
-                      {client.active ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">Activo</Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactivo</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className={client.active ? "text-destructive hover:text-destructive hover:bg-destructive/10" : "text-green-600 hover:text-green-600 hover:bg-green-50"}
-                          onClick={() => handleToggleStatus(client)}
-                        >
-                          {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
+          ) : filteredClients.map((client) => (
+            <Card key={client.id} className="shadow-sm">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-lg">{client.name}</h3>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Mail className="h-3 w-3" /> {client.contactEmail || 'Sin email'}
+                    </div>
+                  </div>
+                  <Badge variant={client.active ? "default" : "secondary"}>{client.active ? "Activo" : "Inactivo"}</Badge>
+                </div>
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div className="text-sm font-medium text-slate-600">{client.contact}</div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setEditingClient(client)}><Edit className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="sm" className={client.active ? "text-destructive" : "text-green-600"} onClick={() => handleToggleStatus(client)}>
+                      {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {editingClient && (
