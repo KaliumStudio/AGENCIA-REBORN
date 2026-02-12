@@ -12,14 +12,14 @@ export const chatService = {
     
     if (!snap.empty) return snap.docs[0].id;
 
-    const members: Record<string, boolean> = { [clientId]: true };
-    editorUids.forEach(uid => members[uid] = true);
+    // memberUids must be an array for security rules (isSignedIn() && uid in resource.data.memberUids)
+    const memberUids = Array.from(new Set([clientId, ...editorUids]));
 
     const newChatRef = doc(collection(db, 'chats'));
     await setDoc(newChatRef, {
       batchId,
       clientId,
-      members,
+      memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp()
     });
@@ -35,7 +35,7 @@ export const chatService = {
     let senderAlias = 'Cliente';
 
     if (role === 'editor' || role === 'admin') {
-      let alias = chatData.editorAliases[senderUid];
+      let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
         alias = `Editor #${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         await updateDoc(chatRef, {
@@ -45,13 +45,15 @@ export const chatService = {
       senderAlias = alias;
     }
 
+    // CRITICAL: Denormalize memberUids for security rules independence
     await addDoc(collection(db, 'chats', chatId, 'messages'), {
       senderUid,
       senderRole: role,
       senderAlias,
       type,
       text,
-      createdAt: serverTimestamp()
+      createdAt: serverTimestamp(),
+      memberUids: chatData.memberUids
     });
 
     await updateDoc(chatRef, { lastMessageAt: serverTimestamp() });

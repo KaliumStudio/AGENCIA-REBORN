@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { chatService } from '@/services/chat.service';
-import { generateCreativeConcepts } from '@/ai/flows/ai-creative-concept-generation';
 import { Batch } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -15,61 +14,74 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, Sparkles, ExternalLink, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Send, ExternalLink, MessageSquare, Info } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EditorBatchDetailPage() {
   const { id } = useParams();
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [batch, setBatch] = useState<Batch | null>(null);
   const [driveLink, setDriveLink] = useState('');
-  const [concepts, setConcepts] = useState<string[]>([]);
-  const [loadingAI, setLoadingAI] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (id) {
-      batchService.getBatch(id as string).then(setBatch);
+      batchService.getBatch(id as string).then(data => {
+        setBatch(data);
+        if (data?.driveLink) setDriveLink(data.driveLink);
+        setLoading(false);
+      }).catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
     }
   }, [id]);
 
   const handleDeliver = async () => {
-    if (!driveLink.includes('drive.google.com')) {
-      toast({ title: "Link inválido", description: "Debes ingresar un link de Google Drive.", variant: "destructive" });
+    if (!driveLink.trim().startsWith('https://')) {
+      toast({ 
+        title: "Link inválido", 
+        description: "Debes ingresar una URL válida de Google Drive.", 
+        variant: "destructive" 
+      });
       return;
     }
 
+    if (!batch || !profile) return;
+
+    setSubmitting(true);
     try {
-      await batchService.updateDriveLink(batch!.id, driveLink);
-      // Trigger chat notification
-      const chatId = await chatService.getOrCreateChat(batch!.id, batch!.clientId, batch!.assignedEditorUids);
-      await chatService.sendMessage(chatId, profile!.uid, profile!.role, 'drive_link', `He entregado los creativos. Link: ${driveLink}`);
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid);
       
-      toast({ title: "Tanda entregada", description: "El cliente ha sido notificado." });
+      // Notify via chat
+      const chatId = await chatService.getOrCreateChat(batch.id, batch.clientId, batch.assignedEditorUids);
+      await chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        'drive_link', 
+        `Nueva entrega realizada. Link: ${driveLink}`
+      );
+      
+      toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
       setBatch(prev => prev ? { ...prev, driveLink, status: 'delivered' } : null);
     } catch (error) {
-      toast({ title: "Error", variant: "destructive" });
-    }
-  };
-
-  const getConcepts = async () => {
-    setLoadingAI(true);
-    try {
-      const result = await generateCreativeConcepts({ brief: batch!.brief, references: "Sin referencias adicionales." });
-      setConcepts(result.concepts);
-    } catch (err) {
-      console.error(err);
+      toast({ title: "Error en la entrega", variant: "destructive" });
     } finally {
-      setLoadingAI(false);
+      setSubmitting(false);
     }
   };
 
-  if (!batch) return null;
+  if (loading || authLoading) return <DashboardLayout>Cargando...</DashboardLayout>;
+  if (!batch) return <DashboardLayout>No se encontró la tanda.</DashboardLayout>;
 
   return (
     <RoleGuard allowedRoles={['editor']}>
       <DashboardLayout>
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/editor/batches"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
@@ -78,10 +90,12 @@ export default function EditorBatchDetailPage() {
               <h1 className="text-3xl font-bold tracking-tight">{batch.title}</h1>
               <StatusBadge status={batch.status} />
             </div>
-            <p className="text-muted-foreground mt-1">Fecha de entrega: {batch.dueDate}</p>
+            <p className="text-muted-foreground mt-1">Límite: {batch.dueDate || 'No definida'}</p>
           </div>
           <Button variant="secondary" asChild>
-            <Link href={`/editor/batches/${batch.id}/chat`}>Ir al Chat</Link>
+            <Link href={`/editor/batches/${batch.id}/chat`}>
+              <MessageSquare className="mr-2 h-4 w-4" /> Ir al Chat
+            </Link>
           </Button>
         </div>
 
@@ -89,76 +103,70 @@ export default function EditorBatchDetailPage() {
           <div className="lg:col-span-2 space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle>Requisitos del Brief</CardTitle>
+                <CardTitle>Instrucciones (Brief)</CardTitle>
               </CardHeader>
-              <CardContent className="whitespace-pre-wrap leading-relaxed">
+              <CardContent className="whitespace-pre-wrap leading-relaxed text-slate-700">
                 {batch.brief}
               </CardContent>
             </Card>
 
-            <Card className="border-primary">
+            <Card className="border-primary shadow-md">
               <CardHeader>
-                <CardTitle>Entrega de Resultados</CardTitle>
+                <CardTitle>Gestión de Entrega</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="drive">Link de Carpeta Google Drive</Label>
                   <Input 
                     id="drive" 
-                    placeholder="https://drive.google.com/..." 
+                    placeholder="https://drive.google.com/drive/folders/..." 
                     value={driveLink} 
                     onChange={e => setDriveLink(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">Asegúrate de que el acceso esté compartido con el cliente.</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-blue-50 p-2 rounded">
+                    <Info className="h-3 w-3 text-blue-500" />
+                    Asegúrate de que el acceso esté compartido para que el cliente pueda verlo.
+                  </div>
                 </div>
-                <Button className="w-full" onClick={handleDeliver}>
-                  <Send className="mr-2 h-4 w-4" /> Entregar y Notificar Cliente
-                </Button>
               </CardContent>
-              {batch.driveLink && (
-                <CardFooter className="bg-muted/30 pt-4 text-sm flex justify-between">
-                  <span>Entrega actual: {batch.driveLink}</span>
-                  <a href={batch.driveLink} target="_blank" className="text-primary hover:underline flex items-center">
-                    Ver <ExternalLink className="ml-1 h-3 w-3" />
-                  </a>
-                </CardFooter>
-              )}
+              <CardFooter className="flex flex-col gap-4">
+                <Button className="w-full" onClick={handleDeliver} disabled={submitting}>
+                  <Send className="mr-2 h-4 w-4" /> 
+                  {submitting ? "Procesando..." : "Enviar Entrega y Notificar"}
+                </Button>
+                {batch.driveLink && (
+                  <div className="w-full p-3 bg-muted/50 rounded-lg text-sm flex justify-between items-center border">
+                    <span className="truncate max-w-[200px] font-mono text-xs">{batch.driveLink}</span>
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={batch.driveLink} target="_blank" rel="noopener noreferrer">
+                        Ver Carpeta <ExternalLink className="ml-2 h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardFooter>
             </Card>
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-gradient-to-br from-accent/5 to-primary/5 border-accent/20">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-accent" /> Ideas Creativas IA
-                </CardTitle>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Estado del Proyecto</CardTitle>
               </CardHeader>
-              <CardContent>
-                {concepts.length > 0 ? (
-                  <ul className="space-y-3">
-                    {concepts.map((c, i) => (
-                      <li key={i} className="text-sm bg-white p-3 rounded-lg border shadow-sm border-accent/10">
-                        {c}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-center py-6">
-                    <Sparkles className="h-10 w-10 text-accent/20 mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground mb-4">¿Bloqueado? Genera conceptos basados en el brief.</p>
-                    <Button variant="accent" size="sm" onClick={getConcepts} disabled={loadingAI}>
-                      {loadingAI ? "Ideando..." : "Generar Inspiración"}
-                    </Button>
-                  </div>
-                )}
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold">Fecha de Creación</p>
+                  <p className="text-sm">
+                    {batch.createdAt?.toDate ? batch.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold">Última Entrega</p>
+                  <p className="text-sm">
+                    {batch.deliveredAt?.toDate ? batch.deliveredAt.toDate().toLocaleString() : 'Pendiente'}
+                  </p>
+                </div>
               </CardContent>
-              {concepts.length > 0 && (
-                 <CardFooter className="pt-0">
-                    <Button variant="ghost" size="xs" onClick={getConcepts} className="mx-auto text-xs opacity-50">
-                      Recargar Ideas
-                    </Button>
-                 </CardFooter>
-              )}
             </Card>
           </div>
         </div>

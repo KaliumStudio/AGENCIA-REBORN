@@ -31,13 +31,15 @@ export interface Batch {
   driveLink?: string;
   createdAt: any;
   createdBy: string;
+  deliveredAt?: any;
+  deliveredBy?: string;
 }
 
 export interface Chat {
   id: string;
   batchId: string;
   clientId: string;
-  members: Record<string, boolean>;
+  memberUids: string[];
   editorAliases: Record<string, string>;
   lastMessageAt: any;
 }
@@ -52,4 +54,5 @@ export interface Message {
   type: MessageType;
   text: string;
   createdAt: any;
+  memberUids: string[]; // Denormalized for security rules
 }

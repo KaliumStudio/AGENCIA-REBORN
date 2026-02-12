@@ -5,9 +5,6 @@ import {
 } from 'firebase/firestore';
 import { Batch, BatchStatus } from '@/types';
 
-/**
- * Helper to remove undefined properties from an object to prevent Firestore errors.
- */
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
     Object.entries(obj).filter(([_, v]) => v !== undefined)
@@ -24,7 +21,7 @@ export const batchService = {
     createdBy: string;
   }) {
     if (!data.createdBy) {
-      throw new Error("El ID del creador (uid) es obligatorio para crear una tanda.");
+      throw new Error("El ID del creador es obligatorio.");
     }
 
     const newDoc = doc(collection(db, 'batches'));
@@ -46,6 +43,15 @@ export const batchService = {
 
   async updateBatchStatus(id: string, status: BatchStatus) {
     await updateDoc(doc(db, 'batches', id), { status });
+  },
+
+  async submitDelivery(id: string, driveLink: string, uid: string) {
+    await updateDoc(doc(db, 'batches', id), { 
+      driveLink,
+      status: 'delivered',
+      deliveredAt: serverTimestamp(),
+      deliveredBy: uid
+    });
   },
 
   async updateDriveLink(id: string, driveLink: string) {
