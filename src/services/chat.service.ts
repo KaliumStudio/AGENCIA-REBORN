@@ -8,19 +8,15 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
-  async getOrCreateChat(batchId: string, clientId: string, editorUids: string[], currentUid: string): Promise<string> {
-    // Safety check to prevent "Unsupported field value: undefined" errors
+  async getOrCreateChat(batchId: string, clientId: string, editorUids: string[] = [], currentUid: string): Promise<string> {
     if (!batchId || !currentUid) {
       console.error("Missing required parameters for getOrCreateChat:", { batchId, currentUid });
       throw new Error("Faltan parámetros obligatorios para inicializar el chat.");
     }
 
     const chatsRef = collection(db, 'chats');
-    const q = query(
-      chatsRef, 
-      where('memberUids', 'array-contains', currentUid),
-      where('batchId', '==', batchId)
-    );
+    // Buscamos si ya existe un chat para esta tanda
+    const q = query(chatsRef, where('batchId', '==', batchId));
     
     let snap;
     try {
@@ -33,10 +29,21 @@ export const chatService = {
       throw e;
     }
     
-    if (!snap.empty) return snap.docs[0].id;
-
-    // Create unique list of members
     const memberUids = Array.from(new Set([clientId, ...editorUids, currentUid]));
+
+    if (!snap.empty) {
+      const existingChat = snap.docs[0];
+      const chatData = existingChat.data() as Chat;
+      
+      // Si el usuario actual no está en la lista de miembros, lo añadimos (importante para nuevos editores asignados)
+      if (!chatData.memberUids.includes(currentUid)) {
+        updateDoc(existingChat.ref, {
+          memberUids: memberUids
+        }).catch(() => {});
+      }
+      
+      return existingChat.id;
+    }
 
     const newChatRef = doc(chatsRef);
     const chatData = {
@@ -47,7 +54,6 @@ export const chatService = {
       lastMessageAt: serverTimestamp()
     };
 
-    // Use non-blocking write
     setDoc(newChatRef, chatData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: newChatRef.path,
@@ -79,21 +85,13 @@ export const chatService = {
     const chatData = chatSnap.data() as Chat;
     let senderAlias = 'Cliente';
 
-    // Handle anonymous aliases for editors
     if (role === 'editor' || role === 'admin') {
       let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
         alias = `Editor #${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        // Update the chat with the new alias (non-blocking)
         updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: alias
-        }).catch(e => {
-          errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: chatRef.path,
-            operation: 'update',
-            requestResourceData: { [`editorAliases.${senderUid}`]: alias }
-          }));
-        });
+        }).catch(() => {});
       }
       senderAlias = alias;
     }
@@ -106,10 +104,9 @@ export const chatService = {
       type,
       text,
       createdAt: serverTimestamp(),
-      memberUids: chatData.memberUids // Denormalized for security rules
+      memberUids: chatData.memberUids 
     };
 
-    // Non-blocking add
     addDoc(messagesRef, messageData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: messagesRef.path,
@@ -118,7 +115,6 @@ export const chatService = {
       }));
     });
 
-    // Update last message timestamp
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
@@ -126,12 +122,20 @@ export const chatService = {
     if (!chatId) return () => {};
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+    // NO usamos orderBy('createdAt') aquí porque filtraría los mensajes locales que aún no tienen timestamp del servidor.
+    // En su lugar, ordenamos en memoria en el callback.
+    const q = query(messagesRef);
     
     return onSnapshot(q, 
       (snap) => {
         const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        callback(messages);
+        // Ordenar en memoria por fecha (los nulos van al final o se manejan como "ahora")
+        const sortedMessages = messages.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+          return timeA - timeB;
+        });
+        callback(sortedMessages);
       },
       (e) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
