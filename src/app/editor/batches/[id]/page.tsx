@@ -25,7 +25,6 @@ export default function EditorBatchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   useEffect(() => {
     if (id) {
@@ -53,26 +52,25 @@ export default function EditorBatchDetailPage() {
     if (!batch || !profile) return;
 
     setSubmitting(true);
-    try {
-      await batchService.submitDelivery(batch.id, driveLink, profile.uid);
-      
-      // Notify via chat
-      const chatId = await chatService.getOrCreateChat(batch.id, batch.clientId, batch.assignedEditorUids);
-      await chatService.sendMessage(
-        chatId, 
-        profile.uid, 
-        profile.role, 
-        'drive_link', 
-        `Nueva entrega realizada. Link: ${driveLink}`
-      );
-      
-      toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
-      setBatch(prev => prev ? { ...prev, driveLink, status: 'delivered' } : null);
-    } catch (error) {
-      toast({ title: "Error en la entrega", variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
+    
+    // Mutations are non-blocking as per guidelines, but we sequence them for chat notification
+    batchService.submitDelivery(batch.id, driveLink, profile.uid);
+    
+    // Notify via chat
+    chatService.getOrCreateChat(batch.id, batch.clientId, batch.assignedEditorUids, profile.uid)
+      .then(chatId => {
+        chatService.sendMessage(
+          chatId, 
+          profile.uid, 
+          profile.role, 
+          'drive_link', 
+          `Nueva entrega realizada. Link: ${driveLink}`
+        );
+      });
+    
+    toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
+    setBatch(prev => prev ? { ...prev, driveLink, status: 'delivered' } : null);
+    setSubmitting(false);
   };
 
   if (loading || authLoading) return <DashboardLayout>Cargando...</DashboardLayout>;

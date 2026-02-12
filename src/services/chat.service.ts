@@ -4,31 +4,69 @@ import {
   query, where, orderBy, serverTimestamp, onSnapshot, addDoc, getDocs 
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
-  async getOrCreateChat(batchId: string, clientId: string, editorUids: string[]): Promise<string> {
-    const q = query(collection(db, 'chats'), where('batchId', '==', batchId));
-    const snap = await getDocs(q);
+  async getOrCreateChat(batchId: string, clientId: string, editorUids: string[], currentUid: string): Promise<string> {
+    const chatsRef = collection(db, 'chats');
+    const q = query(
+      chatsRef, 
+      where('memberUids', 'array-contains', currentUid),
+      where('batchId', '==', batchId)
+    );
+    
+    let snap;
+    try {
+      snap = await getDocs(q);
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: chatsRef.path,
+        operation: 'list'
+      }));
+      throw e;
+    }
     
     if (!snap.empty) return snap.docs[0].id;
 
-    // memberUids must be an array for security rules (isSignedIn() && uid in resource.data.memberUids)
     const memberUids = Array.from(new Set([clientId, ...editorUids]));
+    if (!memberUids.includes(currentUid)) {
+      memberUids.push(currentUid);
+    }
 
-    const newChatRef = doc(collection(db, 'chats'));
-    await setDoc(newChatRef, {
+    const newChatRef = doc(chatsRef);
+    const chatData = {
       batchId,
       clientId,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp()
+    };
+
+    setDoc(newChatRef, chatData).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: newChatRef.path,
+        operation: 'create',
+        requestResourceData: chatData
+      }));
     });
+    
     return newChatRef.id;
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
     const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
+    let chatSnap;
+    try {
+      chatSnap = await getDoc(chatRef);
+    } catch (e) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: chatRef.path,
+        operation: 'get'
+      }));
+      return;
+    }
+
     if (!chatSnap.exists()) return;
 
     const chatData = chatSnap.data() as Chat;
@@ -38,15 +76,21 @@ export const chatService = {
       let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
         alias = `Editor #${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        await updateDoc(chatRef, {
+        updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: alias
+        }).catch(e => {
+          errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: chatRef.path,
+            operation: 'update',
+            requestResourceData: { [`editorAliases.${senderUid}`]: alias }
+          }));
         });
       }
       senderAlias = alias;
     }
 
-    // CRITICAL: Denormalize memberUids for security rules independence
-    await addDoc(collection(db, 'chats', chatId, 'messages'), {
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const messageData = {
       senderUid,
       senderRole: role,
       senderAlias,
@@ -54,16 +98,34 @@ export const chatService = {
       text,
       createdAt: serverTimestamp(),
       memberUids: chatData.memberUids
+    };
+
+    addDoc(messagesRef, messageData).catch(e => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: messagesRef.path,
+        operation: 'create',
+        requestResourceData: messageData
+      }));
     });
 
-    await updateDoc(chatRef, { lastMessageAt: serverTimestamp() });
+    updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
   subscribeToMessages(chatId: string, callback: (messages: Message[]) => void) {
-    const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('createdAt', 'asc'));
-    return onSnapshot(q, (snap) => {
-      const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-      callback(messages);
-    });
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
+    
+    return onSnapshot(q, 
+      (snap) => {
+        const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+        callback(messages);
+      },
+      (e) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: messagesRef.path,
+          operation: 'list'
+        }));
+      }
+    );
   }
 };

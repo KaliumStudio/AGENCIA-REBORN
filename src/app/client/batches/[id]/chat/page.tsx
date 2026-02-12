@@ -17,6 +17,7 @@ import { Send, ArrowLeft, RefreshCw, Sparkles, AlertCircle, CheckCircle2 } from 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export default function ClientChatPage() {
   const { id } = useParams();
@@ -34,7 +35,7 @@ export default function ClientChatPage() {
       batchService.getBatch(id as string).then(async (b) => {
         setBatch(b);
         if (b) {
-          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids);
+          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
           setChatId(cid);
         }
       });
@@ -57,23 +58,24 @@ export default function ClientChatPage() {
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!newMessage.trim() || !chatId || !profile) return;
-    await chatService.sendMessage(chatId, profile.uid, profile.role, 'text', newMessage);
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', newMessage);
     setNewMessage('');
   };
 
   const requestRevision = async () => {
-    if (!chatId || !profile) return;
-    await chatService.sendMessage(chatId, profile.uid, profile.role, 'revision_request', 'Solicito una revisión para esta tanda.');
-    await batchService.updateBatchStatus(batch!.id, 'revisions');
+    if (!chatId || !profile || !batch) return;
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'revision_request', 'Solicito una revisión para esta tanda.');
+    batchService.updateBatchStatus(batch.id, 'revisions');
   };
 
   const approveBatch = async () => {
-    if (!chatId || !profile) return;
-    await chatService.sendMessage(chatId, profile.uid, profile.role, 'system', 'La tanda ha sido APROBADA por el cliente.');
-    await batchService.updateBatchStatus(batch!.id, 'approved');
+    if (!chatId || !profile || !batch) return;
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'system', 'La tanda ha sido APROBADA por el cliente.');
+    batchService.updateBatchStatus(batch.id, 'approved');
   };
 
   const analyzeFeedback = async () => {
+    if (messages.length === 0) return;
     setAnalyzing(true);
     try {
       const chatInput = messages.map(m => ({ senderAlias: m.senderAlias, text: m.text }));
@@ -120,7 +122,7 @@ export default function ClientChatPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-bold">{m.senderAlias}</span>
                       <span className="text-[10px] text-muted-foreground">
-                        {m.createdAt ? format(m.createdAt.toDate(), 'HH:mm') : '...'}
+                        {m.createdAt?.toDate ? format(m.createdAt.toDate(), 'HH:mm') : '...'}
                       </span>
                     </div>
                     <div className={cn(
@@ -197,5 +199,3 @@ export default function ClientChatPage() {
     </RoleGuard>
   );
 }
-
-import { cn } from '@/lib/utils';
