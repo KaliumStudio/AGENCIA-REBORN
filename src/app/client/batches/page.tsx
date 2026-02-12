@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -20,17 +21,22 @@ export default function ClientBatchesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profile?.uid) {
-      batchService.getBatchesByClient(profile.uid).then(data => {
+    if (profile?.clientId) {
+      batchService.getBatchesByClient(profile.clientId).then(data => {
         setBatches(data);
         setLoading(false);
-      }).catch(() => setLoading(false));
+      }).catch((err) => {
+        console.error("Error fetching client batches:", err);
+        setLoading(false);
+      });
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [profile]);
+  }, [profile, authLoading]);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'Pendiente';
-    const d = new Date(dateStr);
+  const formatDate = (date: any) => {
+    if (!date) return 'Pendiente';
+    const d = date.toDate ? date.toDate() : new Date(date);
     return isValid(d) ? format(d, 'dd MMM', { locale: es }) : 'Pendiente';
   };
 
@@ -76,7 +82,7 @@ export default function ClientBatchesPage() {
                     </span>
                   </div>
                   <CardTitle className="text-xl mt-3 line-clamp-1">{batch.title}</CardTitle>
-                  <CardDescription className="line-clamp-2 mt-1">
+                  <CardDescription className="line-clamp-2 mt-1 min-h-[3rem]">
                     {batch.brief}
                   </CardDescription>
                 </CardHeader>

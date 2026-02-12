@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -26,12 +27,13 @@ export default function NewBatchPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.clientId) return;
+    if (!profile?.clientId || !profile?.uid) return;
 
     setLoading(true);
     try {
       await batchService.createBatch({
         clientId: profile.clientId,
+        clientUserUid: profile.uid,
         title,
         brief,
         dueDate,
@@ -40,7 +42,8 @@ export default function NewBatchPage() {
       });
       toast({ title: "Tanda creada", description: "El administrador la asignará pronto." });
       router.push('/client/batches');
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Create batch error:", error);
       toast({ title: "Error", description: "No se pudo crear la tanda.", variant: "destructive" });
     } finally {
       setLoading(false);

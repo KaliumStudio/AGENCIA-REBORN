@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, getDocs, setDoc, updateDoc, 
@@ -46,8 +47,10 @@ export const batchService = {
       throw e;
     });
     
-    // Crear el chat inicial
-    await chatService.getOrCreateChat(newDoc.id, data.clientId, data.clientUserUid, data.assignedEditorUids);
+    // Crear el chat inicial si tenemos un usuario cliente asignado
+    if (data.clientUserUid) {
+      await chatService.getOrCreateChat(newDoc.id, data.clientId, data.clientUserUid, data.assignedEditorUids);
+    }
     
     return newDoc.id;
   },
@@ -85,7 +88,6 @@ export const batchService = {
     const batchData = batchSnap.data() as Batch;
     const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     
-    // Actualizar tanda
     updateDoc(batchRef, { 
       assignedEditorUids: editorUids,
       status
@@ -97,9 +99,10 @@ export const batchService = {
       }));
     });
 
-    // Sincronizar miembros del chat
-    const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
-    await chatService.syncChatMembers(id, memberUids);
+    if (batchData.clientUserUid) {
+      const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
+      await chatService.syncChatMembers(id, memberUids);
+    }
   },
 
   async submitDelivery(id: string, driveLink: string, uid: string) {
@@ -120,21 +123,28 @@ export const batchService = {
     });
   },
 
-  async getBatchesByClient(clientUserUid: string): Promise<Batch[]> {
+  async getBatchesByClient(clientId: string): Promise<Batch[]> {
     const q = query(
       collection(db, 'batches'), 
-      where('clientUserUid', '==', clientUserUid), 
+      where('clientId', '==', clientId), 
       orderBy('createdAt', 'desc')
     );
     try {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'batches',
-        operation: 'list'
-      }));
-      throw e;
+      // Fallback si falla el ordenamiento (ej: falta de índice o campos nulos)
+      const qFallback = query(
+        collection(db, 'batches'), 
+        where('clientId', '==', clientId)
+      );
+      const snap = await getDocs(qFallback);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
+        .sort((a, b) => {
+          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tB - tA;
+        });
     }
   },
 
@@ -148,11 +158,17 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'batches',
-        operation: 'list'
-      }));
-      throw e;
+      const qFallback = query(
+        collection(db, 'batches'), 
+        where('assignedEditorUids', 'array-contains', editorUid)
+      );
+      const snap = await getDocs(qFallback);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
+        .sort((a, b) => {
+          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tB - tA;
+        });
     }
   },
 
@@ -162,11 +178,13 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: 'batches',
-        operation: 'list'
-      }));
-      throw e;
+      const snap = await getDocs(collection(db, 'batches'));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
+        .sort((a, b) => {
+          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tB - tA;
+        });
     }
   }
 };

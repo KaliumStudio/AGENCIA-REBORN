@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -34,7 +35,8 @@ export default function EditorChatPage() {
         if (b) {
           setBatch(b);
           try {
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
+            // Parámetros: batchId, clientId, clientUserUid, editorUids
+            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid, b.assignedEditorUids);
             setChatId(cid);
           } catch (err) {
             console.error("Chat init error:", err);
