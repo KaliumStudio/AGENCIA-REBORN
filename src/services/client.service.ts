@@ -1,10 +1,14 @@
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, 
+  query, orderBy, serverTimestamp 
+} from 'firebase/firestore';
 import { Client } from '@/types';
 
 export const clientService = {
   async getAllClients(): Promise<Client[]> {
-    const snap = await getDocs(collection(db, 'clients'));
+    const q = query(collection(db, 'clients'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as Client));
   },
 
@@ -13,12 +17,22 @@ export const clientService = {
     return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as Client) : null;
   },
 
-  async createClient(data: Omit<Client, 'id' | 'createdAt'>) {
+  async createClient(data: { name: string; contact: string; contactEmail?: string; createdBy: string }) {
     const newDoc = doc(collection(db, 'clients'));
-    await setDoc(newDoc, {
+    const clientData = {
       ...data,
-      createdAt: serverTimestamp()
-    });
+      active: true,
+      createdAt: serverTimestamp(),
+    };
+    await setDoc(newDoc, clientData);
     return newDoc.id;
+  },
+
+  async updateClient(id: string, data: Partial<Omit<Client, 'id' | 'createdAt'>>) {
+    await updateDoc(doc(db, 'clients', id), data);
+  },
+
+  async toggleClientStatus(id: string, currentStatus: boolean) {
+    await updateDoc(doc(db, 'clients', id), { active: !currentStatus });
   }
 };

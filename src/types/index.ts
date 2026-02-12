@@ -12,7 +12,10 @@ export interface Client {
   id: string;
   name: string;
   contact: string;
+  contactEmail?: string;
+  active: boolean;
   createdAt: any;
+  createdBy: string;
 }
 
 export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'approved';
