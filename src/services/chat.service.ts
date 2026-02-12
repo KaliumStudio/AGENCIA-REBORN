@@ -26,24 +26,27 @@ export const chatService = {
     try {
       snap = await getDoc(chatRef);
     } catch (e) {
-      console.warn("Chat fetch error, might not exist yet");
+      console.warn("Chat fetch error:", e);
     }
 
     const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
-    const safeEditorUids = Array.isArray(editorUids) ? editorUids : [editorUids];
+    const safeEditorUids = Array.isArray(editorUids) ? editorUids : [];
     
-    const memberUids = Array.from(new Set([
-      safeClientUserUid, 
-      ...safeEditorUids, 
-      currentUid
-    ])).filter((uid): uid is string => !!uid && typeof uid === 'string');
+    const allMembers = new Set<string>();
+    if (safeClientUserUid) allMembers.add(safeClientUserUid);
+    safeEditorUids.forEach(uid => uid && allMembers.add(uid));
+    if (currentUid) allMembers.add(currentUid);
+
+    const memberUids = Array.from(allMembers).filter(uid => typeof uid === 'string' && uid !== "");
 
     if (snap?.exists()) {
       const data = snap.data() as Chat;
-      const userToSync = currentUid || safeClientUserUid;
-      if (userToSync && typeof userToSync === 'string' && !data.memberUids.includes(userToSync)) {
-        const newMembers = Array.from(new Set([...data.memberUids, userToSync])).filter(uid => typeof uid === 'string');
-        updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
+      // Verificar si falta algún miembro
+      const needsUpdate = memberUids.some(uid => !data.memberUids.includes(uid));
+      
+      if (needsUpdate) {
+        const newMembers = Array.from(new Set([...data.memberUids, ...memberUids]));
+        await updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
       }
       return snap.id;
     }
@@ -80,18 +83,35 @@ export const chatService = {
     }).catch(() => {});
   },
 
-  async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
+  async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string, providedMembers?: string[]) {
     if (!chatId || !senderUid) return;
 
-    const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef).catch(() => null);
-    if (!chatSnap?.exists()) return;
+    let memberUids = providedMembers || [];
+    let clientId = '';
 
-    const chatData = chatSnap.data() as Chat;
+    // Si no se proveen miembros, debemos obtenerlos del chat
+    if (memberUids.length === 0) {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef).catch(() => null);
+      if (chatSnap?.exists()) {
+        const chatData = chatSnap.data() as Chat;
+        memberUids = chatData.memberUids;
+        clientId = chatData.clientId;
+      }
+    }
+
+    // Asegurar que el remitente está en la lista para que pueda ver su propio mensaje
+    if (!memberUids.includes(senderUid)) {
+      memberUids.push(senderUid);
+    }
+
     let senderAlias = 'Cliente';
-
     if (role === 'editor' || role === 'admin') {
-      let alias = chatData.editorAliases?.[senderUid];
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef).catch(() => null);
+      const chatData = chatSnap?.data() as Chat;
+      
+      let alias = chatData?.editorAliases?.[senderUid];
       if (!alias) {
         const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
         alias = `Editor #${randomHex}`;
@@ -103,7 +123,7 @@ export const chatService = {
     }
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    const messageData = {
+    const messageData = stripUndefined({
       chatId,
       senderUid,
       senderRole: role,
@@ -111,9 +131,9 @@ export const chatService = {
       type,
       text,
       createdAt: serverTimestamp(),
-      memberUids: chatData.memberUids,
-      clientId: chatData.clientId
-    };
+      memberUids: Array.from(new Set(memberUids)),
+      clientId: clientId || null
+    });
 
     addDoc(messagesRef, messageData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -123,7 +143,8 @@ export const chatService = {
       }));
     });
 
-    updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
+    const parentChatRef = doc(db, 'chats', chatId);
+    updateDoc(parentChatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
   async syncChatMembers(chatId: string, memberUids: string[]) {
@@ -138,19 +159,17 @@ export const chatService = {
     
     let q;
     if (role === 'admin') {
-      // Admins can see all messages in the chat without filtering
       q = query(messagesRef);
-    } else if (role === 'client' && clientId) {
-      q = query(messagesRef, where('clientId', '==', clientId));
     } else {
+      // Tanto clientes como editores filtran por su presencia en memberUids
       q = query(messagesRef, where('memberUids', 'array-contains', currentUid));
     }
     
     return onSnapshot(q, (snap) => {
       const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
       const sortedMessages = messages.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
         return timeA - timeB;
       });
       callback(sortedMessages);

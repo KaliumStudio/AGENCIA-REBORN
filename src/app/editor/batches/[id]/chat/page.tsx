@@ -33,7 +33,6 @@ export default function EditorChatPage() {
         if (b) {
           setBatch(b);
           try {
-            // clientUserUid can be undefined if batch was created by admin
             const cid = await chatService.getOrCreateChat(
               b.id, 
               b.clientId, 
@@ -67,10 +66,18 @@ export default function EditorChatPage() {
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!newMessage.trim() || !chatId || !profile) return;
+    if (!newMessage.trim() || !chatId || !profile || !batch) return;
     const text = newMessage;
     setNewMessage('');
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+
+    // Preparar lista de miembros para asegurar visibilidad
+    const members = Array.from(new Set([
+      batch.clientUserUid,
+      ...(batch.assignedEditorUids || []),
+      profile.uid
+    ])).filter(Boolean);
+
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, members);
     chatService.markAsRead(chatId, profile.uid);
   };
 

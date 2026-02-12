@@ -13,15 +13,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().role == 'admin';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin';
     }
 
     function isEditor() {
-      return isSignedIn() && getUserData().role == 'editor';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'editor';
     }
 
     function isClient() {
-      return isSignedIn() && getUserData().role == 'client';
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'client';
     }
 
     function isOwner(userId) {
@@ -42,7 +42,7 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      allow get: if isSignedIn() && (isAdmin() || getUserData().clientId == clientId);
+      allow get: if isSignedIn() && (isAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == clientId));
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
@@ -56,25 +56,24 @@ service cloud.firestore {
       allow create: if isAdmin() || (isClient() && request.resource.data.clientId == getUserData().clientId);
       allow update: if isSignedIn() && (
         isAdmin() || 
-        getUserData().clientId == resource.data.clientId || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId) || 
         (isEditor() && request.auth.uid in resource.data.assignedEditorUids)
       );
       allow delete: if isAdmin();
     }
 
     match /chats/{chatId} {
-      // Permitimos get a cualquier autenticado para que getOrCreateChat pueda verificar existencia
       allow get: if isSignedIn();
       allow list: if isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.memberUids || 
-        (isClient() && getUserData().clientId == resource.data.clientId)
+        (isClient() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId)
       );
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.memberUids || 
-        (isClient() && getUserData().clientId == resource.data.clientId)
+        (isClient() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId)
       );
       allow delete: if isAdmin();
     }
@@ -83,9 +82,11 @@ service cloud.firestore {
       allow get, list: if isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.memberUids || 
-        (isClient() && getUserData().clientId == resource.data.clientId)
+        (isClient() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId)
       );
-      allow create: if isSignedIn() && (request.auth.uid == request.resource.data.senderUid);
+      allow create: if isSignedIn() && 
+                   request.auth.uid == request.resource.data.senderUid &&
+                   request.auth.uid in request.resource.data.memberUids;
       allow update, delete: if isAdmin() || (resource != null && request.auth.uid == resource.data.senderUid);
     }
   }
