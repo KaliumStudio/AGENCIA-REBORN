@@ -12,7 +12,7 @@ export const chatService = {
    * Obtiene o crea un chat para una tanda.
    * Usamos el batchId como el ID del documento del chat para que sea determinista.
    */
-  async getOrCreateChat(batchId: string, clientId: string, editorUids: string[] = [], currentUid: string): Promise<string> {
+  async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = []): Promise<string> {
     if (!batchId) throw new Error("Batch ID is required");
 
     const chatRef = doc(db, 'chats', batchId);
@@ -21,20 +21,12 @@ export const chatService = {
     try {
       snap = await getDoc(chatRef);
     } catch (e) {
-      // Si falla por permisos, es probable que el usuario no sea miembro aún.
-      // Pero como estamos en el flujo de creación/obtención, intentaremos crearlo si no existe.
+      // Manejo silencioso: intentaremos crear si no existe
     }
 
-    const memberUids = Array.from(new Set([clientId, ...editorUids, currentUid]));
+    const memberUids = Array.from(new Set([clientUserUid, ...editorUids]));
 
     if (snap?.exists()) {
-      const chatData = snap.data() as Chat;
-      // Si el usuario actual no está en la lista de miembros (ej: editor recién asignado), lo añadimos.
-      if (!chatData.memberUids.includes(currentUid)) {
-        updateDoc(chatRef, {
-          memberUids: memberUids
-        }).catch(() => {});
-      }
       return snap.id;
     }
 
@@ -42,6 +34,7 @@ export const chatService = {
     const chatData = {
       batchId,
       clientId,
+      clientUserUid,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp()
@@ -61,6 +54,11 @@ export const chatService = {
     return batchId;
   },
 
+  async syncChatMembers(chatId: string, memberUids: string[]) {
+    const chatRef = doc(db, 'chats', chatId);
+    updateDoc(chatRef, { memberUids }).catch(() => {});
+  },
+
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
     if (!chatId || !senderUid) return;
 
@@ -74,7 +72,9 @@ export const chatService = {
     if (role === 'editor' || role === 'admin') {
       let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
-        alias = `Editor #${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        // Generar un alias persistente para este editor en este chat
+        const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+        alias = `Editor #${randomHex}`;
         updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: alias
         }).catch(() => {});
@@ -84,7 +84,7 @@ export const chatService = {
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const messageData = {
-      chatId, // Denormalización útil
+      chatId,
       senderUid,
       senderRole: role,
       senderAlias,
@@ -110,8 +110,7 @@ export const chatService = {
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
-    // Para cumplir con las reglas de seguridad "resource.data.memberUids", 
-    // la consulta debe incluir obligatoriamente el filtro de membresía.
+    // Filtro de membresía obligatorio para reglas de seguridad
     const q = query(
       messagesRef, 
       where('memberUids', 'array-contains', currentUid)
@@ -120,7 +119,6 @@ export const chatService = {
     return onSnapshot(q, 
       (snap) => {
         const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        // Ordenamos en memoria para manejar timestamps nulos (optimistic updates)
         const sortedMessages = messages.sort((a, b) => {
           const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
           const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
@@ -129,7 +127,6 @@ export const chatService = {
         callback(sortedMessages);
       },
       (e) => {
-        console.error("Snapshot error:", e);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: messagesRef.path,
           operation: 'list'

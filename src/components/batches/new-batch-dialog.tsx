@@ -45,7 +45,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
     if (!profile?.uid) {
       toast({ 
         title: "Error de sesión", 
-        description: "No se pudo identificar tu usuario. Por favor, reingresa al portal.", 
+        description: "No se pudo identificar tu usuario.", 
         variant: "destructive" 
       });
       return;
@@ -60,6 +60,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
     try {
       await batchService.createBatch({
         ...formData,
+        clientUserUid: profile.uid, // Por defecto el creador es el usuario cliente
         assignedEditorUids: [],
         createdBy: profile.uid
       });
@@ -71,7 +72,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
       console.error("Create batch failed:", error);
       toast({ 
         title: "Error al crear tanda", 
-        description: error.message || "Ocurrió un error inesperado en Firestore.",
+        description: error.message || "Ocurrió un error inesperado.",
         variant: "destructive" 
       });
     } finally {
@@ -92,7 +93,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Cliente</Label>
+            <Label>Cliente (Empresa)</Label>
             <Select onValueChange={(v) => setFormData({...formData, clientId: v})}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar cliente..." />
@@ -119,14 +120,14 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
             <Textarea 
               id="brief" 
               required 
-              placeholder="Instrucciones detalladas para los editores..."
+              placeholder="Instrucciones detalladas..."
               className="min-h-[120px]"
               value={formData.brief}
               onChange={e => setFormData({...formData, brief: e.target.value})}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="dueDate">Fecha de Entrega (Opcional)</Label>
+            <Label htmlFor="dueDate">Fecha de Entrega</Label>
             <Input 
               id="dueDate" 
               type="date"

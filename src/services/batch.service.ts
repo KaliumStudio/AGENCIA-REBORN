@@ -6,6 +6,7 @@ import {
 import { Batch, BatchStatus } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { chatService } from './chat.service';
 
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
@@ -16,6 +17,7 @@ const stripUndefined = (obj: any) => {
 export const batchService = {
   async createBatch(data: {
     clientId: string;
+    clientUserUid: string;
     title: string;
     brief: string;
     dueDate?: string;
@@ -43,6 +45,9 @@ export const batchService = {
       }));
       throw e;
     });
+    
+    // Crear el chat inicial
+    await chatService.getOrCreateChat(newDoc.id, data.clientId, data.clientUserUid, data.assignedEditorUids);
     
     return newDoc.id;
   },
@@ -92,20 +97,16 @@ export const batchService = {
       }));
     });
 
-    // Actualizar miembros del chat para que los editores tengan acceso por seguridad
-    const chatRef = doc(db, 'chats', id);
-    const chatSnap = await getDoc(chatRef).catch(() => null);
-    if (chatSnap?.exists()) {
-      const memberUids = Array.from(new Set([batchData.clientId, ...editorUids]));
-      updateDoc(chatRef, { memberUids }).catch(() => {});
-    }
+    // Sincronizar miembros del chat
+    const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
+    await chatService.syncChatMembers(id, memberUids);
   },
 
   async submitDelivery(id: string, driveLink: string, uid: string) {
     const docRef = doc(db, 'batches', id);
     const updateData = { 
       driveLink,
-      status: 'delivered',
+      status: 'delivered' as BatchStatus,
       deliveredAt: serverTimestamp(),
       deliveredBy: uid
     };
@@ -119,8 +120,12 @@ export const batchService = {
     });
   },
 
-  async getBatchesByClient(clientId: string): Promise<Batch[]> {
-    const q = query(collection(db, 'batches'), where('clientId', '==', clientId), orderBy('createdAt', 'desc'));
+  async getBatchesByClient(clientUserUid: string): Promise<Batch[]> {
+    const q = query(
+      collection(db, 'batches'), 
+      where('clientUserUid', '==', clientUserUid), 
+      orderBy('createdAt', 'desc')
+    );
     try {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
@@ -134,7 +139,11 @@ export const batchService = {
   },
 
   async getBatchesByEditor(editorUid: string): Promise<Batch[]> {
-    const q = query(collection(db, 'batches'), where('assignedEditorUids', 'array-contains', editorUid), orderBy('createdAt', 'desc'));
+    const q = query(
+      collection(db, 'batches'), 
+      where('assignedEditorUids', 'array-contains', editorUid), 
+      orderBy('createdAt', 'desc')
+    );
     try {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));

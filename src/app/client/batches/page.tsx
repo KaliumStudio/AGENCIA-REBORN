@@ -6,25 +6,25 @@ import { batchService } from '@/services/batch.service';
 import { Batch } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, MessageSquare, FolderKanban } from 'lucide-react';
+import { Plus, Eye, MessageSquare, FolderKanban, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function ClientBatchesPage() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (profile?.clientId) {
-      batchService.getBatchesByClient(profile.clientId).then(data => {
+    if (profile?.uid) {
+      batchService.getBatchesByClient(profile.uid).then(data => {
         setBatches(data);
         setLoading(false);
-      });
+      }).catch(() => setLoading(false));
     }
   }, [profile]);
 
@@ -33,6 +33,8 @@ export default function ClientBatchesPage() {
     const d = new Date(dateStr);
     return isValid(d) ? format(d, 'dd MMM', { locale: es }) : 'Pendiente';
   };
+
+  if (authLoading) return null;
 
   return (
     <RoleGuard allowedRoles={['client']}>
@@ -50,14 +52,14 @@ export default function ClientBatchesPage() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Card key={i} className="h-48 animate-pulse bg-muted" />)}
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : batches.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed text-center">
             <FolderKanban className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
             <h3 className="text-lg font-semibold">No tienes tandas todavía</h3>
-            <p className="text-muted-foreground mb-6">Comienza creando tu primera solicitud de producción creativa.</p>
+            <p className="text-muted-foreground mb-6">Comienza creando tu primera solicitud.</p>
             <Button asChild>
               <Link href="/client/batches/new">Crear Tanda</Link>
             </Button>
@@ -78,7 +80,7 @@ export default function ClientBatchesPage() {
                     {batch.brief}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="mt-auto pt-4 flex gap-2">
+                <CardFooter className="mt-auto pt-4 flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <Link href={`/client/batches/${batch.id}`}>
                       <Eye className="mr-2 h-4 w-4" /> Detalles
@@ -89,7 +91,7 @@ export default function ClientBatchesPage() {
                       <MessageSquare className="mr-2 h-4 w-4" /> Chat
                     </Link>
                   </Button>
-                </CardContent>
+                </CardFooter>
               </Card>
             ))}
           </div>

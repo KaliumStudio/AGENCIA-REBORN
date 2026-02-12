@@ -23,6 +23,7 @@ export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'a
 export interface Batch {
   id: string;
   clientId: string;
+  clientUserUid: string; // UID del usuario cliente específico
   title: string;
   brief: string;
   dueDate: string;
@@ -39,6 +40,7 @@ export interface Chat {
   id: string;
   batchId: string;
   clientId: string;
+  clientUserUid: string;
   memberUids: string[];
   editorAliases: Record<string, string>;
   lastMessageAt: any;
@@ -54,5 +56,5 @@ export interface Message {
   type: MessageType;
   text: string;
   createdAt: any;
-  memberUids: string[]; // Denormalized for security rules
+  memberUids: string[]; // Denormalización para reglas de seguridad
 }
