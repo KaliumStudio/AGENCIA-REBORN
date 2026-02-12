@@ -19,7 +19,7 @@ interface NewBatchDialogProps {
 }
 
 export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -41,7 +41,16 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
+    
+    if (!profile?.uid) {
+      toast({ 
+        title: "Error de sesión", 
+        description: "No se pudo identificar tu usuario. Por favor, reingresa al portal.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     if (!formData.clientId) {
       toast({ title: "Error", description: "Selecciona un cliente", variant: "destructive" });
       return;
@@ -58,8 +67,13 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
       setOpen(false);
       setFormData({ clientId: '', title: '', brief: '', dueDate: '' });
       onBatchCreated();
-    } catch (error) {
-      toast({ title: "Error al crear tanda", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Create batch failed:", error);
+      toast({ 
+        title: "Error al crear tanda", 
+        description: error.message || "Ocurrió un error inesperado en Firestore.",
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -68,7 +82,9 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button><Plus className="mr-2 h-4 w-4" /> Nueva Tanda</Button>
+        <Button disabled={authLoading}>
+          <Plus className="mr-2 h-4 w-4" /> Nueva Tanda
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -93,6 +109,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
             <Input 
               id="title" 
               required 
+              placeholder="Ej: Pack 10 Reels - Septiembre"
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
             />
@@ -102,6 +119,8 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
             <Textarea 
               id="brief" 
               required 
+              placeholder="Instrucciones detalladas para los editores..."
+              className="min-h-[120px]"
               value={formData.brief}
               onChange={e => setFormData({...formData, brief: e.target.value})}
             />
@@ -116,7 +135,7 @@ export function NewBatchDialog({ onBatchCreated }: NewBatchDialogProps) {
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || authLoading}>
               {loading ? "Guardando..." : "Crear Tanda"}
             </Button>
           </DialogFooter>

@@ -41,6 +41,8 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
       setFormData({ name: '', contact: '', contactEmail: '' });
       onClientCreated();
     } catch (error) {
+      console.error("Create client failed:", error);
+      throw error; // Rethrow the error to be caught by the caller
       toast({ title: "Error al crear cliente", variant: "destructive" });
     } finally {
       setLoading(false);
