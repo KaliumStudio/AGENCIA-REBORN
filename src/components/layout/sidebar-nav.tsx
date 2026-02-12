@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
 import { notificationService } from '@/services/notification.service';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2 } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export function SidebarNav() {
   const { profile, loading: authLoading } = useAuth();
@@ -19,14 +20,10 @@ export function SidebarNav() {
   
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [notifStatus, setNotifStatus] = useState<string>('default');
 
   useEffect(() => {
-    // Solo suscribirse si el perfil está listo y tiene UID
-    // Esto evita errores de permisos al cargar la página
     if (!authLoading && profile?.uid) {
       const unsubscribe = chatService.subscribeToUnreadCount(profile.uid, setUnreadCount);
-      setNotifStatus(notificationService.getPermissionStatus());
       return () => unsubscribe();
     }
   }, [profile, authLoading]);
@@ -41,22 +38,46 @@ export function SidebarNav() {
     
     setNotifLoading(true);
     try {
-      await notificationService.registerPushToken(profile.uid);
-      setNotifStatus('granted');
+      await notificationService.enablePush(profile.uid);
       toast({
-        title: "Notificaciones activadas",
-        description: "Recibirás avisos de nuevos mensajes en este dispositivo.",
+        title: "Notificaciones activas",
+        description: "Este dispositivo recibirá avisos de nuevos mensajes.",
       });
     } catch (error: any) {
       toast({
         title: "Error al activar",
-        description: error.message || "Ocurrió un problema al solicitar permisos.",
+        description: error.message || "No se pudo completar el registro.",
         variant: "destructive"
       });
     } finally {
       setNotifLoading(false);
     }
   };
+
+  const handleDisableNotifications = async () => {
+    if (!profile?.uid) return;
+    setNotifLoading(true);
+    try {
+      await notificationService.disablePush(profile.uid);
+      toast({
+        title: "Notificaciones desactivadas",
+        description: "Ya no recibirás alertas en tus dispositivos.",
+      });
+    } catch (error: any) {
+      toast({ title: "Error", description: "No se pudo desactivar.", variant: "destructive" });
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  // Lógica de estado de notificaciones
+  const hasTokens = Array.isArray(profile?.fcmTokens) 
+    ? profile.fcmTokens.length > 0 
+    : (profile?.fcmTokens ? Object.keys(profile.fcmTokens).length > 0 : false);
+
+  const isPushEnabled = profile?.notificationPrefs?.push;
+  const isPending = isPushEnabled && !hasTokens;
+  const isActive = isPushEnabled && hasTokens;
 
   const menuItems = {
     admin: [
@@ -114,22 +135,41 @@ export function SidebarNav() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-sidebar-border">
-        {profile && notifStatus !== 'unsupported' && (
-          <div className="mb-4">
-            <SidebarMenuButton
-              onClick={handleEnableNotifications}
-              disabled={notifLoading || notifStatus === 'granted'}
-              className={notifStatus === 'granted' ? "text-green-600 opacity-80" : "text-primary"}
-            >
-              {notifLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : notifStatus === 'granted' ? (
-                <Bell className="w-5 h-5" />
-              ) : (
-                <BellOff className="w-5 h-5" />
-              )}
-              <span>{notifStatus === 'granted' ? "Notificaciones activas" : "Activar notificaciones"}</span>
-            </SidebarMenuButton>
+        {profile && (
+          <div className="mb-4 space-y-1">
+            {isActive ? (
+              <div className="flex flex-col gap-1">
+                <SidebarMenuButton disabled className="text-green-600 bg-green-50 cursor-default hover:bg-green-50">
+                  <Bell className="w-5 h-5" />
+                  <span>Notificaciones activas</span>
+                </SidebarMenuButton>
+                <button 
+                  onClick={handleDisableNotifications}
+                  disabled={notifLoading}
+                  className="text-[10px] text-muted-foreground hover:text-destructive transition-colors text-left px-2 flex items-center gap-1"
+                >
+                  <XCircle className="w-3 h-3" /> Desactivar todas
+                </button>
+              </div>
+            ) : isPending ? (
+              <SidebarMenuButton
+                onClick={handleEnableNotifications}
+                disabled={notifLoading}
+                className="text-amber-600 animate-pulse"
+              >
+                {notifLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                <span>Reactivar push</span>
+              </SidebarMenuButton>
+            ) : (
+              <SidebarMenuButton
+                onClick={handleEnableNotifications}
+                disabled={notifLoading}
+                className="text-primary"
+              >
+                {notifLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <BellOff className="w-5 h-5" />}
+                <span>Activar notificaciones</span>
+              </SidebarMenuButton>
+            )}
           </div>
         )}
         <div className="mb-4 px-2">

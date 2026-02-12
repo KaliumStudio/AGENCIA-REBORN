@@ -39,11 +39,17 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     match /users/{userId} {
-      // Permitir 'get' al propio usuario siempre, para que pueda cargar su perfil inicial
-      allow get: if isOwner(userId) || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.role == 'admin');
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isAdmin() || (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])));
+      
+      // El dueño puede actualizar solo campos no sensibles (incluyendo notificaciones)
+      // El admin puede actualizar todo
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'clientId', 'active'])
+      );
+      
       allow delete: if isAdmin();
     }
 
