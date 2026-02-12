@@ -1,0 +1,342 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the AM Agency Portal with specific roles and an internal display name.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the portal (admin, editor, or client).",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Internal display name for the user."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client entity if the user's role is 'client'. (Relationship: Client 1:N User)"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Indicates whether the user account is active."
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "displayName",
+        "active"
+      ]
+    },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client of the AM Agency, who submits creative batches for production.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the client."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact information for the client, such as email or phone number."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the client record was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contact",
+        "createdAt"
+      ]
+    },
+    "Batch": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Batch",
+      "type": "object",
+      "description": "Represents a batch of creative requests submitted by a client, managed through production, delivery, and approval.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Batch entity."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client who owns this creative batch. (Relationship: Client 1:N Batch)"
+        },
+        "title": {
+          "type": "string",
+          "description": "A descriptive title for the creative batch."
+        },
+        "brief": {
+          "type": "string",
+          "description": "Detailed brief and requirements provided by the client for the creative production."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for the completion of the batch.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current workflow status of the creative batch.",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assignedEditorUids": {
+          "type": "array",
+          "description": "An array of unique identifiers for Users (editors) assigned to work on this batch. (Relationship: User N:N Batch)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "driveLink": {
+          "type": "string",
+          "description": "Google Drive link to the delivered creative assets for the batch.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the batch was initially created.",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Reference to the User (client) who created this batch. (Relationship: User 1:N Batch)"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "title",
+        "brief",
+        "dueDate",
+        "status",
+        "assignedEditorUids",
+        "createdAt",
+        "createdBy"
+      ]
+    },
+    "Chat": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Chat",
+      "type": "object",
+      "description": "Represents a real-time communication channel associated with a specific creative batch, facilitating discussion and revisions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Chat entity."
+        },
+        "batchId": {
+          "type": "string",
+          "description": "Reference to the Batch this chat is associated with. (Relationship: Batch 1:N Chat)"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client involved in this chat. (Relationship: Client 1:N Chat)"
+        },
+        "memberUids": {
+          "type": "array",
+          "description": "An array of unique identifiers for all Users (client and assigned editors) participating in this chat. (Relationship: User N:N Chat)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "editorAliases": {
+          "type": "array",
+          "description": "A map (represented as an array of objects) where each object contains an editor's UID and their stable anonymous alias for this specific chat. (Relationship: User N:N Chat, specific aliases per chat)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastMessageAt": {
+          "type": "string",
+          "description": "Timestamp of the most recent message sent in this chat.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "batchId",
+        "clientId",
+        "memberUids",
+        "editorAliases"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents an individual message within a chat, including sender details, type, and content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "chatId": {
+          "type": "string",
+          "description": "Reference to the Chat this message belongs to. (Relationship: Chat 1:N Message)"
+        },
+        "senderUid": {
+          "type": "string",
+          "description": "Reference to the User who sent this message. (Relationship: User 1:N Message)"
+        },
+        "senderRole": {
+          "type": "string",
+          "description": "The role of the sender at the time the message was sent.",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "senderAlias": {
+          "type": "string",
+          "description": "The anonymous alias of the sender as presented to the other party (e.g., 'Cliente', 'Editor #XXXX')."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the message content.",
+          "format": "enum",
+          "items": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "type": "string",
+          "description": "The textual content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the message was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "chatId",
+        "senderUid",
+        "senderRole",
+        "senderAlias",
+        "type",
+        "text",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles with their assigned roles (admin, editor, client) and an internal display name. For client-role users, it includes 'clientId' to link to their associated client organization. Access is primarily self-owned or admin-controlled.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Authentication User ID (UID)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores details for each client organization. Admins have full access. Client-role users can read their own client record, which is identified by their 'clientId' stored in their user profile.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for a Client entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/batches/{batchId}",
+        "definition": {
+          "entityName": "Batch",
+          "schema": {
+            "$ref": "#/backend/entities/Batch"
+          },
+          "description": "Stores creative batch requests submitted by clients. Includes 'clientId' for direct client ownership authorization and 'assignedEditorUids' for direct editor assignment authorization. These fields enable authorization independence without needing to query parent or related documents.",
+          "params": [
+            {
+              "name": "batchId",
+              "description": "The unique identifier for a Batch entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chats/{chatId}",
+        "definition": {
+          "entityName": "Chat",
+          "schema": {
+            "$ref": "#/backend/entities/Chat"
+          },
+          "description": "Stores metadata for real-time communication channels, each associated with a specific batch. Includes 'memberUids' (an array of user UIDs) for direct chat membership authorization and 'clientId' for context, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "chatId",
+              "description": "The unique identifier for a Chat entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chats/{chatId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores individual messages within a chat. **CRITICAL:** For authorization independence, each message document MUST include a denormalized 'memberUids' array (copied from its parent Chat document). This allows security rules to directly verify chat membership for read/write access without requiring a 'get()' call to the parent Chat document.",
+          "params": [
+            {
+              "name": "chatId",
+              "description": "The unique identifier of the parent Chat entity."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for a Message entity within the chat."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to adhere strictly to the core design principles of Authorization Independence, Structural Segregation, and DBAC, ensuring a secure, scalable, and debuggable system for the AM Agency Portal. \n\n**Authorization Independence (CRITICAL)**:\n1.  **Users (/users/{userId}) and Clients (/clients/{clientId})**: User profiles (`/users/{userId}`) will store the user's `role` and, if applicable, their `clientId`. Access to a user's own profile or a client's specific `clientId` document relies on a self-referential `get()` call to the user's document (`/users/$(request.auth.uid)`), which is a generally accepted pattern and does not constitute a 'hierarchical authorization dependency' in the context of variable parent paths. A client user can read their associated Client document if `resource.id == get(/users/$(request.auth.uid)).data.clientId`.\n2.  **Batches (/batches/{batchId})**: Each `Batch` document explicitly includes `clientId` and `assignedEditorUids`. This denormalization allows security rules to directly check `resource.data.clientId == get(/users/$(request.auth.uid)).data.clientId` for client users, or `request.auth.uid in resource.data.assignedEditorUids` for editors. No `get()` calls to other variable documents are needed for authorization on batches, ensuring full authorization independence for this collection.\n3.  **Chats (/chats/{chatId})**: Each `Chat` document explicitly includes `memberUids` (an array of UIDs) and `clientId`. This enables security rules to check `request.auth.uid in resource.data.memberUids` directly on the `Chat` document, ensuring authorization independence for chat access.\n4.  **Messages (/chats/{chatId}/messages/{messageId})**: This is the most critical application of Authorization Independence via Denormalization. To avoid `get()` calls to the parent `Chat` document (`/chats/$(chatId)`), every `Message` document **MUST be denormalized to include the `memberUids` array from its parent `Chat`**. This allows security rules to evaluate `request.auth.uid in resource.data.memberUids` directly on the `Message` document itself for both read and write operations, including `list` queries within a specific chat. This completely eliminates hierarchical authorization dependencies for messages, enabling atomic operations and simplifying rule debugging.\n\n**QAPs (Rules are not Filters)**:\n*   **Structural Segregation (Homogeneous Security Posture)**: Each collection and subcollection (e.g., `/users`, `/clients`, `/batches`, `/chats`, `/chats/{chatId}/messages`) is designed to contain documents with a uniform security posture. This eliminates the need for complex conditional logic within rules to differentiate access within the same collection, making rules clearer and more efficient.\n*   **Targeted Queries**: The denormalized authorization fields facilitate secure `list` operations without acting as filters. For instance:\n    *   Client users can securely list their batches using `db.collection('batches').where('clientId', '==', userClientId)`. The security rule will enforce `resource.data.clientId == request.auth_data.clientId` (assuming `clientId` is accessible from the user's profile). \n    *   Editor users can list their assigned batches using `db.collection('batches').where('assignedEditorUids', 'array-contains', request.auth.uid)`. The security rule will enforce `request.auth.uid in resource.data.assignedEditorUids`. \n    *   Users can list chats they are a member of using `db.collection('chats').where('memberUids', 'array-contains', request.auth.uid)`. The security rule will enforce `request.auth.uid in resource.data.memberUids`. \n    *   For messages (`/chats/{chatId}/messages`), the denormalized `memberUids` ensures that a `list` operation will only return messages that the authenticated user is authorized to view, as each message document will be individually checked against its `memberUids` field.\n\n**DBAC (No Custom Claims)**:\nRoles are stored directly in the `User` document (`/users/{uid}.role`). Authorization rules will fetch this role via a self-referential `get()` operation on `request.auth.uid`, avoiding the complexity and latency of custom claims.\n\n**Application Error Note**: The reported `Runtime FirebaseError: Firebase: Error (auth/invalid-api-key)` is a client-side configuration issue, likely due to a missing or incorrect `apiKey` in `firebaseConfig` within `src/lib/firebase.ts`. This error is external to the Firestore data structure design and security rules, and needs to be addressed by correcting the Firebase SDK initialization configuration."
+  }
+}
