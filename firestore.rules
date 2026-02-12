@@ -2,34 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * AM AGENCY PORTAL - SECURITY RULES CONFIGURATION
-     * 
-     * Core Philosophy:
-     * This ruleset implements a strict Role-Based and Ownership-Based Access Control model. 
-     * It leverages Database-Based Access Control (DBAC) where user roles are stored 
-     * within the Firestore '/users' collection rather than custom claims.
-     * 
-     * Data Structure:
-     * - /users/{userId}: Profiles containing 'role' (admin, editor, client).
-     * - /clients/{clientId}: Organizational metadata.
-     * - /batches/{batchId}: Creative project requests.
-     * - /chats/{chatId}: Communication channels for batches.
-     * - /chats/{chatId}/messages/{messageId}: Individual messages.
-     * 
-     * Key Security Decisions:
-     * 1. Authorization Independence: Critical fields (clientId, memberUids, assignedEditorUids) 
-     *    are denormalized onto documents to allow rules to evaluate access without 
-     *    expensive recursive lookups.
-     * 2. Message Security: Every message document contains a 'memberUids' array, allowing 
-     *    instant membership validation during list operations.
-     * 3. Role Hierarchy: 'admin' has broad oversight, 'editor' is limited to assigned work, 
-     *    and 'client' is restricted to their specific organization's data.
-     * 4. Prototyping Flexibility: Rules enforce "Who" can access data and "Relational Integrity" 
-     *    (correct owner IDs), but do not strictly validate the types or presence of 
-     *    non-critical content fields.
-     */
-
     // --- HELPER FUNCTIONS ---
 
     function isSignedIn() {
@@ -56,99 +28,50 @@ service cloud.firestore {
       return hasRole('client');
     }
 
-    // Checks if the user's UID matches the provided ID
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Checks if the user belongs to the specific client organization
     function belongsToClient(clientId) {
-      return isClient() && getUserData().clientId == clientId;
-    }
-
-    // Combined ownership and existence check for updates/deletes
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
+      return (isClient() && getUserData().clientId == clientId) || isAdmin();
     }
 
     // --- COLLECTION RULES ---
 
-    /**
-     * @description Rules for User profiles. Admins manage all, users manage self.
-     * @path /users/{userId}
-     * @allow (get) If user is admin or the user themselves.
-     * @deny (create) If the userId in the path doesn't match the auth UID.
-     * @principle Restricts access to a user's own data tree and enforces self-creation.
-     */
     match /users/{userId} {
       allow get: if isAdmin() || isOwner(userId);
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isAdmin() || (isExistingOwner(userId) && request.resource.data.role == resource.data.role);
+      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for Clients. Clients can view their own org info.
-     * @path /clients/{clientId}
-     * @allow (get) If user is admin or a client-user belonging to this clientId.
-     * @deny (write) If the user is not an admin.
-     * @principle Implements organizational boundary based on denormalized clientId.
-     */
     match /clients/{clientId} {
       allow get: if isAdmin() || belongsToClient(clientId);
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for Batches. Access for owners, assigned editors, or admins.
-     * @path /batches/{batchId}
-     * @allow (list) If query filters by clientId for clients or assignedEditorUids for editors.
-     * @deny (update) If a client attempts to change the clientId of a batch.
-     * @principle Validates relational integrity by binding clientId to the auth context.
-     */
     match /batches/{batchId} {
       allow get: if isAdmin() || belongsToClient(resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids);
       allow list: if isAdmin() || (isClient() && belongsToClient(resource.data.clientId)) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids);
       allow create: if isAdmin() || (isClient() && request.resource.data.clientId == getUserData().clientId);
-      allow update: if resource != null && (isAdmin() || belongsToClient(resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids)) && (request.resource.data.clientId == resource.data.clientId);
-      allow delete: if resource != null && (isAdmin() || belongsToClient(resource.data.clientId));
+      allow update: if (isAdmin() || belongsToClient(resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids)) && (request.resource.data.clientId == resource.data.clientId);
+      allow delete: if isAdmin() || belongsToClient(resource.data.clientId);
     }
 
-    /**
-     * @description Rules for Chats. Membership based on memberUids array.
-     * @path /chats/{chatId}
-     * @allow (get) If UID is present in the memberUids array.
-     * @deny (update) If user is not an admin and tries to modify membership.
-     * @principle Shared access pattern using denormalized member lists.
-     */
     match /chats/{chatId} {
-      allow get, list: if isAdmin() || (isSignedIn() && request.auth.uid in resource.data.memberUids);
-      allow create: if isAdmin() || (isSignedIn() && request.auth.uid in request.resource.data.memberUids);
-      allow update: if resource != null && (isAdmin() || (request.auth.uid in resource.data.memberUids && request.resource.data.memberUids == resource.data.memberUids));
+      allow get, list: if isAdmin() || (isSignedIn() && (request.auth.uid in resource.data.memberUids || getUserData().clientId == resource.data.clientId));
+      allow create: if isAdmin() || (isSignedIn() && (request.auth.uid in request.resource.data.memberUids || getUserData().clientId == request.resource.data.clientId));
+      allow update: if isAdmin() || (isSignedIn() && (request.auth.uid in resource.data.memberUids || getUserData().clientId == resource.data.clientId));
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for Messages. Uses denormalized memberUids for query performance.
-     * @path /chats/{chatId}/messages/{messageId}
-     * @allow (list) If the user is a member of the parent chat (verified via local field).
-     * @deny (create) If the senderUid in the data does not match the authenticated user.
-     * @principle Authorization Independence via denormalization to avoid parent get() calls.
-     */
     match /chats/{chatId}/messages/{messageId} {
-      allow get, list: if isAdmin() || (isSignedIn() && request.auth.uid in resource.data.memberUids);
-      allow create: if (isAdmin() || (isSignedIn() && request.auth.uid in request.resource.data.memberUids)) && (request.resource.data.senderUid == request.auth.uid);
-      allow update: if resource != null && (isAdmin() || (isOwner(resource.data.senderUid) && request.resource.data.senderUid == resource.data.senderUid));
-      allow delete: if resource != null && (isAdmin() || isOwner(resource.data.senderUid));
+      allow get, list: if isAdmin() || (isSignedIn() && (request.auth.uid in resource.data.memberUids || getUserData().clientId == resource.data.clientId));
+      allow create: if (isAdmin() || (isSignedIn() && (request.auth.uid in request.resource.data.memberUids || getUserData().clientId == request.resource.data.clientId))) && (request.resource.data.senderUid == request.auth.uid);
+      allow update, delete: if isAdmin() || (resource != null && isOwner(resource.data.senderUid));
     }
 
   }
 }
-/**
- * APPLICATION CONFIGURATION NOTE:
- * The reported 'auth/invalid-api-key' error is a client-side initialization issue.
- * Ensure that the 'firebaseConfig' object in 'src/lib/firebase.ts' contains the correct 
- * 'apiKey' and 'projectId' from your Firebase Project Settings.
- */

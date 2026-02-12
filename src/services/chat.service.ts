@@ -8,10 +8,6 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
-  /**
-   * Obtiene o crea un chat para una tanda.
-   * Usamos el batchId como el ID del documento del chat para que sea determinista.
-   */
   async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = []): Promise<string> {
     if (!batchId) throw new Error("Batch ID is required");
 
@@ -21,16 +17,21 @@ export const chatService = {
     try {
       snap = await getDoc(chatRef);
     } catch (e) {
-      // Manejo silencioso: intentaremos crear si no existe
+      console.warn("Silent fetch error during chat init, attempting to create or join...");
     }
 
-    const memberUids = Array.from(new Set([clientUserUid, ...editorUids]));
+    const memberUids = Array.from(new Set([clientUserUid, ...editorUids])).filter(uid => !!uid);
 
     if (snap?.exists()) {
+      const data = snap.data() as Chat;
+      // Si el usuario actual no está en el chat pero tiene el mismo clientId, lo añadimos
+      if (clientUserUid && !data.memberUids.includes(clientUserUid)) {
+        const newMembers = Array.from(new Set([...data.memberUids, clientUserUid]));
+        updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
+      }
       return snap.id;
     }
 
-    // Si no existe, lo creamos usando el batchId como ID
     const chatData = {
       batchId,
       clientId,
@@ -56,7 +57,7 @@ export const chatService = {
 
   async syncChatMembers(chatId: string, memberUids: string[]) {
     const chatRef = doc(db, 'chats', chatId);
-    updateDoc(chatRef, { memberUids }).catch(() => {});
+    updateDoc(chatRef, { memberUids: memberUids.filter(uid => !!uid) }).catch(() => {});
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
@@ -72,7 +73,6 @@ export const chatService = {
     if (role === 'editor' || role === 'admin') {
       let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
-        // Generar un alias persistente para este editor en este chat
         const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
         alias = `Editor #${randomHex}`;
         updateDoc(chatRef, {
@@ -91,7 +91,8 @@ export const chatService = {
       type,
       text,
       createdAt: serverTimestamp(),
-      memberUids: chatData.memberUids // CRÍTICO para reglas de seguridad
+      memberUids: chatData.memberUids,
+      clientId: chatData.clientId // Denormalización para reglas de seguridad
     };
 
     addDoc(messagesRef, messageData).catch(e => {
@@ -110,7 +111,8 @@ export const chatService = {
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
-    // Filtro de membresía obligatorio para reglas de seguridad
+    // El onSnapshot escuchará mensajes donde el usuario sea miembro explícito
+    // Las reglas de seguridad ahora permiten el listado basado en membresía o clientId
     const q = query(
       messagesRef, 
       where('memberUids', 'array-contains', currentUid)
@@ -127,6 +129,7 @@ export const chatService = {
         callback(sortedMessages);
       },
       (e) => {
+        console.error("Subscription error:", e);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: messagesRef.path,
           operation: 'list'
