@@ -27,8 +27,13 @@ export default function AdminClientsPage() {
     try {
       const data = await clientService.getAllClients();
       setClients(data);
-    } catch (error) {
-      toast({ title: "Error", description: "No se pudieron cargar los clientes.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Error loading clients:", error);
+      toast({ 
+        title: "Error de carga", 
+        description: error.message || "No se pudieron obtener los clientes de Firestore.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
@@ -43,8 +48,9 @@ export default function AdminClientsPage() {
       await clientService.toggleClientStatus(client.id, client.active);
       toast({ title: client.active ? "Cliente desactivado" : "Cliente activado" });
       fetchClients();
-    } catch (error) {
-      toast({ title: "Error", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Error toggling status:", error);
+      toast({ title: "Error al cambiar estado", variant: "destructive" });
     }
   };
 
@@ -57,7 +63,7 @@ export default function AdminClientsPage() {
       <DashboardLayout>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-headline">Clientes</h1>
             <p className="text-muted-foreground">Gestiona las empresas y organizaciones clientes.</p>
           </div>
           <div className="flex gap-2">
@@ -102,21 +108,21 @@ export default function AdminClientsPage() {
                 ))
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                    No se encontraron clientes.
+                  <TableCell colSpan={4} className="text-center py-12 text-muted-foreground italic">
+                    No se encontraron clientes activos o registrados.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
                   <TableRow key={client.id}>
-                    <TableCell className="font-semibold">{client.name}</TableCell>
+                    <TableCell className="font-semibold text-slate-800">{client.name}</TableCell>
                     <TableCell>
-                      <div className="text-sm">{client.contact}</div>
-                      <div className="text-xs text-muted-foreground">{client.contactEmail}</div>
+                      <div className="text-sm font-medium">{client.contact}</div>
+                      <div className="text-xs text-muted-foreground">{client.contactEmail || "Sin email"}</div>
                     </TableCell>
                     <TableCell>
                       {client.active ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-200">Activo</Badge>
+                        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-100">Activo</Badge>
                       ) : (
                         <Badge variant="secondary">Inactivo</Badge>
                       )}
@@ -129,7 +135,7 @@ export default function AdminClientsPage() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className={client.active ? "text-destructive" : "text-green-600"}
+                          className={client.active ? "text-destructive hover:text-destructive hover:bg-destructive/10" : "text-green-600 hover:text-green-600 hover:bg-green-50"}
                           onClick={() => handleToggleStatus(client)}
                         >
                           {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
