@@ -1,23 +1,31 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell } from 'lucide-react';
+import { notificationService } from '@/services/notification.service';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2 } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 export function SidebarNav() {
   const { profile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
+  
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<string>('default');
 
   useEffect(() => {
     if (profile?.uid) {
       const unsubscribe = chatService.subscribeToUnreadCount(profile.uid, setUnreadCount);
+      setNotifStatus(notificationService.getPermissionStatus());
       return () => unsubscribe();
     }
   }, [profile]);
@@ -25,6 +33,28 @@ export function SidebarNav() {
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/login');
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!profile?.uid) return;
+    
+    setNotifLoading(true);
+    try {
+      await notificationService.registerPushToken(profile.uid);
+      setNotifStatus('granted');
+      toast({
+        title: "Notificaciones activadas",
+        description: "Recibirás avisos de nuevos mensajes en este dispositivo.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error al activar",
+        description: error.message || "Ocurrió un problema al solicitar permisos.",
+        variant: "destructive"
+      });
+    } finally {
+      setNotifLoading(false);
+    }
   };
 
   const menuItems = {
@@ -83,6 +113,24 @@ export function SidebarNav() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-sidebar-border">
+        {profile && notifStatus !== 'unsupported' && (
+          <div className="mb-4">
+            <SidebarMenuButton
+              onClick={handleEnableNotifications}
+              disabled={notifLoading || notifStatus === 'granted'}
+              className={notifStatus === 'granted' ? "text-green-600 opacity-80" : "text-primary"}
+            >
+              {notifLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : notifStatus === 'granted' ? (
+                <Bell className="w-5 h-5" />
+              ) : (
+                <BellOff className="w-5 h-5" />
+              )}
+              <span>{notifStatus === 'granted' ? "Notificaciones activas" : "Activar notificaciones"}</span>
+            </SidebarMenuButton>
+          </div>
+        )}
         <div className="mb-4 px-2">
           <p className="text-sm font-medium truncate">{profile?.displayName}</p>
           <p className="text-xs text-muted-foreground truncate">{auth.currentUser?.email}</p>

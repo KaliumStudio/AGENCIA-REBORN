@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'editor' | 'client';
 
 export interface UserProfile {
@@ -6,7 +7,7 @@ export interface UserProfile {
   displayName: string;
   clientId?: string;
   active: boolean;
-  fcmTokens?: Record<string, boolean>;
+  fcmTokens?: Record<string, boolean> | string[];
   notificationPrefs?: {
     email: boolean;
     push: boolean;

@@ -1,3 +1,4 @@
+
 /**
  * Cloud Functions (Gen2) for CreativeFlow
  * - ping: quick health check
@@ -113,6 +114,8 @@ export const notifyOnMessageCreate = onDocumentCreated(
       return;
     }
 
+    logger.info(`Sending notification to ${recipientUids.length} users with total ${allTokens.length} tokens`);
+
     // Prepare the multicast message payload
     const messagePayload: MulticastMessage = {
       tokens: allTokens,
@@ -151,13 +154,20 @@ export const notifyOnMessageCreate = onDocumentCreated(
               errorCode === "messaging/invalid-registration-token"
             ) {
               const invalidToken = allTokens[index];
-              // Identify the user who owns this invalid token to clean it up from their profile
+              // Identify the user who owns this invalid token to clean it up
               for (const [uid, tokens] of Object.entries(uidToTokensMap)) {
                 if (tokens.includes(invalidToken)) {
+                  // If it's a map format
                   cleanupPromises.push(
                     db.collection("users").doc(uid).update({
                       [`fcmTokens.${invalidToken}`]: FieldValue.delete()
-                    }).catch(e => logger.error(`Error removing token ${invalidToken} for user ${uid}`, e))
+                    }).catch(() => {})
+                  );
+                  // If it's an array format
+                  cleanupPromises.push(
+                    db.collection("users").doc(uid).update({
+                      fcmTokens: FieldValue.arrayRemove(invalidToken)
+                    }).catch(() => {})
                   );
                   break;
                 }
