@@ -9,6 +9,12 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export const chatService = {
   async getOrCreateChat(batchId: string, clientId: string, editorUids: string[], currentUid: string): Promise<string> {
+    // Safety check to prevent "Unsupported field value: undefined" errors
+    if (!batchId || !currentUid) {
+      console.error("Missing required parameters for getOrCreateChat:", { batchId, currentUid });
+      throw new Error("Faltan parámetros obligatorios para inicializar el chat.");
+    }
+
     const chatsRef = collection(db, 'chats');
     const q = query(
       chatsRef, 
@@ -29,10 +35,8 @@ export const chatService = {
     
     if (!snap.empty) return snap.docs[0].id;
 
-    const memberUids = Array.from(new Set([clientId, ...editorUids]));
-    if (!memberUids.includes(currentUid)) {
-      memberUids.push(currentUid);
-    }
+    // Create unique list of members
+    const memberUids = Array.from(new Set([clientId, ...editorUids, currentUid]));
 
     const newChatRef = doc(chatsRef);
     const chatData = {
@@ -43,6 +47,7 @@ export const chatService = {
       lastMessageAt: serverTimestamp()
     };
 
+    // Use non-blocking write
     setDoc(newChatRef, chatData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: newChatRef.path,
@@ -55,6 +60,8 @@ export const chatService = {
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
+    if (!chatId || !senderUid) return;
+
     const chatRef = doc(db, 'chats', chatId);
     let chatSnap;
     try {
@@ -72,10 +79,12 @@ export const chatService = {
     const chatData = chatSnap.data() as Chat;
     let senderAlias = 'Cliente';
 
+    // Handle anonymous aliases for editors
     if (role === 'editor' || role === 'admin') {
       let alias = chatData.editorAliases?.[senderUid];
       if (!alias) {
         alias = `Editor #${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        // Update the chat with the new alias (non-blocking)
         updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: alias
         }).catch(e => {
@@ -97,9 +106,10 @@ export const chatService = {
       type,
       text,
       createdAt: serverTimestamp(),
-      memberUids: chatData.memberUids
+      memberUids: chatData.memberUids // Denormalized for security rules
     };
 
+    // Non-blocking add
     addDoc(messagesRef, messageData).catch(e => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: messagesRef.path,
@@ -108,10 +118,13 @@ export const chatService = {
       }));
     });
 
+    // Update last message timestamp
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
   subscribeToMessages(chatId: string, callback: (messages: Message[]) => void) {
+    if (!chatId) return () => {};
+
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
     

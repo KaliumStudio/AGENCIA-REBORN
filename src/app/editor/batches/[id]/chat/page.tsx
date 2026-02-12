@@ -33,7 +33,8 @@ export default function EditorChatPage() {
       batchService.getBatch(id as string).then(async (b) => {
         if (b) {
           setBatch(b);
-          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids);
+          // CRITICAL FIX: Pass profile.uid as the 4th argument to identify the current member
+          const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.assignedEditorUids, profile.uid);
           setChatId(cid);
         }
         setLoading(false);
