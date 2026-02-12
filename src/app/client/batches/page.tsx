@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { Batch } from '@/types';
@@ -19,9 +19,11 @@ export default function ClientBatchesPage() {
   const { profile, loading: authLoading } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetched = useRef(false);
 
   useEffect(() => {
-    if (profile?.clientId) {
+    if (profile?.clientId && !fetched.current) {
+      fetched.current = true;
       batchService.getBatchesByClient(profile.clientId).then(data => {
         setBatches(data);
         setLoading(false);
@@ -29,7 +31,7 @@ export default function ClientBatchesPage() {
         console.error("Error fetching client batches:", err);
         setLoading(false);
       });
-    } else if (!authLoading) {
+    } else if (!authLoading && !profile?.clientId) {
       setLoading(false);
     }
   }, [profile, authLoading]);

@@ -1,19 +1,23 @@
+
 "use client";
 
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const { profile, loading, user } = useAuth();
   const router = useRouter();
+  const redirecting = useRef(false);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !redirecting.current) {
       if (!user) {
+        redirecting.current = true;
         router.push('/login');
       } else if (profile) {
+        redirecting.current = true;
         router.push(`/${profile.role}/batches`);
       }
     }

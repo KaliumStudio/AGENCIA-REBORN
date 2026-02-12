@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { userService } from '@/services/user.service';
@@ -23,8 +24,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const userProfile = await userService.getProfile(firebaseUser.uid);
-        setProfile(userProfile);
+        try {
+          const userProfile = await userService.getProfile(firebaseUser.uid);
+          setProfile(userProfile);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+          setProfile(null);
+        }
       } else {
         setProfile(null);
       }
@@ -34,8 +40,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const value = useMemo(() => ({
+    user,
+    profile,
+    loading
+  }), [user, profile, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
