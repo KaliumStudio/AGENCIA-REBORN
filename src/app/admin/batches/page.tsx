@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { Batch } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
@@ -16,6 +17,7 @@ import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog'
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminBatchesPage() {
+  const { profile } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,14 +26,21 @@ export default function AdminBatchesPage() {
 
   const fetchBatches = async () => {
     setLoading(true);
-    const data = await batchService.getAllBatches();
-    setBatches(data);
-    setLoading(false);
+    try {
+      const data = await batchService.getAllBatches();
+      setBatches(data);
+    } catch (error) {
+      console.error("Error fetching batches:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchBatches();
-  }, []);
+    if (profile?.role === 'admin') {
+      fetchBatches();
+    }
+  }, [profile]);
 
   const filteredBatches = batches.filter(b => 
     b.title.toLowerCase().includes(searchTerm.toLowerCase())

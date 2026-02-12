@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { clientService } from '@/services/client.service';
 import { userService } from '@/services/user.service';
@@ -11,6 +12,7 @@ import { FolderKanban, Users, Building2, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboardPage() {
+  const { profile } = useAuth();
   const [stats, setStats] = useState({
     batches: 0,
     clients: 0,
@@ -21,6 +23,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (profile?.role !== 'admin') return;
+      
       try {
         const [batches, clients, users] = await Promise.all([
           batchService.getAllBatches(),
@@ -42,7 +46,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchStats();
-  }, []);
+  }, [profile]);
 
   const cards = [
     { title: "Tandas Totales", value: stats.batches, icon: FolderKanban, color: "text-blue-600" },
