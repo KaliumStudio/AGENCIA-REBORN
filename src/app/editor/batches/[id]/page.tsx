@@ -53,20 +53,25 @@ export default function EditorBatchDetailPage() {
 
     setSubmitting(true);
     
-    // Mutations are non-blocking as per guidelines, but we sequence them for chat notification
+    // Las mutaciones no son bloqueantes, pero actualizamos el estado local para feedback inmediato
     batchService.submitDelivery(batch.id, driveLink, profile.uid);
     
-    // Notify via chat
-    chatService.getOrCreateChat(batch.id, batch.clientId, batch.assignedEditorUids, profile.uid)
-      .then(chatId => {
-        chatService.sendMessage(
-          chatId, 
-          profile.uid, 
-          profile.role, 
-          'drive_link', 
-          `Nueva entrega realizada. Link: ${driveLink}`
-        );
-      });
+    // Notificar vía chat con el orden correcto de parámetros: batchId, clientId, clientUserUid, editorUids, currentUid
+    chatService.getOrCreateChat(
+      batch.id, 
+      batch.clientId, 
+      batch.clientUserUid, 
+      batch.assignedEditorUids, 
+      profile.uid
+    ).then(chatId => {
+      chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        'drive_link', 
+        `Nueva entrega realizada. Link: ${driveLink}`
+      );
+    });
     
     toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
     setBatch(prev => prev ? { ...prev, driveLink, status: 'delivered' } : null);

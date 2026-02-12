@@ -20,14 +20,17 @@ export const chatService = {
       console.warn("Silent fetch error during chat init, attempting to create or join...");
     }
 
-    const memberUids = Array.from(new Set([clientUserUid, ...editorUids])).filter(uid => !!uid);
+    // Aseguramos que los parámetros sean del tipo correcto para evitar arreglos anidados
+    const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
+    const safeEditorUids = Array.isArray(editorUids) ? editorUids : [editorUids];
+    const memberUids = Array.from(new Set([safeClientUserUid, ...safeEditorUids])).filter(uid => !!uid && typeof uid === 'string');
 
     if (snap?.exists()) {
       const data = snap.data() as Chat;
-      // Asegurarnos de que el usuario actual (si se pasa) esté en los miembros si pertenece al batch
-      const userToSync = currentUid || clientUserUid;
-      if (userToSync && !data.memberUids.includes(userToSync)) {
-        const newMembers = Array.from(new Set([...data.memberUids, userToSync]));
+      const userToSync = currentUid || safeClientUserUid;
+      // Sincronizar membresía si el usuario actual no está en la lista (evitando anidamientos)
+      if (userToSync && typeof userToSync === 'string' && !data.memberUids.includes(userToSync)) {
+        const newMembers = Array.from(new Set([...data.memberUids, userToSync])).filter(uid => typeof uid === 'string');
         updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
       }
       return snap.id;
@@ -36,7 +39,7 @@ export const chatService = {
     const chatData = {
       batchId,
       clientId,
-      clientUserUid,
+      clientUserUid: safeClientUserUid,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp()
@@ -58,7 +61,8 @@ export const chatService = {
 
   async syncChatMembers(chatId: string, memberUids: string[]) {
     const chatRef = doc(db, 'chats', chatId);
-    updateDoc(chatRef, { memberUids: memberUids.filter(uid => !!uid) }).catch(() => {});
+    const flatMembers = memberUids.flat().filter(uid => !!uid && typeof uid === 'string');
+    updateDoc(chatRef, { memberUids: flatMembers }).catch(() => {});
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
@@ -114,13 +118,11 @@ export const chatService = {
     
     let q;
     if (role === 'client' && clientId) {
-      // Para clientes, usamos el clientId para asegurar que vean todos los mensajes de su empresa
       q = query(
         messagesRef, 
         where('clientId', '==', clientId)
       );
     } else {
-      // Para editores y otros, usamos membresía directa
       q = query(
         messagesRef, 
         where('memberUids', 'array-contains', currentUid)
