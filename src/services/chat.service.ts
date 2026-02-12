@@ -17,10 +17,9 @@ export const chatService = {
     try {
       snap = await getDoc(chatRef);
     } catch (e) {
-      console.warn("Silent fetch error during chat init, attempting to create or join...");
+      console.warn("Silent fetch error during chat init");
     }
 
-    // Aseguramos que los parámetros sean del tipo correcto para evitar arreglos anidados
     const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
     const safeEditorUids = Array.isArray(editorUids) ? editorUids : [editorUids];
     const memberUids = Array.from(new Set([safeClientUserUid, ...safeEditorUids])).filter(uid => !!uid && typeof uid === 'string');
@@ -28,7 +27,6 @@ export const chatService = {
     if (snap?.exists()) {
       const data = snap.data() as Chat;
       const userToSync = currentUid || safeClientUserUid;
-      // Sincronizar membresía si el usuario actual no está en la lista (evitando anidamientos)
       if (userToSync && typeof userToSync === 'string' && !data.memberUids.includes(userToSync)) {
         const newMembers = Array.from(new Set([...data.memberUids, userToSync])).filter(uid => typeof uid === 'string');
         updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
@@ -42,7 +40,8 @@ export const chatService = {
       clientUserUid: safeClientUserUid,
       memberUids,
       editorAliases: {},
-      lastMessageAt: serverTimestamp()
+      lastMessageAt: serverTimestamp(),
+      lastReadAtByUid: {}
     };
 
     try {
@@ -59,10 +58,12 @@ export const chatService = {
     return batchId;
   },
 
-  async syncChatMembers(chatId: string, memberUids: string[]) {
+  async markAsRead(chatId: string, uid: string) {
+    if (!chatId || !uid) return;
     const chatRef = doc(db, 'chats', chatId);
-    const flatMembers = memberUids.flat().filter(uid => !!uid && typeof uid === 'string');
-    updateDoc(chatRef, { memberUids: flatMembers }).catch(() => {});
+    updateDoc(chatRef, {
+      [`lastReadAtByUid.${uid}`]: serverTimestamp()
+    }).catch(() => {});
   },
 
   async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string) {
@@ -113,39 +114,44 @@ export const chatService = {
 
   subscribeToMessages(chatId: string, currentUid: string, role: UserRole, clientId: string | undefined, callback: (messages: Message[]) => void) {
     if (!chatId || !currentUid) return () => {};
-
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
     let q;
     if (role === 'client' && clientId) {
-      q = query(
-        messagesRef, 
-        where('clientId', '==', clientId)
-      );
+      q = query(messagesRef, where('clientId', '==', clientId));
     } else {
-      q = query(
-        messagesRef, 
-        where('memberUids', 'array-contains', currentUid)
-      );
+      q = query(messagesRef, where('memberUids', 'array-contains', currentUid));
     }
     
-    return onSnapshot(q, 
-      (snap) => {
-        const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        const sortedMessages = messages.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
-          return timeA - timeB;
-        });
-        callback(sortedMessages);
-      },
-      (e) => {
-        console.error("Subscription error:", e);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: messagesRef.path,
-          operation: 'list'
-        }));
-      }
-    );
+    return onSnapshot(q, (snap) => {
+      const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+      const sortedMessages = messages.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+        return timeA - timeB;
+      });
+      callback(sortedMessages);
+    }, (e) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: messagesRef.path,
+        operation: 'list'
+      }));
+    });
+  },
+
+  subscribeToUnreadCount(uid: string, callback: (count: number) => void) {
+    const q = query(collection(db, 'chats'), where('memberUids', 'array-contains', uid));
+    return onSnapshot(q, (snap) => {
+      let unreadCount = 0;
+      snap.docs.forEach(doc => {
+        const chat = doc.data() as Chat;
+        const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
+        const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
+        if (lastMessage > lastRead) {
+          unreadCount++;
+        }
+      });
+      callback(unreadCount);
+    });
   }
 };

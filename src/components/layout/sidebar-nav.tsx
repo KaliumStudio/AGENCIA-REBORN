@@ -1,15 +1,26 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, MessageSquare } from 'lucide-react';
+import { chatService } from '@/services/chat.service';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 
 export function SidebarNav() {
   const { profile } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (profile?.uid) {
+      const unsubscribe = chatService.subscribeToUnreadCount(profile.uid, setUnreadCount);
+      return () => unsubscribe();
+    }
+  }, [profile]);
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -59,7 +70,12 @@ export function SidebarNav() {
                   className="transition-all duration-200"
                 >
                   <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.label === 'Mis Tandas' && unreadCount > 0 && (
+                    <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                      {unreadCount}
+                    </Badge>
+                  )}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}

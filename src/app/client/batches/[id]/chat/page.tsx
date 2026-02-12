@@ -49,6 +49,7 @@ export default function ClientChatPage() {
   useEffect(() => {
     if (chatId && profile) {
       const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, profile.clientId, setMessages);
+      chatService.markAsRead(chatId, profile.uid);
       return () => unsubscribe();
     }
   }, [chatId, profile]);
@@ -65,6 +66,7 @@ export default function ClientChatPage() {
     const text = newMessage;
     setNewMessage('');
     chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+    chatService.markAsRead(chatId, profile.uid);
   };
 
   const analyzeFeedback = async () => {
@@ -168,7 +170,6 @@ export default function ClientChatPage() {
             </form>
           </div>
 
-          {/* Desktop Tools Sidebar */}
           <div className="hidden lg:flex w-80 flex-col gap-4">
             <Card className="shadow-sm">
               <CardHeader className="py-3 px-4 flex flex-row items-center justify-between border-b">

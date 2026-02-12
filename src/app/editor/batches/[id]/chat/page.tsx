@@ -45,6 +45,7 @@ export default function EditorChatPage() {
   useEffect(() => {
     if (chatId && profile) {
       const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, profile.clientId, setMessages);
+      chatService.markAsRead(chatId, profile.uid);
       return () => unsubscribe();
     }
   }, [chatId, profile]);
@@ -61,6 +62,7 @@ export default function EditorChatPage() {
     const text = newMessage;
     setNewMessage('');
     chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+    chatService.markAsRead(chatId, profile.uid);
   };
 
   if (authLoading || loadingChat) {

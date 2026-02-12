@@ -6,6 +6,11 @@ export interface UserProfile {
   displayName: string;
   clientId?: string;
   active: boolean;
+  fcmTokens?: Record<string, boolean>;
+  notificationPrefs?: {
+    email: boolean;
+    push: boolean;
+  };
 }
 
 export interface Client {
@@ -44,6 +49,7 @@ export interface Chat {
   memberUids: string[];
   editorAliases: Record<string, string>;
   lastMessageAt: any;
+  lastReadAtByUid: Record<string, any>;
 }
 
 export type MessageType = 'text' | 'drive_link' | 'revision_request' | 'system';
@@ -58,5 +64,5 @@ export interface Message {
   text: string;
   createdAt: any;
   memberUids: string[];
-  clientId?: string; // Denormalización para reglas de seguridad
+  clientId?: string;
 }
