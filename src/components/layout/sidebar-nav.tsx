@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -13,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
 export function SidebarNav() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -23,12 +22,14 @@ export function SidebarNav() {
   const [notifStatus, setNotifStatus] = useState<string>('default');
 
   useEffect(() => {
-    if (profile?.uid) {
+    // Solo suscribirse si el perfil está listo y tiene UID
+    // Esto evita errores de permisos al cargar la página
+    if (!authLoading && profile?.uid) {
       const unsubscribe = chatService.subscribeToUnreadCount(profile.uid, setUnreadCount);
       setNotifStatus(notificationService.getPermissionStatus());
       return () => unsubscribe();
     }
-  }, [profile]);
+  }, [profile, authLoading]);
 
   const handleLogout = async () => {
     await auth.signOut();

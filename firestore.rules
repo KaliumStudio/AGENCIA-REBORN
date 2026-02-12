@@ -8,19 +8,15 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Verifica si el usuario tiene un documento de perfil en Firestore
-    function hasProfile() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    // Obtiene el documento de usuario de forma segura (sin fallar si no existe)
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Obtiene los datos del perfil de forma segura
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // Verifica el rol del usuario de forma segura
+    // Verifica si el usuario existe y tiene un rol específico
     function hasRole(role) {
-      return hasProfile() && getUserData().role == role;
+      let user = getUserDoc();
+      return isSignedIn() && user != null && user.data.role == role;
     }
 
     function isAdmin() {
@@ -35,50 +31,80 @@ service cloud.firestore {
       return hasRole('client');
     }
 
+    // Verifica si el usuario es el dueño del documento solicitado
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Verifica si el usuario pertenece a un cliente específico
-    function belongsToClient(clientId) {
-      return (isClient() && getUserData().clientId == clientId) || isAdmin();
     }
 
     // --- COLLECTION RULES ---
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      // Permitir 'get' al propio usuario siempre, para que pueda cargar su perfil inicial
+      allow get: if isOwner(userId) || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.role == 'admin');
       allow list: if isAdmin();
-      allow create: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isAdmin() || (isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])));
       allow delete: if isAdmin();
     }
 
     match /clients/{clientId} {
-      allow get: if belongsToClient(clientId);
+      allow get: if isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.clientId == clientId) || 
+        isAdmin()
+      );
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
     match /batches/{batchId} {
-      allow get: if isAdmin() || (hasProfile() && (belongsToClient(resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids)));
-      allow list: if isAdmin() || (hasProfile() && ((isClient() && getUserData().clientId == resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids)));
-      allow create: if isAdmin() || (isClient() && hasProfile() && request.resource.data.clientId == getUserData().clientId);
-      allow update: if (isAdmin() || (hasProfile() && (belongsToClient(resource.data.clientId) || (isEditor() && request.auth.uid in resource.data.assignedEditorUids))));
+      allow get: if isSignedIn() && (
+        isAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserDoc().data.clientId == resource.data.clientId || 
+          (isEditor() && request.auth.uid in resource.data.assignedEditorUids)
+        ))
+      );
+      allow list: if isSignedIn() && (
+        isAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          (isClient() && getUserDoc().data.clientId == resource.data.clientId) || 
+          (isEditor() && request.auth.uid in resource.data.assignedEditorUids)
+        ))
+      );
+      allow create: if isAdmin() || (isClient() && request.resource.data.clientId == getUserDoc().data.clientId);
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          getUserDoc().data.clientId == resource.data.clientId || 
+          (isEditor() && request.auth.uid in resource.data.assignedEditorUids)
+        ))
+      );
       allow delete: if isAdmin();
     }
 
     match /chats/{chatId} {
-      allow get, list: if isSignedIn() && (request.auth.uid in resource.data.memberUids || (hasProfile() && belongsToClient(resource.data.clientId)));
+      allow get, list: if isSignedIn() && (
+        request.auth.uid in resource.data.memberUids || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.clientId == resource.data.clientId) ||
+        isAdmin()
+      );
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid in resource.data.memberUids || (hasProfile() && belongsToClient(resource.data.clientId)));
+      allow update: if isSignedIn() && (
+        request.auth.uid in resource.data.memberUids || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.clientId == resource.data.clientId) ||
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
 
     match /chats/{chatId}/messages/{messageId} {
-      allow get, list: if isSignedIn() && (request.auth.uid in resource.data.memberUids || (hasProfile() && belongsToClient(resource.data.clientId)));
+      allow get, list: if isSignedIn() && (
+        request.auth.uid in resource.data.memberUids || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserDoc().data.clientId == resource.data.clientId) ||
+        isAdmin()
+      );
       allow create: if isSignedIn() && (request.auth.uid == request.resource.data.senderUid);
-      allow update, delete: if isAdmin() || (resource != null && isOwner(resource.data.senderUid));
+      allow update, delete: if isAdmin() || (resource != null && request.auth.uid == resource.data.senderUid);
     }
   }
 }
