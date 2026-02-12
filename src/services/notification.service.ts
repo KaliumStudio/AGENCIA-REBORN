@@ -8,11 +8,21 @@ export const notificationService = {
   async enablePush(uid: string) {
     if (!uid) throw new Error("No user ID provided");
 
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      throw new Error("Las notificaciones no están soportadas en este navegador.");
+    if (typeof window === 'undefined') return;
+
+    // Detección específica para iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+
+    if (isIOS && !isStandalone) {
+      throw new Error("En iPhone, debes añadir esta web a tu pantalla de inicio ('Compartir' -> 'Añadir a pantalla de inicio') para activar las notificaciones.");
     }
 
-    // 1. Registrar Service Worker de forma explícita
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      throw new Error("Tu navegador no soporta notificaciones push.");
+    }
+
+    // 1. Registrar Service Worker
     let registration;
     try {
       registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
@@ -25,15 +35,15 @@ export const notificationService = {
     }
 
     const messaging = await getFcmMessaging();
-    if (!messaging) throw new Error("FCM no inicializado.");
+    if (!messaging) throw new Error("FCM no inicializado o no soportado.");
 
     // 2. Pedir permiso
     const permission = await Notification.requestPermission();
     if (permission === "denied") {
-      throw new Error("Permiso denegado por el navegador.");
+      throw new Error("Permiso denegado. Por favor, actívalo en los ajustes de tu navegador para este sitio.");
     }
 
-    // 3. Obtener Token vinculado al SW
+    // 3. Obtener Token
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
     try {
       const token = await getToken(messaging, { 
@@ -41,7 +51,9 @@ export const notificationService = {
         serviceWorkerRegistration: registration 
       });
       
-      if (!token) throw new Error("No se obtuvo token.");
+      if (!token) throw new Error("No se pudo generar el identificador del dispositivo.");
+
+      console.log("[NotificationService] Token obtenido:", token.substring(0, 10) + "...");
 
       // 4. Guardar en Firestore
       const userRef = doc(db, "users", uid);
@@ -51,9 +63,11 @@ export const notificationService = {
         "notificationPrefs.push": true
       });
 
+      console.log("[NotificationService] Guardado en Firestore ok.");
       return token;
     } catch (error: any) {
-      throw new Error(error.message || "Error al registrar dispositivo.");
+      console.error("[NotificationService] Error en proceso:", error);
+      throw new Error(error.message || "Error al vincular el dispositivo.");
     }
   },
 
