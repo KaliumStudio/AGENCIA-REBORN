@@ -10,20 +10,25 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Shield, User, Edit, Search } from 'lucide-react';
+import { Shield, User, Edit, Search, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddUserDialog } from '@/components/users/add-user-dialog';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const fetchUsers = async () => {
+    setLoading(true);
+    const data = await userService.getAllUsers();
+    setUsers(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    userService.getAllUsers().then(data => {
-      setUsers(data);
-      setLoading(false);
-    });
+    fetchUsers();
   }, []);
 
   const roleColors: Record<UserRole, string> = {
@@ -32,7 +37,10 @@ export default function AdminUsersPage() {
     client: "bg-primary/10 text-primary border-primary/20",
   };
 
-  const filteredUsers = users.filter(u => u.displayName.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredUsers = users.filter(u => 
+    u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.uid?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <RoleGuard allowedRoles={['admin']}>
@@ -42,9 +50,12 @@ export default function AdminUsersPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Usuarios</h1>
             <p className="text-sm md:text-base text-muted-foreground">Administra los accesos y roles de tu equipo y clientes.</p>
           </div>
-          <Button disabled className="w-full md:w-auto h-11 md:h-10">
-            <UserPlus className="mr-2 h-4 w-4" /> Invitar Usuario
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" size="icon" onClick={fetchUsers} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <AddUserDialog onUserAdded={fetchUsers} />
+          </div>
         </div>
 
         <div className="mb-6 relative w-full max-w-sm">
@@ -78,21 +89,27 @@ export default function AdminUsersPage() {
                     <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                   </TableRow>
                 ))
+              ) : filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                    No se encontraron usuarios.
+                  </TableCell>
+                </TableRow>
               ) : filteredUsers.map((u) => (
                 <TableRow key={u.uid}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs text-primary">
-                          {u.displayName.substring(0, 2).toUpperCase()}
+                          {(u.displayName || '??').substring(0, 2).toUpperCase()}
                        </div>
                        <div>
-                          <div className="font-semibold">{u.displayName}</div>
+                          <div className="font-semibold">{u.displayName || 'Sin nombre'}</div>
                           <div className="text-[10px] text-muted-foreground font-mono">{u.uid}</div>
                        </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={cn("capitalize", roleColors[u.role])}>
+                    <Badge variant="outline" className={cn("capitalize", roleColors[u.role] || "bg-gray-100")}>
                        {u.role === 'admin' ? <Shield className="w-3 h-3 mr-1" /> : <User className="w-3 h-3 mr-1" />}
                        {u.role}
                     </Badge>
@@ -101,7 +118,7 @@ export default function AdminUsersPage() {
                     <Badge variant={u.active ? "default" : "secondary"}>{u.active ? "Activo" : "Inactivo"}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled><Edit className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -119,11 +136,11 @@ export default function AdminUsersPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-sm text-primary">
-                      {u.displayName.substring(0, 2).toUpperCase()}
+                      {(u.displayName || '??').substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div className="font-bold">{u.displayName}</div>
-                      <Badge variant="outline" className={cn("mt-1 text-[10px] h-5", roleColors[u.role])}>
+                      <div className="font-bold">{u.displayName || 'Sin nombre'}</div>
+                      <Badge variant="outline" className={cn("mt-1 text-[10px] h-5", roleColors[u.role] || "bg-gray-100")}>
                         {u.role}
                       </Badge>
                     </div>
@@ -131,7 +148,7 @@ export default function AdminUsersPage() {
                   <Badge variant={u.active ? "default" : "secondary"}>{u.active ? "Activo" : "Inactivo"}</Badge>
                 </div>
                 <div className="flex justify-end border-t pt-3">
-                  <Button variant="outline" size="sm" className="w-full">Editar Perfil</Button>
+                  <Button variant="outline" size="sm" className="w-full" disabled>Ver Perfil</Button>
                 </div>
               </CardContent>
             </Card>
