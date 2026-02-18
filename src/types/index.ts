@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'editor' | 'client';
 
 export interface UserProfile {
@@ -53,7 +52,7 @@ export interface Chat {
   lastReadAtByUid: Record<string, any>;
 }
 
-export type MessageType = 'text' | 'drive_link' | 'revision_request' | 'system';
+export type MessageType = 'text' | 'image' | 'file' | 'drive_link' | 'revision_request' | 'system';
 
 export interface Message {
   id: string;
@@ -63,6 +62,9 @@ export interface Message {
   senderAlias: string;
   type: MessageType;
   text: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
   createdAt: any;
   memberUids: string[];
   clientId?: string;

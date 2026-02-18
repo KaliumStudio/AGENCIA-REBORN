@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
 import { batchService } from '@/services/batch.service';
+import { storageService } from '@/services/storage.service';
 import { Message, Batch } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -12,10 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, ShieldAlert, Loader2, Info } from 'lucide-react';
+import { Send, ArrowLeft, ShieldAlert, Loader2, Info, Paperclip, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EditorChatPage() {
   const { id } = useParams();
@@ -25,7 +27,10 @@ export default function EditorChatPage() {
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
   const [loadingChat, setLoadingChat] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id && profile) {
@@ -70,7 +75,6 @@ export default function EditorChatPage() {
     const text = newMessage;
     setNewMessage('');
 
-    // Preparar lista de miembros para asegurar visibilidad
     const members = Array.from(new Set([
       batch.clientUserUid,
       ...(batch.assignedEditorUids || []),
@@ -79,6 +83,46 @@ export default function EditorChatPage() {
 
     chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, members);
     chatService.markAsRead(chatId, profile.uid);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chatId || !profile || !batch) return;
+
+    const isImage = file.type.startsWith('image/');
+    setUploading(true);
+
+    try {
+      const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
+      
+      const members = Array.from(new Set([
+        batch.clientUserUid,
+        ...(batch.assignedEditorUids || []),
+        profile.uid
+      ])).filter(Boolean);
+
+      await chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        isImage ? 'image' : 'file', 
+        isImage ? 'Ha enviado una imagen' : `Archivo: ${file.name}`,
+        members,
+        {
+          url: uploadResult.url,
+          name: uploadResult.name,
+          size: uploadResult.size
+        }
+      );
+      
+      toast({ title: "Archivo enviado" });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error al subir archivo", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   if (authLoading || loadingChat) {
@@ -126,11 +170,24 @@ export default function EditorChatPage() {
                       </span>
                     </div>
                     <div className={cn(
-                      "px-4 py-2 rounded-2xl max-w-[85%] text-sm shadow-sm",
+                      "px-4 py-2.5 rounded-2xl max-w-[85%] text-sm shadow-sm overflow-hidden",
                       m.senderUid === profile?.uid ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 border rounded-tl-none",
+                      m.type === 'image' && "p-1",
                       m.type === 'drive_link' && "bg-green-600 text-white",
                       m.type === 'revision_request' && "bg-amber-100 text-amber-900 border-amber-200"
                     )}>
+                      {m.type === 'image' && m.fileUrl && (
+                        <div className="mb-2">
+                          <img src={m.fileUrl} alt={m.fileName} className="max-w-full rounded-lg h-auto cursor-pointer hover:opacity-90" onClick={() => window.open(m.fileUrl, '_blank')} />
+                        </div>
+                      )}
+                      {m.type === 'file' && m.fileUrl && (
+                        <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/5 rounded hover:bg-black/10 transition-colors mb-1">
+                          <FileText className="h-4 w-4" />
+                          <span className="underline truncate">{m.fileName}</span>
+                          <Download className="h-3 w-3 ml-auto" />
+                        </a>
+                      )}
                       {m.text}
                     </div>
                   </div>
@@ -139,17 +196,43 @@ export default function EditorChatPage() {
               </div>
             </ScrollArea>
 
-            <form onSubmit={handleSend} className="p-3 md:p-4 bg-white border-t flex gap-2 sticky bottom-0">
-              <Input 
-                placeholder="Escribe al cliente..." 
-                value={newMessage} 
-                onChange={e => setNewMessage(e.target.value)}
-                className="rounded-full px-6 h-11 md:h-12 bg-slate-100 border-none focus-visible:ring-primary"
-              />
-              <Button type="submit" size="icon" className="rounded-full shrink-0 h-11 w-11 md:h-12 md:w-12 shadow-md">
-                <Send className="h-5 w-5" />
-              </Button>
-            </form>
+            <div className="p-3 md:p-4 bg-white border-t flex flex-col gap-2">
+              {uploading && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1 animate-pulse">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Subiendo archivo...
+                </div>
+              )}
+              <div className="flex gap-2 items-center">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  onChange={handleFileUpload}
+                  accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full shrink-0 h-10 w-10"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                <form onSubmit={handleSend} className="flex-1 flex gap-2">
+                  <Input 
+                    placeholder="Escribe al cliente..." 
+                    value={newMessage} 
+                    onChange={e => setNewMessage(e.target.value)}
+                    className="rounded-full px-6 h-11 bg-slate-100 border-none focus-visible:ring-primary"
+                  />
+                  <Button type="submit" size="icon" className="rounded-full shrink-0 h-11 w-11 shadow-md">
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </form>
+              </div>
+            </div>
           </div>
 
           <div className="hidden lg:flex w-72 flex-col gap-4">

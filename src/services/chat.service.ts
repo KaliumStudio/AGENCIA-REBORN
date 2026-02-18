@@ -7,9 +7,6 @@ import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-/**
- * Utility to remove undefined properties from an object for Firestore safety.
- */
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
     Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null)
@@ -41,7 +38,6 @@ export const chatService = {
 
     if (snap?.exists()) {
       const data = snap.data() as Chat;
-      // Verificar si falta algún miembro
       const needsUpdate = memberUids.some(uid => !data.memberUids.includes(uid));
       
       if (needsUpdate) {
@@ -83,13 +79,20 @@ export const chatService = {
     }).catch(() => {});
   },
 
-  async sendMessage(chatId: string, senderUid: string, role: UserRole, type: MessageType, text: string, providedMembers?: string[]) {
+  async sendMessage(
+    chatId: string, 
+    senderUid: string, 
+    role: UserRole, 
+    type: MessageType, 
+    text: string, 
+    providedMembers?: string[],
+    fileData?: { url: string; name: string; size: number }
+  ) {
     if (!chatId || !senderUid) return;
 
     let memberUids = providedMembers || [];
     let clientId = '';
 
-    // Si no se proveen miembros, debemos obtenerlos del chat
     if (memberUids.length === 0) {
       const chatRef = doc(db, 'chats', chatId);
       const chatSnap = await getDoc(chatRef).catch(() => null);
@@ -100,7 +103,6 @@ export const chatService = {
       }
     }
 
-    // Asegurar que el remitente está en la lista para que pueda ver su propio mensaje
     if (!memberUids.includes(senderUid)) {
       memberUids.push(senderUid);
     }
@@ -130,6 +132,9 @@ export const chatService = {
       senderAlias,
       type,
       text,
+      fileUrl: fileData?.url,
+      fileName: fileData?.name,
+      fileSize: fileData?.size,
       createdAt: serverTimestamp(),
       memberUids: Array.from(new Set(memberUids)),
       clientId: clientId || null
@@ -161,7 +166,6 @@ export const chatService = {
     if (role === 'admin') {
       q = query(messagesRef);
     } else {
-      // Tanto clientes como editores filtran por su presencia en memberUids
       q = query(messagesRef, where('memberUids', 'array-contains', currentUid));
     }
     
