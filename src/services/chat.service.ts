@@ -1,8 +1,8 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
-  query, where, serverTimestamp, onSnapshot, addDoc, Timestamp,
-  limit, orderBy, getDocs
+  query, where, serverTimestamp, onSnapshot, addDoc,
+  orderBy, getDocs
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -24,14 +24,15 @@ export const chatService = {
     const allMembers = new Set<string>();
     if (clientUserUid) allMembers.add(clientUserUid);
     if (currentUid) allMembers.add(currentUid);
-    editorUids.forEach(uid => {
-      if (uid) allMembers.add(uid);
-    });
+    if (editorUids && Array.isArray(editorUids)) {
+      editorUids.forEach(uid => {
+        if (uid) allMembers.add(uid);
+      });
+    }
 
     const memberUids = Array.from(allMembers).filter(Boolean);
 
     if (snap.exists()) {
-      // Actualizar miembros si es necesario
       const data = snap.data() as Chat;
       const existingMembers = data.memberUids || [];
       const hasAllMembers = memberUids.every(m => existingMembers.includes(m));
@@ -90,7 +91,6 @@ export const chatService = {
       editorAliases = data.editorAliases || {};
     }
 
-    // Asegurar que el remitente está en la lista
     if (!memberUids.includes(senderUid)) {
       memberUids.push(senderUid);
     }
@@ -101,7 +101,6 @@ export const chatService = {
       if (!senderAlias) {
         const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
         senderAlias = `Editor #${randomHex}`;
-        // Guardar el nuevo alias en el chat
         updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: senderAlias
         }).catch(() => {});
@@ -120,7 +119,7 @@ export const chatService = {
       fileName: fileData?.name,
       fileSize: fileData?.size,
       createdAt: serverTimestamp(),
-      memberUids, // Importante para las reglas de seguridad
+      memberUids,
       clientId
     });
 
@@ -142,8 +141,6 @@ export const chatService = {
     if (!chatId || !currentUid) return () => {};
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
-    // Usamos memberUids para todos (excepto admin que ve todo)
-    // Esto es más consistente con las reglas de seguridad
     let q;
     if (role === 'admin') {
       q = query(messagesRef, orderBy('createdAt', 'asc'));
@@ -164,6 +161,22 @@ export const chatService = {
         path: `chats/${chatId}/messages`,
       });
       errorEmitter.emit('permission-error', contextualError);
+    });
+  },
+
+  subscribeToUnreadCount(uid: string, callback: (count: number) => void) {
+    const q = query(collection(db, 'chats'), where('memberUids', 'array-contains', uid));
+    return onSnapshot(q, (snap) => {
+      let count = 0;
+      snap.docs.forEach(doc => {
+        const chat = doc.data() as Chat;
+        const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
+        const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
+        if (lastMessage > lastRead) count++;
+      });
+      callback(count);
+    }, (error) => {
+      console.error("Error subscribing to unread count:", error);
     });
   },
 
