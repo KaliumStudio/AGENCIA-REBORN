@@ -1,7 +1,8 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
-  query, where, serverTimestamp, onSnapshot, addDoc, Timestamp 
+  query, where, serverTimestamp, onSnapshot, addDoc, Timestamp,
+  limit, orderBy, getDocs
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -14,63 +15,45 @@ const stripUndefined = (obj: any) => {
 };
 
 export const chatService = {
-  async getOrCreateChat(batchId: string, clientId: string, clientUserUid?: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
+  async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
     if (!batchId) throw new Error("Batch ID is required");
 
     const chatRef = doc(db, 'chats', batchId);
-    let snap;
-    
-    try {
-      snap = await getDoc(chatRef);
-    } catch (e) {
-      console.warn("Chat fetch error:", e);
-    }
+    const snap = await getDoc(chatRef);
 
-    const safeClientUserUid = Array.isArray(clientUserUid) ? clientUserUid[0] : clientUserUid;
-    const safeEditorUids = Array.isArray(editorUids) ? editorUids : [];
-    
     const allMembers = new Set<string>();
-    if (safeClientUserUid) allMembers.add(safeClientUserUid);
-    if (Array.isArray(safeEditorUids)) {
-      safeEditorUids.forEach(uid => uid && allMembers.add(uid));
-    }
+    if (clientUserUid) allMembers.add(clientUserUid);
     if (currentUid) allMembers.add(currentUid);
+    editorUids.forEach(uid => {
+      if (uid) allMembers.add(uid);
+    });
 
-    const memberUids = Array.from(allMembers).filter(uid => typeof uid === 'string' && uid !== "");
+    const memberUids = Array.from(allMembers).filter(Boolean);
 
-    if (snap?.exists()) {
+    if (snap.exists()) {
+      // Actualizar miembros si es necesario
       const data = snap.data() as Chat;
-      const currentMembers = data.memberUids || [];
-      const needsUpdate = memberUids.some(uid => !currentMembers.includes(uid));
+      const existingMembers = data.memberUids || [];
+      const hasAllMembers = memberUids.every(m => existingMembers.includes(m));
       
-      if (needsUpdate) {
-        const newMembers = Array.from(new Set([...currentMembers, ...memberUids]));
-        await updateDoc(chatRef, { memberUids: newMembers }).catch(() => {});
+      if (!hasAllMembers) {
+        const updatedMembers = Array.from(new Set([...existingMembers, ...memberUids]));
+        await updateDoc(chatRef, { memberUids: updatedMembers });
       }
       return snap.id;
     }
 
-    const chatData = stripUndefined({
+    const chatData = {
       batchId,
       clientId,
-      clientUserUid: safeClientUserUid || null,
+      clientUserUid,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp(),
       lastReadAtByUid: {}
-    });
+    };
 
-    try {
-      await setDoc(chatRef, chatData);
-    } catch (e: any) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: chatRef.path,
-        operation: 'create',
-        requestResourceData: chatData
-      }));
-      throw e;
-    }
-    
+    await setDoc(chatRef, chatData);
     return batchId;
   },
 
@@ -88,35 +71,41 @@ export const chatService = {
     role: UserRole, 
     type: MessageType, 
     text: string, 
-    _unused_members?: string[],
+    context?: { clientId?: string, memberUids?: string[] },
     fileData?: { url: string; name: string; size: number }
   ) {
     if (!chatId || !senderUid) return;
 
-    // Obtenemos los datos actuales del chat para asegurar coherencia
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
     
-    if (!chatSnap.exists()) {
-      console.error("Chat does not exist");
-      return;
+    let memberUids: string[] = context?.memberUids || [senderUid];
+    let clientId: string | null = context?.clientId || null;
+    let editorAliases: Record<string, string> = {};
+
+    if (chatSnap.exists()) {
+      const data = chatSnap.data() as Chat;
+      memberUids = data.memberUids || memberUids;
+      clientId = data.clientId || clientId;
+      editorAliases = data.editorAliases || {};
     }
 
-    const chatData = chatSnap.data() as Chat;
-    const memberUids = chatData.memberUids || [];
-    const clientId = chatData.clientId;
+    // Asegurar que el remitente está en la lista
+    if (!memberUids.includes(senderUid)) {
+      memberUids.push(senderUid);
+    }
 
     let senderAlias = 'Cliente';
     if (role === 'editor' || role === 'admin') {
-      let alias = chatData.editorAliases?.[senderUid];
-      if (!alias) {
+      senderAlias = editorAliases[senderUid];
+      if (!senderAlias) {
         const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
-        alias = `Editor #${randomHex}`;
+        senderAlias = `Editor #${randomHex}`;
+        // Guardar el nuevo alias en el chat
         updateDoc(chatRef, {
-          [`editorAliases.${senderUid}`]: alias
+          [`editorAliases.${senderUid}`]: senderAlias
         }).catch(() => {});
       }
-      senderAlias = alias;
     }
 
     const messagesRef = collection(db, 'chats', chatId, 'messages');
@@ -131,71 +120,68 @@ export const chatService = {
       fileName: fileData?.name,
       fileSize: fileData?.size,
       createdAt: serverTimestamp(),
-      memberUids: Array.from(new Set([...memberUids, senderUid])),
-      clientId: clientId || null
+      memberUids, // Importante para las reglas de seguridad
+      clientId
     });
 
-    addDoc(messagesRef, messageData).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: messagesRef.path,
-        operation: 'create',
-        requestResourceData: messageData
-      }));
+    addDoc(messagesRef, messageData).catch(error => {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: messagesRef.path,
+          operation: 'create',
+          requestResourceData: messageData,
+        })
+      );
     });
 
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
-  async syncChatMembers(chatId: string, memberUids: string[]) {
-    const chatRef = doc(db, 'chats', chatId);
-    const safeMembers = memberUids.filter(uid => !!uid && typeof uid === 'string');
-    await updateDoc(chatRef, { memberUids: safeMembers }).catch(() => {});
-  },
-
-  subscribeToMessages(chatId: string, currentUid: string, role: UserRole, clientId: string | undefined, callback: (messages: Message[]) => void) {
+  subscribeToMessages(chatId: string, currentUid: string, role: UserRole, callback: (messages: Message[]) => void) {
     if (!chatId || !currentUid) return () => {};
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
+    // Usamos memberUids para todos (excepto admin que ve todo)
+    // Esto es más consistente con las reglas de seguridad
     let q;
     if (role === 'admin') {
-      q = query(messagesRef);
-    } else if (role === 'client' && clientId) {
-      // Los clientes ven mensajes de su empresa
-      q = query(messagesRef, where('clientId', '==', clientId));
+      q = query(messagesRef, orderBy('createdAt', 'asc'));
     } else {
-      // Los editores ven mensajes donde son miembros
-      q = query(messagesRef, where('memberUids', 'array-contains', currentUid));
+      q = query(
+        messagesRef, 
+        where('memberUids', 'array-contains', currentUid),
+        orderBy('createdAt', 'asc')
+      );
     }
     
     return onSnapshot(q, (snap) => {
       const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-      const sortedMessages = messages.sort((a, b) => {
-        const timeA = (a.createdAt as Timestamp)?.toMillis?.() || 0;
-        const timeB = (b.createdAt as Timestamp)?.toMillis?.() || 0;
-        return timeA - timeB;
+      callback(messages);
+    }, (error) => {
+      const contextualError = new FirestorePermissionError({
+        operation: 'list',
+        path: `chats/${chatId}/messages`,
       });
-      callback(sortedMessages);
-    }, (e) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: messagesRef.path,
-        operation: 'list'
-      }));
+      errorEmitter.emit('permission-error', contextualError);
     });
   },
 
-  subscribeToUnreadCount(uid: string, callback: (count: number) => void) {
+  async syncChatMembersManual(chatId: string, memberUids: string[]) {
+    const chatRef = doc(db, 'chats', chatId);
+    await updateDoc(chatRef, { memberUids: Array.from(new Set(memberUids)) });
+  },
+
+  async getUnreadCount(uid: string): Promise<number> {
     const q = query(collection(db, 'chats'), where('memberUids', 'array-contains', uid));
-    return onSnapshot(q, (snap) => {
-      let unreadCount = 0;
-      snap.docs.forEach(doc => {
-        const chat = doc.data() as Chat;
-        const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
-        const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
-        if (lastMessage > lastRead) {
-          unreadCount++;
-        }
-      });
-      callback(unreadCount);
+    const snap = await getDocs(q);
+    let count = 0;
+    snap.docs.forEach(doc => {
+      const chat = doc.data() as Chat;
+      const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
+      const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
+      if (lastMessage > lastRead) count++;
     });
+    return count;
   }
 };

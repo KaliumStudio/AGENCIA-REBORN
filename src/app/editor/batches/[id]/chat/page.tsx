@@ -57,7 +57,7 @@ export default function EditorChatPage() {
 
   useEffect(() => {
     if (chatId && profile) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, profile.clientId, setMessages);
+      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, setMessages);
       chatService.markAsRead(chatId, profile.uid);
       return () => unsubscribe();
     }
@@ -75,13 +75,16 @@ export default function EditorChatPage() {
     const text = newMessage;
     setNewMessage('');
 
-    const members = Array.from(new Set([
+    const memberUids = Array.from(new Set([
       batch.clientUserUid,
       ...(batch.assignedEditorUids || []),
       profile.uid
     ])).filter(Boolean);
 
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, members);
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, {
+      clientId: batch.clientId,
+      memberUids
+    });
     chatService.markAsRead(chatId, profile.uid);
   };
 
@@ -91,13 +94,11 @@ export default function EditorChatPage() {
 
     const isImage = file.type.startsWith('image/');
     setUploading(true);
-    console.log("UI Editor: Iniciando subida...");
 
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
-      console.log("UI Editor: Subida OK");
       
-      const members = Array.from(new Set([
+      const memberUids = Array.from(new Set([
         batch.clientUserUid,
         ...(batch.assignedEditorUids || []),
         profile.uid
@@ -109,7 +110,10 @@ export default function EditorChatPage() {
         profile.role, 
         isImage ? 'image' : 'file', 
         isImage ? 'Ha enviado una imagen' : `Archivo: ${file.name}`,
-        members,
+        {
+          clientId: batch.clientId,
+          memberUids
+        },
         {
           url: uploadResult.url,
           name: uploadResult.name,
@@ -119,10 +123,9 @@ export default function EditorChatPage() {
       
       toast({ title: "Archivo enviado" });
     } catch (error: any) {
-      console.error("UI Editor: Error en subida:", error);
       toast({ 
         title: "Error al subir archivo", 
-        description: error.message || "Error de conexión con Storage",
+        description: error.message || "Ocurrió un problema inesperado",
         variant: "destructive" 
       });
     } finally {

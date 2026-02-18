@@ -42,7 +42,13 @@ export default function ClientChatPage() {
         if (b) {
           setBatch(b);
           try {
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid, b.assignedEditorUids, profile.uid);
+            const cid = await chatService.getOrCreateChat(
+              b.id, 
+              b.clientId, 
+              b.clientUserUid || profile.uid, 
+              b.assignedEditorUids, 
+              profile.uid
+            );
             setChatId(cid);
           } catch (err) { console.error("Chat init error:", err); }
         }
@@ -53,7 +59,7 @@ export default function ClientChatPage() {
 
   useEffect(() => {
     if (chatId && profile) {
-      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, profile.clientId, setMessages);
+      const unsubscribe = chatService.subscribeToMessages(chatId, profile.uid, profile.role, setMessages);
       chatService.markAsRead(chatId, profile.uid);
       return () => unsubscribe();
     }
@@ -71,7 +77,16 @@ export default function ClientChatPage() {
     const text = newMessage;
     setNewMessage('');
     
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+    const memberUids = Array.from(new Set([
+      batch.clientUserUid,
+      ...(batch.assignedEditorUids || []),
+      profile.uid
+    ])).filter(Boolean);
+
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, {
+      clientId: profile.clientId,
+      memberUids
+    });
     chatService.markAsRead(chatId, profile.uid);
   };
 
@@ -85,13 +100,22 @@ export default function ClientChatPage() {
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
       
+      const memberUids = Array.from(new Set([
+        batch.clientUserUid,
+        ...(batch.assignedEditorUids || []),
+        profile.uid
+      ])).filter(Boolean);
+
       chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
         isImage ? 'image' : 'file', 
         isImage ? 'Ha enviado una imagen' : `Archivo: ${file.name}`,
-        undefined,
+        {
+          clientId: profile.clientId,
+          memberUids
+        },
         {
           url: uploadResult.url,
           name: uploadResult.name,
