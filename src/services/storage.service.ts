@@ -3,29 +3,33 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const storageService = {
   /**
-   * Sube un archivo a Firebase Storage y retorna la URL de descarga.
+   * Sube un archivo a Firebase Storage y devuelve la URL de descarga y metadatos.
    * @param file El archivo a subir
-   * @param path El directorio de destino (ej: 'chats/chatId')
+   * @param path La ruta en el storage (ej: 'chats/chatId')
    */
   async uploadFile(file: File, path: string): Promise<{ url: string; name: string; size: number; type: string }> {
-    console.log("storageService: Iniciando subida...", { name: file.name, size: file.size, path });
+    console.log("StorageService: Iniciando subida de archivo...", { name: file.name, size: file.size, type: file.type });
     
     try {
-      // Generar un ID único simple
-      const fileId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      // Crear un nombre único para el archivo
+      const timestamp = Date.now();
+      const randomSuffix = Math.floor(Math.random() * 1000000);
       const extension = file.name.split('.').pop();
-      const fileName = `${fileId}.${extension}`;
+      const fileName = `${timestamp}-${randomSuffix}.${extension}`;
       
-      const storageRef = ref(storage, `${path}/${fileName}`);
-      console.log("storageService: Referencia creada en", storageRef.fullPath);
-
+      const fullPath = `${path}/${fileName}`;
+      const storageRef = ref(storage, fullPath);
+      
       // Realizar la subida
-      const snapshot = await uploadBytes(storageRef, file);
-      console.log("storageService: Subida completada con éxito");
+      // Nota: Si persiste el error storage/unknown, es probable que se deba a la falta de configuración de CORS en el bucket.
+      const snapshot = await uploadBytes(storageRef, file, {
+        contentType: file.type // Es importante especificar el tipo de contenido
+      });
+      
+      console.log("StorageService: Subida completada con éxito.");
       
       const url = await getDownloadURL(snapshot.ref);
-      console.log("storageService: URL de descarga obtenida:", url);
-
+      
       return {
         url,
         name: file.name,
@@ -33,7 +37,8 @@ export const storageService = {
         type: file.type
       };
     } catch (error: any) {
-      console.error("storageService: Error fatal en uploadFile:", error);
+      console.error("StorageService: Error detallado en la subida:", error);
+      // Re-lanzamos el error para que sea capturado por el componente
       throw error;
     }
   }
