@@ -2,7 +2,7 @@ import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
   query, where, serverTimestamp, onSnapshot, addDoc,
-  orderBy, getDocs
+  orderBy, Timestamp, limit
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -16,45 +16,45 @@ const stripUndefined = (obj: any) => {
 
 export const chatService = {
   async getOrCreateChat(batchId: string, clientId: string, clientUserUid: string, editorUids: string[] = [], currentUid?: string): Promise<string> {
-    if (!batchId) throw new Error("Batch ID is required");
+    if (!batchId) throw new Error("ID de lote es requerido");
 
     const chatRef = doc(db, 'chats', batchId);
     const snap = await getDoc(chatRef);
 
-    const allMembers = new Set<string>();
-    if (clientUserUid) allMembers.add(clientUserUid);
-    if (currentUid) allMembers.add(currentUid);
+    // Construir lista única de miembros
+    const membersSet = new Set<string>();
+    if (clientUserUid) membersSet.add(clientUserUid);
+    if (currentUid) membersSet.add(currentUid);
     if (editorUids && Array.isArray(editorUids)) {
-      editorUids.forEach(uid => {
-        if (uid) allMembers.add(uid);
-      });
+      editorUids.forEach(uid => { if (uid) membersSet.add(uid); });
     }
-
-    const memberUids = Array.from(allMembers).filter(Boolean);
+    const memberUids = Array.from(membersSet).filter(Boolean);
 
     if (snap.exists()) {
+      // Si el chat ya existe, nos aseguramos de que el usuario actual esté en la lista
       const data = snap.data() as Chat;
       const existingMembers = data.memberUids || [];
-      const hasAllMembers = memberUids.every(m => existingMembers.includes(m));
+      const isUserInChat = currentUid ? existingMembers.includes(currentUid) : true;
       
-      if (!hasAllMembers) {
-        const updatedMembers = Array.from(new Set([...existingMembers, ...memberUids]));
+      if (!isUserInChat && currentUid) {
+        const updatedMembers = Array.from(new Set([...existingMembers, currentUid]));
         await updateDoc(chatRef, { memberUids: updatedMembers });
       }
       return snap.id;
     }
 
+    // Crear nuevo chat
     const chatData = {
       batchId,
       clientId,
-      clientUserUid,
+      clientUserUid: clientUserUid || null,
       memberUids,
       editorAliases: {},
       lastMessageAt: serverTimestamp(),
       lastReadAtByUid: {}
     };
 
-    await setDoc(chatRef, chatData);
+    await setDoc(chatRef, stripUndefined(chatData));
     return batchId;
   },
 
@@ -72,7 +72,6 @@ export const chatService = {
     role: UserRole, 
     type: MessageType, 
     text: string, 
-    context?: { clientId?: string, memberUids?: string[] },
     fileData?: { url: string; name: string; size: number }
   ) {
     if (!chatId || !senderUid) return;
@@ -80,27 +79,22 @@ export const chatService = {
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
     
-    let memberUids: string[] = context?.memberUids || [senderUid];
-    let clientId: string | null = context?.clientId || null;
-    let editorAliases: Record<string, string> = {};
-
-    if (chatSnap.exists()) {
-      const data = chatSnap.data() as Chat;
-      memberUids = data.memberUids || memberUids;
-      clientId = data.clientId || clientId;
-      editorAliases = data.editorAliases || {};
+    if (!chatSnap.exists()) {
+      console.error("No se encontró el chat para enviar el mensaje");
+      return;
     }
 
-    if (!memberUids.includes(senderUid)) {
-      memberUids.push(senderUid);
-    }
+    const chatData = chatSnap.data() as Chat;
+    const editorAliases = chatData.editorAliases || {};
 
     let senderAlias = 'Cliente';
-    if (role === 'editor' || role === 'admin') {
+    if (role !== 'client') {
       senderAlias = editorAliases[senderUid];
       if (!senderAlias) {
         const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
-        senderAlias = `Editor #${randomHex}`;
+        senderAlias = role === 'admin' ? 'Administrador' : `Editor #${randomHex}`;
+        
+        // Guardar el alias generado en el documento del chat
         updateDoc(chatRef, {
           [`editorAliases.${senderUid}`]: senderAlias
         }).catch(() => {});
@@ -115,15 +109,18 @@ export const chatService = {
       senderAlias,
       type,
       text,
-      fileUrl: fileData?.url,
-      fileName: fileData?.name,
-      fileSize: fileData?.size,
+      fileUrl: fileData?.url || null,
+      fileName: fileData?.name || null,
+      fileSize: fileData?.size || null,
       createdAt: serverTimestamp(),
-      memberUids,
-      clientId
+      // Mantenemos memberUids y clientId en el mensaje para facilitar reglas si fuera necesario,
+      // pero la consulta principal ya no los usará como filtro obligatorio
+      memberUids: chatData.memberUids,
+      clientId: chatData.clientId
     });
 
     addDoc(messagesRef, messageData).catch(error => {
+      console.error("Error enviando mensaje:", error);
       errorEmitter.emit(
         'permission-error',
         new FirestorePermissionError({
@@ -134,28 +131,24 @@ export const chatService = {
       );
     });
 
+    // Actualizar última actividad del chat
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
   subscribeToMessages(chatId: string, currentUid: string, role: UserRole, callback: (messages: Message[]) => void) {
     if (!chatId || !currentUid) return () => {};
+    
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     
-    let q;
-    if (role === 'admin') {
-      q = query(messagesRef, orderBy('createdAt', 'asc'));
-    } else {
-      q = query(
-        messagesRef, 
-        where('memberUids', 'array-contains', currentUid),
-        orderBy('createdAt', 'asc')
-      );
-    }
+    // Simplificamos la consulta eliminando el filtro 'where' para evitar la necesidad de índices compuestos
+    // La seguridad se maneja a nivel de reglas de Firestore (isChatMember)
+    const q = query(messagesRef, orderBy('createdAt', 'asc'));
     
     return onSnapshot(q, (snap) => {
       const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
       callback(messages);
     }, (error) => {
+      console.error("Error en suscripción de mensajes:", error);
       const contextualError = new FirestorePermissionError({
         operation: 'list',
         path: `chats/${chatId}/messages`,
@@ -165,36 +158,32 @@ export const chatService = {
   },
 
   subscribeToUnreadCount(uid: string, callback: (count: number) => void) {
-    const q = query(collection(db, 'chats'), where('memberUids', 'array-contains', uid));
+    if (!uid) return () => {};
+    
+    const q = query(
+      collection(db, 'chats'), 
+      where('memberUids', 'array-contains', uid)
+    );
+
     return onSnapshot(q, (snap) => {
       let count = 0;
       snap.docs.forEach(doc => {
         const chat = doc.data() as Chat;
-        const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
-        const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
-        if (lastMessage > lastRead) count++;
+        const lastMessageAt = chat.lastMessageAt;
+        const lastReadAt = chat.lastReadAtByUid?.[uid];
+
+        if (lastMessageAt) {
+          const lastMsgTime = lastMessageAt instanceof Timestamp ? lastMessageAt.toMillis() : new Date(lastMessageAt).getTime();
+          const lastReadTime = lastReadAt ? (lastReadAt instanceof Timestamp ? lastReadAt.toMillis() : new Date(lastReadAt).getTime()) : 0;
+          
+          if (lastMsgTime > lastReadTime) {
+            count++;
+          }
+        }
       });
       callback(count);
     }, (error) => {
-      console.error("Error subscribing to unread count:", error);
+      console.error("Error en suscripción de mensajes no leídos:", error);
     });
-  },
-
-  async syncChatMembersManual(chatId: string, memberUids: string[]) {
-    const chatRef = doc(db, 'chats', chatId);
-    await updateDoc(chatRef, { memberUids: Array.from(new Set(memberUids)) });
-  },
-
-  async getUnreadCount(uid: string): Promise<number> {
-    const q = query(collection(db, 'chats'), where('memberUids', 'array-contains', uid));
-    const snap = await getDocs(q);
-    let count = 0;
-    snap.docs.forEach(doc => {
-      const chat = doc.data() as Chat;
-      const lastMessage = chat.lastMessageAt?.toMillis ? chat.lastMessageAt.toMillis() : 0;
-      const lastRead = chat.lastReadAtByUid?.[uid]?.toMillis ? chat.lastReadAtByUid[uid].toMillis() : 0;
-      if (lastMessage > lastRead) count++;
-    });
-    return count;
   }
 };

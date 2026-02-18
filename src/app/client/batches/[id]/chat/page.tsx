@@ -50,7 +50,7 @@ export default function ClientChatPage() {
               profile.uid
             );
             setChatId(cid);
-          } catch (err) { console.error("Chat init error:", err); }
+          } catch (err) { console.error("Error al inicializar chat:", err); }
         }
         setLoadingChat(false);
       });
@@ -73,26 +73,17 @@ export default function ClientChatPage() {
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!newMessage.trim() || !chatId || !profile || !batch) return;
+    if (!newMessage.trim() || !chatId || !profile) return;
     const text = newMessage;
     setNewMessage('');
     
-    const memberUids = Array.from(new Set([
-      batch.clientUserUid,
-      ...(batch.assignedEditorUids || []),
-      profile.uid
-    ])).filter(Boolean);
-
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, {
-      clientId: profile.clientId,
-      memberUids
-    });
+    await chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
     chatService.markAsRead(chatId, profile.uid);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !chatId || !profile || !batch) return;
+    if (!file || !chatId || !profile) return;
 
     const isImage = file.type.startsWith('image/');
     setUploading(true);
@@ -100,22 +91,12 @@ export default function ClientChatPage() {
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
       
-      const memberUids = Array.from(new Set([
-        batch.clientUserUid,
-        ...(batch.assignedEditorUids || []),
-        profile.uid
-      ])).filter(Boolean);
-
-      chatService.sendMessage(
+      await chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
         isImage ? 'image' : 'file', 
         isImage ? 'Ha enviado una imagen' : `Archivo: ${file.name}`,
-        {
-          clientId: profile.clientId,
-          memberUids
-        },
         {
           url: uploadResult.url,
           name: uploadResult.name,
@@ -143,7 +124,10 @@ export default function ClientChatPage() {
       const chatInput = messages.map(m => ({ senderAlias: m.senderAlias, text: m.text }));
       const result = await analyzeClientFeedback({ messages: chatInput });
       setAnalysis(result.summary);
-    } catch (err) { console.error(err); } finally { setAnalyzing(false); }
+    } catch (err) { 
+      console.error(err);
+      toast({ title: "Error en el análisis", description: "No se pudo procesar el resumen.", variant: "destructive" });
+    } finally { setAnalyzing(false); }
   };
 
   if (authLoading || loadingChat) {
