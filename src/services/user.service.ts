@@ -19,7 +19,7 @@ export const userService = {
     return null;
   },
 
-  async saveProfile(profile: UserProfile) {
+  saveProfile(profile: UserProfile) {
     const { uid, ...data } = profile;
     const docRef = doc(db, 'users', uid);
     
@@ -34,7 +34,7 @@ export const userService = {
       });
   },
 
-  async updateProfile(uid: string, profile: Partial<UserProfile>) {
+  updateProfile(uid: string, profile: Partial<UserProfile>) {
     const docRef = doc(db, 'users', uid);
     updateDoc(docRef, profile).catch(async (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({

@@ -36,7 +36,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
   }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.uid || !formData.displayName) {
@@ -50,33 +50,30 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     }
 
     setLoading(true);
-    try {
-      const newUser: UserProfile = {
-        uid: formData.uid,
-        displayName: formData.displayName,
-        role: formData.role,
-        active: true,
-        notificationPrefs: {
-          email: true,
-          push: true
-        }
-      };
-
-      if (formData.role === 'client') {
-        newUser.clientId = formData.clientId;
+    
+    const newUser: UserProfile = {
+      uid: formData.uid,
+      displayName: formData.displayName,
+      role: formData.role,
+      active: true,
+      notificationPrefs: {
+        email: true,
+        push: true
       }
+    };
 
-      await userService.saveProfile(newUser);
-      
-      toast({ title: "Usuario creado", description: "El perfil ha sido registrado correctamente." });
-      setOpen(false);
-      setFormData({ uid: '', displayName: '', role: 'editor', clientId: '' });
-      onUserAdded();
-    } catch (error: any) {
-      toast({ title: "Error", description: "No se pudo crear el perfil", variant: "destructive" });
-    } finally {
-      setLoading(false);
+    if (formData.role === 'client') {
+      newUser.clientId = formData.clientId;
     }
+
+    // CRITICAL: Call saveProfile directly without await to use optimistic UI
+    userService.saveProfile(newUser);
+    
+    toast({ title: "Perfil enviado", description: "Se ha solicitado la creación del perfil." });
+    setOpen(false);
+    setFormData({ uid: '', displayName: '', role: 'editor', clientId: '' });
+    onUserAdded();
+    setLoading(false);
   };
 
   return (
