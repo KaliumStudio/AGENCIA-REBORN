@@ -36,22 +36,19 @@ export const batchService = {
       createdAt: serverTimestamp(),
     });
     
-    // No usamos await para permitir actualizaciones optimistas
+    // Escritura no bloqueante
     setDoc(newDoc, batchData)
       .then(() => {
-        // Una vez creado el lote, intentamos inicializar el chat
-        if (data.clientUserUid) {
-          chatService.getOrCreateChat(
-            newDoc.id, 
-            data.clientId, 
-            data.clientUserUid, 
-            data.assignedEditorUids,
-            data.createdBy
-          );
-        }
+        // Inicializar el chat automáticamente al crear la tanda
+        chatService.getOrCreateChat(
+          newDoc.id, 
+          data.clientId, 
+          data.clientUserUid, 
+          data.assignedEditorUids,
+          data.createdBy
+        );
       })
       .catch(async (error) => {
-        console.error("Error creating batch:", error);
         const permissionError = new FirestorePermissionError({
           path: `batches/${newDoc.id}`,
           operation: 'create',
@@ -69,7 +66,6 @@ export const batchService = {
       const snap = await getDoc(docRef);
       return snap.exists() ? ({ id: snap.id, ...snap.data() } as Batch) : null;
     } catch (e) {
-      console.error("Error getting batch:", e);
       return null;
     }
   },
@@ -89,7 +85,7 @@ export const batchService = {
   async assignEditors(id: string, editorUids: string[]) {
     const batchRef = doc(db, 'batches', id);
     
-    // Obtenemos el batch primero para tener los datos necesarios para el chat
+    // El getDoc es necesario para obtener metadatos para el chat, se mantiene el await aquí
     const batchSnap = await getDoc(batchRef);
     if (!batchSnap.exists()) return;
     const batchData = batchSnap.data() as Batch;
@@ -100,7 +96,6 @@ export const batchService = {
       assignedEditorUids: editorUids,
       status
     }).then(() => {
-      // Sincronizar miembros del chat cuando se asignan editores
       const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
       chatService.syncChatMembers(id, memberUids);
     }).catch(async (error) => {
@@ -142,7 +137,6 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      console.warn("Falling back to client-side sort for batches");
       const qFallback = query(collection(db, 'batches'), where('clientId', '==', clientId));
       const snap = await getDocs(qFallback);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
@@ -160,7 +154,6 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      console.warn("Falling back to client-side sort for editor batches");
       const qFallback = query(collection(db, 'batches'), where('assignedEditorUids', 'array-contains', editorUid));
       const snap = await getDocs(qFallback);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))

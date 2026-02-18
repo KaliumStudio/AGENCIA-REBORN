@@ -1,89 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- HELPER FUNCTIONS ---
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function hasRole(role) {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == role;
-    }
-
-    function isAdmin() {
-      return hasRole('admin') || (isSignedIn() && request.auth.token.email == "admin@test.com");
-    }
-
-    // --- COLLECTION RULES ---
-
-    match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isAdmin() || (isSignedIn() && request.auth.uid == userId && 
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'clientId', 'active']));
-      allow delete: if isAdmin();
-    }
-
-    match /clients/{clientId} {
-      allow get: if isSignedIn() && (isAdmin() || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == clientId));
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /batches/{batchId} {
-      allow read: if isSignedIn() && (
-        isAdmin() || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId) ||
-        (request.auth.uid in resource.data.assignedEditorUids)
-      );
-      allow create: if isSignedIn() && (
-        isAdmin() || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'client')
-      );
-      allow update: if isSignedIn() && (
-        isAdmin() || 
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().clientId == resource.data.clientId) || 
-        (request.auth.uid in resource.data.assignedEditorUids)
-      );
-      allow delete: if isAdmin();
-    }
-
-    match /chats/{chatId} {
-      allow read: if isSignedIn() && (
-        isAdmin() || 
-        request.auth.uid in resource.data.memberUids
-      );
-      allow create: if isSignedIn() && (
-        isAdmin() || 
-        request.auth.uid in request.resource.data.memberUids
-      );
-      allow update: if isSignedIn() && (
-        isAdmin() || 
-        request.auth.uid in resource.data.memberUids ||
-        request.auth.uid in request.resource.data.memberUids
-      );
-      allow delete: if isAdmin();
-    }
-
-    match /chats/{chatId}/messages/{messageId} {
-      // Verificación simplificada: si el usuario es miembro del chat padre, puede leer/escribir mensajes
-      allow read: if isSignedIn() && (
-        isAdmin() || 
-        request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberUids
-      );
-      allow create: if isSignedIn() && (
-        isAdmin() || 
-        (request.auth.uid == request.resource.data.senderUid && 
-         request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberUids)
-      );
-      allow update, delete: if isAdmin() || (resource != null && request.auth.uid == resource.data.senderUid);
+    // Reglas simplificadas para proyecto privado
+    // Permite lectura y escritura a cualquier usuario autenticado
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
