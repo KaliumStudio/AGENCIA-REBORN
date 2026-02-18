@@ -1,8 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas simplificadas para proyecto privado
-    // Permite lectura y escritura a cualquier usuario autenticado
+    // Permitir todo a usuarios autenticados para facilitar el desarrollo en entorno privado
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

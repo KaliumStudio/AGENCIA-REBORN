@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore';
 import { Batch, BatchStatus } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 import { chatService } from './chat.service';
 
 const stripUndefined = (obj: any) => {
@@ -15,7 +15,7 @@ const stripUndefined = (obj: any) => {
 };
 
 export const batchService = {
-  async createBatch(data: {
+  createBatch(data: {
     clientId: string;
     clientUserUid: string;
     title: string;
@@ -24,10 +24,6 @@ export const batchService = {
     assignedEditorUids: string[];
     createdBy: string;
   }) {
-    if (!data.createdBy) {
-      throw new Error("El ID del creador es obligatorio.");
-    }
-
     const batchesRef = collection(db, 'batches');
     const newDoc = doc(batchesRef);
     const batchData = stripUndefined({
@@ -38,24 +34,22 @@ export const batchService = {
     
     // Escritura no bloqueante
     setDoc(newDoc, batchData)
-      .then(() => {
-        // Inicializar el chat automáticamente al crear la tanda
-        chatService.getOrCreateChat(
-          newDoc.id, 
-          data.clientId, 
-          data.clientUserUid, 
-          data.assignedEditorUids,
-          data.createdBy
-        );
-      })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
-          path: `batches/${newDoc.id}`,
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: newDoc.path,
           operation: 'create',
           requestResourceData: batchData
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+        }));
       });
+    
+    // Crear el chat asociado inmediatamente
+    chatService.getOrCreateChat(
+      newDoc.id, 
+      data.clientId, 
+      data.clientUserUid, 
+      data.assignedEditorUids,
+      data.createdBy
+    );
     
     return newDoc.id;
   },
@@ -70,45 +64,45 @@ export const batchService = {
     }
   },
 
-  async updateBatchStatus(id: string, status: BatchStatus) {
+  updateBatchStatus(id: string, status: BatchStatus) {
     const docRef = doc(db, 'batches', id);
     updateDoc(docRef, { status }).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: `batches/${id}`,
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
         operation: 'update',
         requestResourceData: { status }
-      } satisfies SecurityRuleContext);
-      errorEmitter.emit('permission-error', permissionError);
+      }));
     });
   },
 
   async assignEditors(id: string, editorUids: string[]) {
     const batchRef = doc(db, 'batches', id);
     
-    // El getDoc es necesario para obtener metadatos para el chat, se mantiene el await aquí
+    // Obtenemos los datos actuales para sincronizar el chat
     const batchSnap = await getDoc(batchRef);
     if (!batchSnap.exists()) return;
     const batchData = batchSnap.data() as Batch;
 
     const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     
+    // Actualización no bloqueante del lote
     updateDoc(batchRef, { 
       assignedEditorUids: editorUids,
       status
-    }).then(() => {
-      const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
-      chatService.syncChatMembers(id, memberUids);
     }).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: `batches/${id}`,
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: batchRef.path,
         operation: 'update',
         requestResourceData: { assignedEditorUids: editorUids, status }
-      } satisfies SecurityRuleContext);
-      errorEmitter.emit('permission-error', permissionError);
+      }));
     });
+
+    // Sincronizar miembros del chat
+    const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids])).filter(Boolean);
+    chatService.syncChatMembers(id, memberUids);
   },
 
-  async submitDelivery(id: string, driveLink: string, uid: string) {
+  submitDelivery(id: string, driveLink: string, uid: string) {
     const docRef = doc(db, 'batches', id);
     const updateData = { 
       driveLink,
@@ -118,12 +112,11 @@ export const batchService = {
     };
     
     updateDoc(docRef, updateData).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
-        path: `batches/${id}`,
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
         operation: 'update',
         requestResourceData: updateData
-      } satisfies SecurityRuleContext);
-      errorEmitter.emit('permission-error', permissionError);
+      }));
     });
   },
 

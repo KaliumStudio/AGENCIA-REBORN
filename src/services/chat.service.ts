@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore';
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
@@ -40,7 +40,7 @@ export const chatService = {
           const updatedMembers = Array.from(new Set([...existingMembers, currentUid]));
           updateDoc(chatRef, { memberUids: updatedMembers }).catch(() => {});
         }
-        return snap.id;
+        return batchId;
       }
 
       const chatData = {
@@ -53,37 +53,36 @@ export const chatService = {
         lastReadAtByUid: {}
       };
 
-      // Escritura no bloqueante
       setDoc(chatRef, stripUndefined(chatData)).catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: chatRef.path,
           operation: 'create',
           requestResourceData: chatData
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+        }));
       });
 
       return batchId;
     } catch (error) {
       console.error("Error in getOrCreateChat:", error);
-      throw error;
+      return batchId;
     }
   },
 
-  async syncChatMembers(chatId: string, memberUids: string[]) {
+  syncChatMembers(chatId: string, memberUids: string[]) {
     const chatRef = doc(db, 'chats', chatId);
-    updateDoc(chatRef, { memberUids: Array.from(new Set(memberUids)).filter(Boolean) })
+    const data = { memberUids: Array.from(new Set(memberUids)).filter(Boolean) };
+    
+    updateDoc(chatRef, data)
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: chatRef.path,
           operation: 'update',
-          requestResourceData: { memberUids }
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+          requestResourceData: data
+        }));
       });
   },
 
-  async markAsRead(chatId: string, uid: string) {
+  markAsRead(chatId: string, uid: string) {
     if (!chatId || !uid) return;
     const chatRef = doc(db, 'chats', chatId);
     updateDoc(chatRef, {
@@ -101,7 +100,6 @@ export const chatService = {
   ) {
     if (!chatId || !senderUid) return;
 
-    // Obtenemos info del chat para asegurar coherencia de datos en el mensaje
     const chatRef = doc(db, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
     
@@ -111,10 +109,11 @@ export const chatService = {
     let senderAlias = 'Cliente';
     if (role !== 'client') {
       const editorAliases = chatData.editorAliases || {};
-      senderAlias = editorAliases[senderUid];
-      if (!senderAlias) {
+      senderAlias = editorAliases[senderUid] || (role === 'admin' ? 'Administrador' : 'Editor');
+      
+      if (role === 'editor' && !editorAliases[senderUid]) {
         const randomHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(4, '0');
-        senderAlias = role === 'admin' ? 'Administrador' : `Editor #${randomHex}`;
+        senderAlias = `Editor #${randomHex}`;
         updateDoc(chatRef, { [`editorAliases.${senderUid}`]: senderAlias }).catch(() => {});
       }
     }
@@ -135,14 +134,12 @@ export const chatService = {
       clientId: chatData.clientId
     });
 
-    // Escritura no bloqueante
     addDoc(messagesRef, messageData).catch(async (error) => {
-      const permissionError = new FirestorePermissionError({
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: `chats/${chatId}/messages/new`,
         operation: 'create',
         requestResourceData: messageData
-      } satisfies SecurityRuleContext);
-      errorEmitter.emit('permission-error', permissionError);
+      }));
     });
 
     updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
@@ -152,19 +149,16 @@ export const chatService = {
     if (!chatId || !currentUid) return () => {};
     
     const messagesRef = collection(db, 'chats', chatId, 'messages');
-    // Eliminamos el filtro 'where' para evitar problemas de índices compuestos y 
-    // confiamos en que las reglas de seguridad (o la privacidad del proyecto) protejan los datos.
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
     
     return onSnapshot(q, (snap) => {
       const messages = snap.docs.map(d => ({ id: d.id, ...d.data() } as Message));
       callback(messages);
     }, async (error) => {
-      const permissionError = new FirestorePermissionError({
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: `chats/${chatId}/messages`,
         operation: 'list',
-      } satisfies SecurityRuleContext);
-      errorEmitter.emit('permission-error', permissionError);
+      }));
     });
   },
 
@@ -193,6 +187,8 @@ export const chatService = {
         }
       });
       callback(count);
+    }, (error) => {
+      console.error("Error subscribing to unread count:", error);
     });
   }
 };
