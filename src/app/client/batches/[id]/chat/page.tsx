@@ -42,7 +42,7 @@ export default function ClientChatPage() {
         if (b) {
           setBatch(b);
           try {
-            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid || profile.uid, b.assignedEditorUids, profile.uid);
+            const cid = await chatService.getOrCreateChat(b.id, b.clientId, b.clientUserUid, b.assignedEditorUids, profile.uid);
             setChatId(cid);
           } catch (err) { console.error("Chat init error:", err); }
         }
@@ -71,13 +71,7 @@ export default function ClientChatPage() {
     const text = newMessage;
     setNewMessage('');
     
-    const members = Array.from(new Set([
-      batch.clientUserUid,
-      ...(batch.assignedEditorUids || []),
-      profile.uid
-    ])).filter(Boolean);
-
-    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text, members);
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
     chatService.markAsRead(chatId, profile.uid);
   };
 
@@ -87,25 +81,17 @@ export default function ClientChatPage() {
 
     const isImage = file.type.startsWith('image/');
     setUploading(true);
-    console.log("UI: Iniciando proceso de subida para", file.name);
 
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
-      console.log("UI: Subida exitosa, enviando mensaje...");
       
-      const members = Array.from(new Set([
-        batch.clientUserUid,
-        ...(batch.assignedEditorUids || []),
-        profile.uid
-      ])).filter(Boolean);
-
       chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
         isImage ? 'image' : 'file', 
         isImage ? 'Ha enviado una imagen' : `Archivo: ${file.name}`,
-        members,
+        undefined,
         {
           url: uploadResult.url,
           name: uploadResult.name,
@@ -115,7 +101,6 @@ export default function ClientChatPage() {
       
       toast({ title: "Archivo enviado" });
     } catch (error: any) {
-      console.error("UI: Error en handleFileUpload:", error);
       toast({ 
         title: "Error al subir archivo", 
         description: error.message || "Ocurrió un problema inesperado",
@@ -123,7 +108,6 @@ export default function ClientChatPage() {
       });
     } finally {
       setUploading(false);
-      console.log("UI: Proceso de subida finalizado (estado reseteado)");
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
