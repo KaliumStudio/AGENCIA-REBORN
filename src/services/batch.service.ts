@@ -81,6 +81,18 @@ export const batchService = {
     });
   },
 
+  updateBatch(id: string, data: Partial<Batch>) {
+    const docRef = doc(db, 'batches', id);
+    const updateData = stripUndefined(data);
+    updateDoc(docRef, updateData).catch(async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: updateData
+      }));
+    });
+  },
+
   async assignEditors(id: string, editorUids: string[]) {
     const batchRef = doc(db, 'batches', id);
     

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -10,7 +9,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, MessageSquare, FolderKanban, Loader2 } from 'lucide-react';
+import { Plus, Eye, MessageSquare, FolderKanban, Loader2, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -85,18 +84,25 @@ export default function ClientBatchesPage() {
                   </div>
                   <CardTitle className="text-xl mt-3 line-clamp-1">{batch.title}</CardTitle>
                   <CardDescription className="line-clamp-2 mt-1 min-h-[3rem]">
-                    {batch.brief}
+                    Producto: {batch.productName}
                   </CardDescription>
                 </CardHeader>
                 <CardFooter className="mt-auto pt-4 flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <Link href={`/client/batches/${batch.id}`}>
-                      <Eye className="mr-2 h-4 w-4" /> Detalles
+                      <Eye className="mr-1 h-4 w-4" /> Ver
                     </Link>
                   </Button>
+                  {batch.status !== 'approved' && (
+                    <Button variant="outline" size="sm" className="flex-1" asChild>
+                      <Link href={`/client/batches/${batch.id}/edit`}>
+                        <Edit className="mr-1 h-4 w-4" /> Edit
+                      </Link>
+                    </Button>
+                  )}
                   <Button variant="secondary" size="sm" className="flex-1" asChild>
                     <Link href={`/client/batches/${batch.id}/chat`}>
-                      <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                      <MessageSquare className="mr-1 h-4 w-4" /> Chat
                     </Link>
                   </Button>
                 </CardFooter>

@@ -9,7 +9,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, Link as LinkIcon, FileText, Video } from 'lucide-react';
+import { ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,6 +33,8 @@ export default function ClientBatchDetailPage() {
 
   if (!batch) return null;
 
+  const isEditable = batch.status !== 'approved';
+
   return (
     <RoleGuard allowedRoles={['client']}>
       <DashboardLayout>
@@ -49,11 +51,20 @@ export default function ClientBatchDetailPage() {
               Producto: <span className="font-semibold text-foreground">{batch.productName}</span> • Creado el {formatDate(batch.createdAt, "PPP")}
             </p>
           </div>
-          <Button asChild className="w-full md:w-auto">
-            <Link href={`/client/batches/${batch.id}/chat`}>
-              <MessageSquare className="mr-2 h-4 w-4" /> Ir al Chat
-            </Link>
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+            {isEditable && (
+              <Button variant="outline" asChild className="flex-1 md:flex-none">
+                <Link href={`/client/batches/${batch.id}/edit`}>
+                  <Edit className="mr-2 h-4 w-4" /> Editar
+                </Link>
+              </Button>
+            )}
+            <Button asChild className="flex-1 md:flex-none">
+              <Link href={`/client/batches/${batch.id}/chat`}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Ir al Chat
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
