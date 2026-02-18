@@ -91,9 +91,11 @@ export default function EditorChatPage() {
 
     const isImage = file.type.startsWith('image/');
     setUploading(true);
+    console.log("UI Editor: Iniciando subida...");
 
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
+      console.log("UI Editor: Subida OK");
       
       const members = Array.from(new Set([
         batch.clientUserUid,
@@ -101,7 +103,7 @@ export default function EditorChatPage() {
         profile.uid
       ])).filter(Boolean);
 
-      await chatService.sendMessage(
+      chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
@@ -116,9 +118,13 @@ export default function EditorChatPage() {
       );
       
       toast({ title: "Archivo enviado" });
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error al subir archivo", variant: "destructive" });
+    } catch (error: any) {
+      console.error("UI Editor: Error en subida:", error);
+      toast({ 
+        title: "Error al subir archivo", 
+        description: error.message || "Error de conexión con Storage",
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

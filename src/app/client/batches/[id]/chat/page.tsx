@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, RefreshCw, Sparkles, CheckCircle2, Loader2, Menu, Paperclip, ImageIcon, FileText, Download } from 'lucide-react';
+import { Send, ArrowLeft, RefreshCw, Sparkles, CheckCircle2, Loader2, Menu, Paperclip, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Link from 'next/link';
@@ -87,9 +87,11 @@ export default function ClientChatPage() {
 
     const isImage = file.type.startsWith('image/');
     setUploading(true);
+    console.log("UI: Iniciando proceso de subida para", file.name);
 
     try {
       const uploadResult = await storageService.uploadFile(file, `chats/${chatId}`);
+      console.log("UI: Subida exitosa, enviando mensaje...");
       
       const members = Array.from(new Set([
         batch.clientUserUid,
@@ -97,7 +99,7 @@ export default function ClientChatPage() {
         profile.uid
       ])).filter(Boolean);
 
-      await chatService.sendMessage(
+      chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
@@ -112,11 +114,16 @@ export default function ClientChatPage() {
       );
       
       toast({ title: "Archivo enviado" });
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error al subir archivo", variant: "destructive" });
+    } catch (error: any) {
+      console.error("UI: Error en handleFileUpload:", error);
+      toast({ 
+        title: "Error al subir archivo", 
+        description: error.message || "Ocurrió un problema inesperado",
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
+      console.log("UI: Proceso de subida finalizado (estado reseteado)");
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
