@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Plus, Trash2, Video } from 'lucide-react';
 import Link from 'next/link';
@@ -205,7 +206,7 @@ export default function NewBatchPage() {
                         <Label>Guion (Opcional)</Label>
                         <Textarea 
                           placeholder="Pega aquí el guion o estructura..." 
-                          value={spec.script} 
+                          value={spec.script || ''} 
                           onChange={e => updateVideoSpec(index, 'script', e.target.value)}
                           className="min-h-[100px]"
                         />
@@ -232,7 +233,7 @@ export default function NewBatchPage() {
                           <Label>Nota para este video</Label>
                           <Input 
                             placeholder="Ej: Usar música movida" 
-                            value={spec.notes} 
+                            value={spec.notes || ''} 
                             onChange={e => updateVideoSpec(index, 'notes', e.target.value)}
                           />
                         </div>
