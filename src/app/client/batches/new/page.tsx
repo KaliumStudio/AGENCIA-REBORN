@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -12,34 +11,75 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Video } from 'lucide-react';
 import Link from 'next/link';
+import { VideoSpecification } from '@/types';
 
 export default function NewBatchPage() {
   const { profile } = useAuth();
   const [title, setTitle] = useState('');
-  const [brief, setBrief] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [productName, setProductName] = useState('');
+  const [referenceLinks, setReferenceLinks] = useState('');
+  const [landingPage, setLandingPage] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [deliveryDeadlineTime, setDeliveryDeadlineTime] = useState('19:00');
+  const [videoSpecs, setVideoSpecs] = useState<VideoSpecification[]>([{ format: 'UGC IA' }]);
+  
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
+  const addVideoSpec = () => {
+    setVideoSpecs([...videoSpecs, { format: 'UGC IA' }]);
+  };
+
+  const removeVideoSpec = (index: number) => {
+    if (videoSpecs.length === 1) return;
+    const newSpecs = [...videoSpecs];
+    newSpecs.splice(index, 1);
+    setVideoSpecs(newSpecs);
+  };
+
+  const updateVideoSpec = (index: number, field: keyof VideoSpecification, value: string) => {
+    const newSpecs = [...videoSpecs];
+    newSpecs[index] = { ...newSpecs[index], [field]: value };
+    setVideoSpecs(newSpecs);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile?.clientId || !profile?.uid) return;
+
+    if (!productName || !referenceLinks || !landingPage) {
+      toast({ 
+        title: "Campos obligatorios", 
+        description: "Por favor completa el nombre del producto, videos de referencia y landing page.", 
+        variant: "destructive" 
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       await batchService.createBatch({
         clientId: profile.clientId,
         clientUserUid: profile.uid,
-        title,
-        brief,
-        dueDate,
+        title: title || `Tanda ${productName}`,
+        productName,
+        creativeCount: videoSpecs.length,
+        videoSpecs,
+        referenceLinks,
+        landingPage,
+        additionalNotes,
+        deliveryDeadlineTime,
         assignedEditorUids: [],
         createdBy: profile.uid,
+        // Fallback for old fields
+        brief: `Producto: ${productName}. Landing: ${landingPage}. Referencias: ${referenceLinks}`,
       });
+      
       toast({ title: "Tanda creada", description: "El administrador la asignará pronto." });
       router.push('/client/batches');
     } catch (error: any) {
@@ -50,65 +90,189 @@ export default function NewBatchPage() {
     }
   };
 
+  // Horarios disponibles desde las 7 PM (19:00) hasta las 11 PM
+  const timeOptions = [
+    "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
+  ];
+
   return (
     <RoleGuard allowedRoles={['client']}>
       <DashboardLayout>
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-12">
           <div className="mb-6 flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/client/batches"><ArrowLeft className="h-5 w-5" /></Link>
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Nueva Solicitud</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Nueva Solicitud de Producción</h1>
           </div>
 
-          <Card className="shadow-lg">
-            <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <Card className="shadow-lg border-t-4 border-t-primary">
               <CardHeader>
-                <CardTitle>Detalles de la Tanda</CardTitle>
+                <CardTitle>Información General del Producto</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="productName">Nombre del Producto <span className="text-destructive">*</span></Label>
+                    <Input 
+                      id="productName" 
+                      placeholder="Ej: Aspiradora Pro Max" 
+                      value={productName} 
+                      onChange={e => setProductName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Título de la Tanda (Opcional)</Label>
+                    <Input 
+                      id="title" 
+                      placeholder="Ej: Campaña Mayo - 5 Videos" 
+                      value={title} 
+                      onChange={e => setTitle(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título del Proyecto</Label>
+                  <Label htmlFor="landingPage">Link de Landing Page / Info <span className="text-destructive">*</span></Label>
                   <Input 
-                    id="title" 
-                    placeholder="Ej: Campaña Verano 2024 - Pack 10 Videos" 
-                    value={title} 
-                    onChange={e => setTitle(e.target.value)}
+                    id="landingPage" 
+                    placeholder="https://tu-tienda.com/producto" 
+                    value={landingPage} 
+                    onChange={e => setLandingPage(e.target.value)}
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="brief">Brief / Instrucciones Detalladas</Label>
+                  <Label htmlFor="referenceLinks">Videos de Referencia <span className="text-destructive">*</span></Label>
                   <Textarea 
-                    id="brief" 
-                    className="min-h-[200px]"
-                    placeholder="Describe los requisitos, referencias y objetivos..." 
-                    value={brief} 
-                    onChange={e => setBrief(e.target.value)}
+                    id="referenceLinks" 
+                    placeholder="Link de Drive, Biblioteca de anuncios, TikTok, etc." 
+                    value={referenceLinks} 
+                    onChange={e => setReferenceLinks(e.target.value)}
                     required
+                    className="min-h-[80px]"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="dueDate">Fecha de Entrega Deseada</Label>
-                  <Input 
-                    id="dueDate" 
-                    type="date" 
-                    value={dueDate} 
-                    onChange={e => setDueDate(e.target.value)}
-                    required
-                  />
+                  <Label htmlFor="deliveryTime">Horario Límite de Entrega (Post 7 PM)</Label>
+                  <Select value={deliveryDeadlineTime} onValueChange={setDeliveryDeadlineTime}>
+                    <SelectTrigger id="deliveryTime">
+                      <SelectValue placeholder="Selecciona un horario" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map(time => (
+                        <SelectItem key={time} value={time}>{time} HS</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end gap-3 border-t pt-6">
+            </Card>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Video className="h-5 w-5 text-primary" /> Especificaciones por Video
+                </h2>
+                <Badge variant="secondary" className="px-3 py-1">
+                  Total: {videoSpecs.length} Creativos
+                </Badge>
+              </div>
+
+              {videoSpecs.map((spec, index) => (
+                <Card key={index} className="relative overflow-hidden group border-l-4 border-l-accent">
+                  <CardHeader className="py-4 flex flex-row items-center justify-between bg-slate-50/50">
+                    <CardTitle className="text-base">Video #{index + 1}</CardTitle>
+                    {videoSpecs.length > 1 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        type="button" 
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={() => removeVideoSpec(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="md:col-span-2 space-y-2">
+                        <Label>Guion (Opcional)</Label>
+                        <Textarea 
+                          placeholder="Pega aquí el guion o estructura..." 
+                          value={spec.script} 
+                          onChange={e => updateVideoSpec(index, 'script', e.target.value)}
+                          className="min-h-[100px]"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Formato</Label>
+                          <Select 
+                            value={spec.format} 
+                            onValueChange={(v) => updateVideoSpec(index, 'format', v as any)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="UGC IA">UGC IA</SelectItem>
+                              <SelectItem value="CINEMATICO">CINEMATICO</SelectItem>
+                              <SelectItem value="POV">POV</SelectItem>
+                              <SelectItem value="PODCAST">PODCAST</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nota para este video</Label>
+                          <Input 
+                            placeholder="Ej: Usar música movida" 
+                            value={spec.notes} 
+                            onChange={e => updateVideoSpec(index, 'notes', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-full border-dashed border-2 py-8 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary transition-all"
+                onClick={addVideoSpec}
+              >
+                <Plus className="h-6 w-6" />
+                <span>Agregar otro video a esta tanda</span>
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="pt-6 space-y-2">
+                <Label htmlFor="additionalNotes">Nota Opcional Final</Label>
+                <Textarea 
+                  id="additionalNotes" 
+                  placeholder="Instrucciones generales para toda la tanda..." 
+                  value={additionalNotes} 
+                  onChange={e => setAdditionalNotes(e.target.value)}
+                />
+              </CardContent>
+              <CardFooter className="flex justify-end gap-3 border-t bg-slate-50 p-6">
                 <Button variant="outline" type="button" asChild disabled={loading}>
                   <Link href="/client/batches">Cancelar</Link>
                 </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Creando..." : <><Save className="mr-2 h-4 w-4" /> Crear Tanda</>}
+                <Button type="submit" disabled={loading} size="lg" className="px-8">
+                  {loading ? "Creando..." : <><Save className="mr-2 h-4 w-4" /> Confirmar Solicitud</>}
                 </Button>
               </CardFooter>
-            </form>
-          </Card>
+            </Card>
+          </form>
         </div>
       </DashboardLayout>
     </RoleGuard>

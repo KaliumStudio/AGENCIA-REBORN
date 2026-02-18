@@ -13,10 +13,7 @@
         "role": {
           "type": "string",
           "description": "The role of the user within the portal (admin, editor, or client).",
-          "format": "enum",
-          "items": {
-            "type": "string"
-          }
+          "enum": ["admin", "editor", "client"]
         },
         "displayName": {
           "type": "string",
@@ -24,259 +21,72 @@
         },
         "clientId": {
           "type": "string",
-          "description": "Reference to the Client entity if the user's role is 'client'. (Relationship: Client 1:N User)"
+          "description": "Reference to the Client entity if the user's role is 'client'."
         },
         "active": {
           "type": "boolean",
           "description": "Indicates whether the user account is active."
         }
       },
-      "required": [
-        "id",
-        "role",
-        "displayName",
-        "active"
-      ]
+      "required": ["id", "role", "displayName", "active"]
     },
     "Client": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Client",
       "type": "object",
-      "description": "Represents a client of the AM Agency, who submits creative batches for production.",
+      "description": "Represents a client of the AM Agency.",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the Client entity."
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "description": "The full name of the client."
+          "type": "string"
         },
         "contact": {
-          "type": "string",
-          "description": "Contact information for the client, such as email or phone number."
+          "type": "string"
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the client record was created.",
           "format": "date-time"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "contact",
-        "createdAt"
-      ]
+      "required": ["id", "name", "contact", "createdAt"]
     },
     "Batch": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Batch",
       "type": "object",
-      "description": "Represents a batch of creative requests submitted by a client, managed through production, delivery, and approval.",
+      "description": "Represents a batch of creative requests submitted by a client.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Batch entity."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the Client who owns this creative batch. (Relationship: Client 1:N Batch)"
-        },
-        "clientUserUid": {
-          "type": "string",
-          "description": "The UID of the specific user within the client organization who created the batch."
-        },
-        "title": {
-          "type": "string",
-          "description": "A descriptive title for the creative batch."
-        },
-        "brief": {
-          "type": "string",
-          "description": "Detailed brief and requirements provided by the client for the creative production."
-        },
-        "dueDate": {
-          "type": "string",
-          "description": "The deadline for the completion of the batch.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current workflow status of the creative batch.",
-          "format": "enum",
-          "items": {
-            "type": "string"
-          }
-        },
-        "assignedEditorUids": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientUserUid": { "type": "string" },
+        "title": { "type": "string" },
+        "productName": { "type": "string" },
+        "creativeCount": { "type": "number" },
+        "videoSpecs": {
           "type": "array",
-          "description": "An array of unique identifiers for Users (editors) assigned to work on this batch. (Relationship: User N:N Batch)",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "script": { "type": "string" },
+              "notes": { "type": "string" },
+              "format": { "type": "string", "enum": ["UGC IA", "CINEMATICO", "POV", "PODCAST"] }
+            }
           }
         },
-        "driveLink": {
-          "type": "string",
-          "description": "Google Drive link to the delivered creative assets for the batch.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the batch was initially created.",
-          "format": "date-time"
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "Reference to the User (client or admin) who created this batch. (Relationship: User 1:N Batch)"
-        }
+        "referenceLinks": { "type": "string" },
+        "landingPage": { "type": "string" },
+        "deliveryDeadlineTime": { "type": "string" },
+        "status": { "type": "string" },
+        "assignedEditorUids": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "clientId",
-        "title",
-        "brief",
-        "dueDate",
-        "status",
-        "assignedEditorUids",
-        "createdAt",
-        "createdBy"
-      ]
-    },
-    "Chat": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Chat",
-      "type": "object",
-      "description": "Represents a real-time communication channel associated with a specific creative batch, facilitating discussion and revisions.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Chat entity."
-        },
-        "batchId": {
-          "type": "string",
-          "description": "Reference to the Batch this chat is associated with. (Relationship: Batch 1:N Chat)"
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the Client involved in this chat. (Relationship: Client 1:N Chat)"
-        },
-        "memberUids": {
-          "type": "array",
-          "description": "An array of unique identifiers for all Users (client and assigned editors) participating in this chat. (Relationship: User N:N Chat)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "editorAliases": {
-          "type": "object",
-          "description": "A map where keys are editor UIDs and values are their stable anonymous aliases for this specific chat.",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "lastMessageAt": {
-          "type": "string",
-          "description": "Timestamp of the most recent message sent in this chat.",
-          "format": "date-time"
-        },
-        "lastReadAtByUid": {
-          "type": "object",
-          "description": "A map of user UIDs to the timestamp of their last read message.",
-          "additionalProperties": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "batchId",
-        "clientId",
-        "memberUids"
-      ]
-    },
-    "Message": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Message",
-      "type": "object",
-      "description": "Represents an individual message within a chat, including sender details, type, and content.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Message entity."
-        },
-        "chatId": {
-          "type": "string",
-          "description": "Reference to the Chat this message belongs to. (Relationship: Chat 1:N Message)"
-        },
-        "senderUid": {
-          "type": "string",
-          "description": "Reference to the User who sent this message. (Relationship: User 1:N Message)"
-        },
-        "senderRole": {
-          "type": "string",
-          "description": "The role of the sender at the time the message was sent.",
-          "format": "enum",
-          "items": {
-            "type": "string"
-          }
-        },
-        "senderAlias": {
-          "type": "string",
-          "description": "The anonymous alias of the sender as presented to the other party (e.g., 'Cliente', 'Editor #XXXX')."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of the message content.",
-          "format": "enum",
-          "items": {
-            "type": "string"
-          }
-        },
-        "text": {
-          "type": "string",
-          "description": "The textual content of the message."
-        },
-        "fileUrl": {
-          "type": "string",
-          "format": "uri"
-        },
-        "fileName": {
-          "type": "string"
-        },
-        "fileSize": {
-          "type": "number"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the message was created.",
-          "format": "date-time"
-        },
-        "memberUids": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "clientId": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "chatId",
-        "senderUid",
-        "senderRole",
-        "senderAlias",
-        "type",
-        "text",
-        "createdAt"
-      ]
+      "required": ["id", "clientId", "productName", "referenceLinks", "landingPage", "deliveryDeadlineTime", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
@@ -284,87 +94,23 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles with their assigned roles (admin, editor, client) and an internal display name.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique Firebase Authentication User ID (UID)."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" }
         }
       },
       {
         "path": "/clients/{clientId}",
         "definition": {
           "entityName": "Client",
-          "schema": {
-            "$ref": "#/backend/entities/Client"
-          },
-          "description": "Stores details for each client organization.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier for a Client entity."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Client" }
         }
       },
       {
         "path": "/batches/{batchId}",
         "definition": {
           "entityName": "Batch",
-          "schema": {
-            "$ref": "#/backend/entities/Batch"
-          },
-          "description": "Stores creative batch requests.",
-          "params": [
-            {
-              "name": "batchId",
-              "description": "The unique identifier for a Batch entity."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/chats/{chatId}",
-        "definition": {
-          "entityName": "Chat",
-          "schema": {
-            "$ref": "#/backend/entities/Chat"
-          },
-          "description": "Stores metadata for real-time communication channels.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The unique identifier for a Chat entity."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/chats/{chatId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": {
-            "$ref": "#/backend/entities/Message"
-          },
-          "description": "Stores individual messages within a chat.",
-          "params": [
-            {
-              "name": "chatId",
-              "description": "The unique identifier of the parent Chat entity."
-            },
-            {
-              "name": "messageId",
-              "description": "The unique identifier for a Message entity within the chat."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Batch" }
         }
       }
-    ],
-    "reasoning": "Standardized structure for agency management with role-based access."
+    ]
   }
 }

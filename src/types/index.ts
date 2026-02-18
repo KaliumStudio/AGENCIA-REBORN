@@ -25,13 +25,24 @@ export interface Client {
 
 export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'approved';
 
+export interface VideoSpecification {
+  script?: string;
+  notes?: string;
+  format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST';
+}
+
 export interface Batch {
   id: string;
   clientId: string;
   clientUserUid: string;
   title: string;
-  brief: string;
-  dueDate: string;
+  productName: string;
+  creativeCount: number;
+  videoSpecs: VideoSpecification[];
+  referenceLinks: string;
+  landingPage: string;
+  additionalNotes?: string;
+  deliveryDeadlineTime: string;
   status: BatchStatus;
   assignedEditorUids: string[];
   driveLink?: string;
@@ -39,6 +50,9 @@ export interface Batch {
   createdBy: string;
   deliveredAt?: any;
   deliveredBy?: string;
+  // Deprecated fields kept for backward compatibility if necessary
+  brief?: string;
+  dueDate?: string;
 }
 
 export interface Chat {

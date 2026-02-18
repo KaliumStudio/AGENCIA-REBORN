@@ -3,7 +3,7 @@ import {
   collection, doc, getDoc, getDocs, setDoc, updateDoc, 
   query, where, orderBy, serverTimestamp 
 } from 'firebase/firestore';
-import { Batch, BatchStatus } from '@/types';
+import { Batch, BatchStatus, VideoSpecification } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { chatService } from './chat.service';
@@ -19,10 +19,16 @@ export const batchService = {
     clientId: string;
     clientUserUid: string;
     title: string;
-    brief: string;
-    dueDate?: string;
+    productName: string;
+    creativeCount: number;
+    videoSpecs: VideoSpecification[];
+    referenceLinks: string;
+    landingPage: string;
+    additionalNotes?: string;
+    deliveryDeadlineTime: string;
     assignedEditorUids: string[];
     createdBy: string;
+    brief?: string;
   }) {
     const batchesRef = collection(db, 'batches');
     const newDoc = doc(batchesRef);
@@ -78,14 +84,12 @@ export const batchService = {
   async assignEditors(id: string, editorUids: string[]) {
     const batchRef = doc(db, 'batches', id);
     
-    // Obtenemos los datos actuales para sincronizar el chat
     const batchSnap = await getDoc(batchRef);
     if (!batchSnap.exists()) return;
     const batchData = batchSnap.data() as Batch;
 
     const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     
-    // Actualización no bloqueante del lote
     updateDoc(batchRef, { 
       assignedEditorUids: editorUids,
       status
@@ -97,7 +101,6 @@ export const batchService = {
       }));
     });
 
-    // Sincronizar miembros del chat
     const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids])).filter(Boolean);
     chatService.syncChatMembers(id, memberUids);
   },
