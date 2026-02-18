@@ -1,4 +1,3 @@
-
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, getDocs, setDoc, updateDoc, 
@@ -6,12 +5,12 @@ import {
 } from 'firebase/firestore';
 import { Batch, BatchStatus } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
 import { chatService } from './chat.service';
 
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
-    Object.entries(obj).filter(([_, v]) => v !== undefined)
+    Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null)
   );
 };
 
@@ -34,23 +33,32 @@ export const batchService = {
     const batchData = stripUndefined({
       ...data,
       status: 'new',
-      driveLink: null,
       createdAt: serverTimestamp(),
     });
     
-    await setDoc(newDoc, batchData).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: newDoc.path,
-        operation: 'create',
-        requestResourceData: batchData
-      }));
-      throw e;
-    });
-    
-    // Crear el chat inicial si tenemos un usuario cliente asignado
-    if (data.clientUserUid) {
-      await chatService.getOrCreateChat(newDoc.id, data.clientId, data.clientUserUid, data.assignedEditorUids);
-    }
+    // No usamos await para permitir actualizaciones optimistas
+    setDoc(newDoc, batchData)
+      .then(() => {
+        // Una vez creado el lote, intentamos inicializar el chat
+        if (data.clientUserUid) {
+          chatService.getOrCreateChat(
+            newDoc.id, 
+            data.clientId, 
+            data.clientUserUid, 
+            data.assignedEditorUids,
+            data.createdBy
+          );
+        }
+      })
+      .catch(async (error) => {
+        console.error("Error creating batch:", error);
+        const permissionError = new FirestorePermissionError({
+          path: `batches/${newDoc.id}`,
+          operation: 'create',
+          requestResourceData: batchData
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
     
     return newDoc.id;
   },
@@ -61,48 +69,48 @@ export const batchService = {
       const snap = await getDoc(docRef);
       return snap.exists() ? ({ id: snap.id, ...snap.data() } as Batch) : null;
     } catch (e) {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'get'
-      }));
-      throw e;
+      console.error("Error getting batch:", e);
+      return null;
     }
   },
 
   async updateBatchStatus(id: string, status: BatchStatus) {
     const docRef = doc(db, 'batches', id);
-    updateDoc(docRef, { status }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+    updateDoc(docRef, { status }).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: `batches/${id}`,
         operation: 'update',
         requestResourceData: { status }
-      }));
+      } satisfies SecurityRuleContext);
+      errorEmitter.emit('permission-error', permissionError);
     });
   },
 
   async assignEditors(id: string, editorUids: string[]) {
     const batchRef = doc(db, 'batches', id);
+    
+    // Obtenemos el batch primero para tener los datos necesarios para el chat
     const batchSnap = await getDoc(batchRef);
     if (!batchSnap.exists()) return;
-
     const batchData = batchSnap.data() as Batch;
+
     const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     
     updateDoc(batchRef, { 
       assignedEditorUids: editorUids,
       status
-    }).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: batchRef.path,
+    }).then(() => {
+      // Sincronizar miembros del chat cuando se asignan editores
+      const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
+      chatService.syncChatMembers(id, memberUids);
+    }).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: `batches/${id}`,
         operation: 'update',
         requestResourceData: { assignedEditorUids: editorUids, status }
-      }));
+      } satisfies SecurityRuleContext);
+      errorEmitter.emit('permission-error', permissionError);
     });
-
-    if (batchData.clientUserUid) {
-      const memberUids = Array.from(new Set([batchData.clientUserUid, ...editorUids]));
-      await chatService.syncChatMembers(id, memberUids);
-    }
   },
 
   async submitDelivery(id: string, driveLink: string, uid: string) {
@@ -114,12 +122,13 @@ export const batchService = {
       deliveredBy: uid
     };
     
-    updateDoc(docRef, updateData).catch(e => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: docRef.path,
+    updateDoc(docRef, updateData).catch(async (error) => {
+      const permissionError = new FirestorePermissionError({
+        path: `batches/${id}`,
         operation: 'update',
         requestResourceData: updateData
-      }));
+      } satisfies SecurityRuleContext);
+      errorEmitter.emit('permission-error', permissionError);
     });
   },
 
@@ -133,18 +142,11 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      // Fallback si falla el ordenamiento (ej: falta de índice o campos nulos)
-      const qFallback = query(
-        collection(db, 'batches'), 
-        where('clientId', '==', clientId)
-      );
+      console.warn("Falling back to client-side sort for batches");
+      const qFallback = query(collection(db, 'batches'), where('clientId', '==', clientId));
       const snap = await getDocs(qFallback);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
-        .sort((a, b) => {
-          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tB - tA;
-        });
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }
   },
 
@@ -158,17 +160,11 @@ export const batchService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch));
     } catch (e) {
-      const qFallback = query(
-        collection(db, 'batches'), 
-        where('assignedEditorUids', 'array-contains', editorUid)
-      );
+      console.warn("Falling back to client-side sort for editor batches");
+      const qFallback = query(collection(db, 'batches'), where('assignedEditorUids', 'array-contains', editorUid));
       const snap = await getDocs(qFallback);
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
-        .sort((a, b) => {
-          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tB - tA;
-        });
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }
   },
 
@@ -180,11 +176,7 @@ export const batchService = {
     } catch (e) {
       const snap = await getDocs(collection(db, 'batches'));
       return snap.docs.map(d => ({ id: d.id, ...d.data() } as Batch))
-        .sort((a, b) => {
-          const tA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tB - tA;
-        });
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }
   }
 };

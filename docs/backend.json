@@ -83,6 +83,10 @@
           "type": "string",
           "description": "Reference to the Client who owns this creative batch. (Relationship: Client 1:N Batch)"
         },
+        "clientUserUid": {
+          "type": "string",
+          "description": "The UID of the specific user within the client organization who created the batch."
+        },
         "title": {
           "type": "string",
           "description": "A descriptive title for the creative batch."
@@ -123,7 +127,7 @@
         },
         "createdBy": {
           "type": "string",
-          "description": "Reference to the User (client) who created this batch. (Relationship: User 1:N Batch)"
+          "description": "Reference to the User (client or admin) who created this batch. (Relationship: User 1:N Batch)"
         }
       },
       "required": [
@@ -164,9 +168,9 @@
           }
         },
         "editorAliases": {
-          "type": "array",
-          "description": "A map (represented as an array of objects) where each object contains an editor's UID and their stable anonymous alias for this specific chat. (Relationship: User N:N Chat, specific aliases per chat)",
-          "items": {
+          "type": "object",
+          "description": "A map where keys are editor UIDs and values are their stable anonymous aliases for this specific chat.",
+          "additionalProperties": {
             "type": "string"
           }
         },
@@ -174,14 +178,21 @@
           "type": "string",
           "description": "Timestamp of the most recent message sent in this chat.",
           "format": "date-time"
+        },
+        "lastReadAtByUid": {
+          "type": "object",
+          "description": "A map of user UIDs to the timestamp of their last read message.",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "required": [
         "id",
         "batchId",
         "clientId",
-        "memberUids",
-        "editorAliases"
+        "memberUids"
       ]
     },
     "Message": {
@@ -226,10 +237,27 @@
           "type": "string",
           "description": "The textual content of the message."
         },
+        "fileUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "fileSize": {
+          "type": "number"
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the message was created.",
           "format": "date-time"
+        },
+        "memberUids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "clientId": {
+          "type": "string"
         }
       },
       "required": [
@@ -259,7 +287,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profiles with their assigned roles (admin, editor, client) and an internal display name. For client-role users, it includes 'clientId' to link to their associated client organization. Access is primarily self-owned or admin-controlled.",
+          "description": "Stores user profiles with their assigned roles (admin, editor, client) and an internal display name.",
           "params": [
             {
               "name": "userId",
@@ -275,7 +303,7 @@
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores details for each client organization. Admins have full access. Client-role users can read their own client record, which is identified by their 'clientId' stored in their user profile.",
+          "description": "Stores details for each client organization.",
           "params": [
             {
               "name": "clientId",
@@ -291,7 +319,7 @@
           "schema": {
             "$ref": "#/backend/entities/Batch"
           },
-          "description": "Stores creative batch requests submitted by clients. Includes 'clientId' for direct client ownership authorization and 'assignedEditorUids' for direct editor assignment authorization. These fields enable authorization independence without needing to query parent or related documents.",
+          "description": "Stores creative batch requests.",
           "params": [
             {
               "name": "batchId",
@@ -307,7 +335,7 @@
           "schema": {
             "$ref": "#/backend/entities/Chat"
           },
-          "description": "Stores metadata for real-time communication channels, each associated with a specific batch. Includes 'memberUids' (an array of user UIDs) for direct chat membership authorization and 'clientId' for context, ensuring authorization independence.",
+          "description": "Stores metadata for real-time communication channels.",
           "params": [
             {
               "name": "chatId",
@@ -323,7 +351,7 @@
           "schema": {
             "$ref": "#/backend/entities/Message"
           },
-          "description": "Stores individual messages within a chat. **CRITICAL:** For authorization independence, each message document MUST include a denormalized 'memberUids' array (copied from its parent Chat document). This allows security rules to directly verify chat membership for read/write access without requiring a 'get()' call to the parent Chat document.",
+          "description": "Stores individual messages within a chat.",
           "params": [
             {
               "name": "chatId",
@@ -337,6 +365,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to adhere strictly to the core design principles of Authorization Independence, Structural Segregation, and DBAC, ensuring a secure, scalable, and debuggable system for the AM Agency Portal. \n\n**Authorization Independence (CRITICAL)**:\n1.  **Users (/users/{userId}) and Clients (/clients/{clientId})**: User profiles (`/users/{userId}`) will store the user's `role` and, if applicable, their `clientId`. Access to a user's own profile or a client's specific `clientId` document relies on a self-referential `get()` call to the user's document (`/users/$(request.auth.uid)`), which is a generally accepted pattern and does not constitute a 'hierarchical authorization dependency' in the context of variable parent paths. A client user can read their associated Client document if `resource.id == get(/users/$(request.auth.uid)).data.clientId`.\n2.  **Batches (/batches/{batchId})**: Each `Batch` document explicitly includes `clientId` and `assignedEditorUids`. This denormalization allows security rules to directly check `resource.data.clientId == get(/users/$(request.auth.uid)).data.clientId` for client users, or `request.auth.uid in resource.data.assignedEditorUids` for editors. No `get()` calls to other variable documents are needed for authorization on batches, ensuring full authorization independence for this collection.\n3.  **Chats (/chats/{chatId})**: Each `Chat` document explicitly includes `memberUids` (an array of UIDs) and `clientId`. This enables security rules to check `request.auth.uid in resource.data.memberUids` directly on the `Chat` document, ensuring authorization independence for chat access.\n4.  **Messages (/chats/{chatId}/messages/{messageId})**: This is the most critical application of Authorization Independence via Denormalization. To avoid `get()` calls to the parent `Chat` document (`/chats/$(chatId)`), every `Message` document **MUST be denormalized to include the `memberUids` array from its parent `Chat`**. This allows security rules to evaluate `request.auth.uid in resource.data.memberUids` directly on the `Message` document itself for both read and write operations, including `list` queries within a specific chat. This completely eliminates hierarchical authorization dependencies for messages, enabling atomic operations and simplifying rule debugging.\n\n**QAPs (Rules are not Filters)**:\n*   **Structural Segregation (Homogeneous Security Posture)**: Each collection and subcollection (e.g., `/users`, `/clients`, `/batches`, `/chats`, `/chats/{chatId}/messages`) is designed to contain documents with a uniform security posture. This eliminates the need for complex conditional logic within rules to differentiate access within the same collection, making rules clearer and more efficient.\n*   **Targeted Queries**: The denormalized authorization fields facilitate secure `list` operations without acting as filters. For instance:\n    *   Client users can securely list their batches using `db.collection('batches').where('clientId', '==', userClientId)`. The security rule will enforce `resource.data.clientId == request.auth_data.clientId` (assuming `clientId` is accessible from the user's profile). \n    *   Editor users can list their assigned batches using `db.collection('batches').where('assignedEditorUids', 'array-contains', request.auth.uid)`. The security rule will enforce `request.auth.uid in resource.data.assignedEditorUids`. \n    *   Users can list chats they are a member of using `db.collection('chats').where('memberUids', 'array-contains', request.auth.uid)`. The security rule will enforce `request.auth.uid in resource.data.memberUids`. \n    *   For messages (`/chats/{chatId}/messages`), the denormalized `memberUids` ensures that a `list` operation will only return messages that the authenticated user is authorized to view, as each message document will be individually checked against its `memberUids` field.\n\n**DBAC (No Custom Claims)**:\nRoles are stored directly in the `User` document (`/users/{uid}.role`). Authorization rules will fetch this role via a self-referential `get()` operation on `request.auth.uid`, avoiding the complexity and latency of custom claims.\n\n**Application Error Note**: The reported `Runtime FirebaseError: Firebase: Error (auth/invalid-api-key)` is a client-side configuration issue, likely due to a missing or incorrect `apiKey` in `firebaseConfig` within `src/lib/firebase.ts`. This error is external to the Firestore data structure design and security rules, and needs to be addressed by correcting the Firebase SDK initialization configuration."
+    "reasoning": "Standardized structure for agency management with role-based access."
   }
 }
