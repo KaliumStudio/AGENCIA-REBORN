@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { chatService } from '@/services/chat.service';
@@ -14,8 +14,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Send, ExternalLink, MessageSquare, Info } from 'lucide-react';
+import { 
+  ArrowLeft, Send, ExternalLink, MessageSquare, Info, 
+  Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Loader2 
+} from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { format, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function EditorBatchDetailPage() {
   const { id } = useParams();
@@ -39,6 +45,12 @@ export default function EditorBatchDetailPage() {
     }
   }, [id]);
 
+  const formatDate = (date: any, formatStr: string) => {
+    if (!date) return 'N/A';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
+  };
+
   const handleDeliver = async () => {
     if (!driveLink.trim().startsWith('https://')) {
       toast({ 
@@ -53,10 +65,8 @@ export default function EditorBatchDetailPage() {
 
     setSubmitting(true);
     
-    // Las mutaciones no son bloqueantes, pero actualizamos el estado local para feedback inmediato
     batchService.submitDelivery(batch.id, driveLink, profile.uid);
     
-    // Notificar vía chat con el orden correcto de parámetros: batchId, clientId, clientUserUid, editorUids, currentUid
     chatService.getOrCreateChat(
       batch.id, 
       batch.clientId, 
@@ -78,7 +88,16 @@ export default function EditorBatchDetailPage() {
     setSubmitting(false);
   };
 
-  if (loading || authLoading) return <DashboardLayout>Cargando...</DashboardLayout>;
+  if (loading || authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!batch) return <DashboardLayout>No se encontró la tanda.</DashboardLayout>;
 
   return (
@@ -90,10 +109,12 @@ export default function EditorBatchDetailPage() {
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{batch.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{batch.title}</h1>
               <StatusBadge status={batch.status} />
             </div>
-            <p className="text-muted-foreground mt-1">Límite: {batch.dueDate || 'No definida'}</p>
+            <p className="text-muted-foreground mt-1">
+              Producto: <span className="font-semibold text-foreground">{batch.productName}</span> • Creado el {formatDate(batch.createdAt, "PPP")}
+            </p>
           </div>
           <Button variant="secondary" asChild>
             <Link href={`/editor/batches/${batch.id}/chat`}>
@@ -104,14 +125,71 @@ export default function EditorBatchDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Instrucciones (Brief)</CardTitle>
-              </CardHeader>
-              <CardContent className="whitespace-pre-wrap leading-relaxed text-slate-700">
-                {batch.brief}
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <LinkIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Landing Page</p>
+                    <a href={batch.landingPage} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline truncate block">
+                      Abrir enlace <ExternalLink className="inline h-3 w-3 ml-1" />
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-accent/5 border-accent/20">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="p-2 bg-accent/10 rounded-lg">
+                    <Video className="h-5 w-5 text-accent" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias</p>
+                    <p className="text-sm font-medium truncate">{batch.referenceLinks}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold">Detalles de los Creativos ({batch.creativeCount})</h2>
+              {batch.videoSpecs && batch.videoSpecs.map((spec, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <CardHeader className="py-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-bold">Video #{index + 1}</CardTitle>
+                      <Badge variant="outline">{spec.format}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    {spec.script && (
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Guion / Estructura</p>
+                        <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap">{spec.script}</p>
+                      </div>
+                    )}
+                    {spec.notes && (
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <FileText className="h-4 w-4 mt-0.5 text-accent" />
+                        <span>{spec.notes}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {batch.additionalNotes && (
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Notas Adicionales</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {batch.additionalNotes}
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-primary shadow-md">
               <CardHeader>
@@ -152,22 +230,50 @@ export default function EditorBatchDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg">Estado del Proyecto</CardTitle>
+                <CardTitle className="text-lg">Información de Tiempo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-orange-100 rounded-full">
+                    <Clock className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Horario Límite</p>
+                    <p className="font-bold text-xl">{batch.deliveryDeadlineTime} HS</p>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-4 space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Estado</p>
+                    <div className="mt-1"><StatusBadge status={batch.status} /></div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">Última Entrega</p>
+                    <p className="text-sm font-medium">
+                      {batch.deliveredAt ? formatDate(batch.deliveredAt, "PPpp") : 'Pendiente'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900 text-white">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-primary" /> Detalles de Producto
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold">Fecha de Creación</p>
-                  <p className="text-sm">
-                    {batch.createdAt?.toDate ? batch.createdAt.toDate().toLocaleDateString() : 'N/A'}
-                  </p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">Producto</p>
+                  <p className="font-semibold">{batch.productName}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase font-bold">Última Entrega</p>
-                  <p className="text-sm">
-                    {batch.deliveredAt?.toDate ? batch.deliveredAt.toDate().toLocaleString() : 'Pendiente'}
-                  </p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">Creativos Solicitados</p>
+                  <p className="text-2xl font-bold text-primary">{batch.creativeCount}</p>
                 </div>
               </CardContent>
             </Card>
