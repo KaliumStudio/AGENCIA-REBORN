@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { UserProfile, UserRole } from '@/types';
@@ -64,6 +65,21 @@ export const userService = {
       const snap = await getDocs(q);
       return snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile));
     } catch (error) {
+      return [];
+    }
+  },
+
+  async getUsersByClient(clientId: string): Promise<UserProfile[]> {
+    const q = query(
+      collection(db, 'users'), 
+      where('clientId', '==', clientId),
+      where('role', '==', 'client')
+    );
+    try {
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ uid: d.id, ...d.data() } as UserProfile));
+    } catch (error) {
+      console.error("Error fetching users by client:", error);
       return [];
     }
   },

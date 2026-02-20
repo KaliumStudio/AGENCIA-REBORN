@@ -23,8 +23,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye } from 'lucide-react';
-import { NewBatchDialog } from '@/components/batches/new-batch-dialog';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -60,6 +59,7 @@ export default function AdminBatchesPage() {
   }, [profile]);
 
   const handleDeleteBatch = (id: string) => {
+    // Eliminación optimista
     setBatches(prev => prev.filter(b => b.id !== id));
     batchService.deleteBatch(id);
     toast({ 
@@ -91,7 +91,11 @@ export default function AdminBatchesPage() {
             <Button variant="outline" size="icon" onClick={fetchBatches} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-            <NewBatchDialog onBatchCreated={fetchBatches} />
+            <Button asChild className="h-11 md:h-10">
+              <Link href="/admin/batches/new">
+                <Plus className="mr-2 h-4 w-4" /> Nueva Tanda
+              </Link>
+            </Button>
           </div>
         </div>
 
