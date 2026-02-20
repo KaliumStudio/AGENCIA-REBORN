@@ -23,7 +23,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { Users, Search, RefreshCw, MessageSquare, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye } from 'lucide-react';
 import { NewBatchDialog } from '@/components/batches/new-batch-dialog';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,12 +60,8 @@ export default function AdminBatchesPage() {
   }, [profile]);
 
   const handleDeleteBatch = (id: string) => {
-    // UI optimista: eliminar de la lista inmediatamente
     setBatches(prev => prev.filter(b => b.id !== id));
-    
-    // Llamar al servicio sin bloquear la interfaz
     batchService.deleteBatch(id);
-    
     toast({ 
       title: "Tanda eliminada", 
       description: "El registro ha sido borrado correctamente del sistema." 
@@ -153,18 +149,23 @@ export default function AdminBatchesPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href={`/admin/batches/${batch.id}/chat`}>
-                          <MessageSquare className="mr-2 h-4 w-4" /> Chat
+                      <Button variant="outline" size="sm" asChild title="Ver detalles">
+                        <Link href={`/admin/batches/${batch.id}`}>
+                          <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }}>
-                        <Users className="mr-2 h-4 w-4" /> Asignar
+                      <Button variant="outline" size="sm" asChild title="Supervisar chat">
+                        <Link href={`/admin/batches/${batch.id}/chat`}>
+                          <MessageSquare className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }} title="Asignar editores">
+                        <Users className="h-4 w-4" />
                       </Button>
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" title="Eliminar tanda">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -212,6 +213,9 @@ export default function AdminBatchesPage() {
               <CardContent className="p-4 pt-0 space-y-4">
                 <div className="flex items-center justify-between border-t pt-4">
                   <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/batches/${batch.id}`}><Eye className="h-4 w-4" /></Link>
+                    </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/admin/batches/${batch.id}/chat`}><MessageSquare className="h-4 w-4" /></Link>
                     </Button>
