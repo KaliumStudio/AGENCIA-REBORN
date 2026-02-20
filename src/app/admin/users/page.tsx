@@ -10,15 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Shield, User, Edit, Search, RefreshCw } from 'lucide-react';
+import { Shield, User, Edit, Search, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddUserDialog } from '@/components/users/add-user-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -30,6 +32,17 @@ export default function AdminUsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleDeleteUser = async (uid: string) => {
+    if (!confirm("¿Eliminar este usuario de la base de datos? (No afectará a Firebase Auth)")) return;
+    try {
+      await userService.deleteUser(uid);
+      toast({ title: "Perfil eliminado" });
+      fetchUsers();
+    } catch (error) {
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    }
+  };
 
   const roleColors: Record<UserRole, string> = {
     admin: "bg-destructive/10 text-destructive border-destructive/20",
@@ -68,7 +81,6 @@ export default function AdminUsersPage() {
           />
         </div>
 
-        {/* Desktop View */}
         <div className="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
           <Table>
             <TableHeader>
@@ -118,7 +130,12 @@ export default function AdminUsersPage() {
                     <Badge variant={u.active ? "default" : "secondary"}>{u.active ? "Activo" : "Inactivo"}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" disabled><Edit className="h-4 w-4" /></Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" disabled><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteUser(u.uid)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -126,7 +143,6 @@ export default function AdminUsersPage() {
           </Table>
         </div>
 
-        {/* Mobile View */}
         <div className="md:hidden space-y-4">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
@@ -147,8 +163,8 @@ export default function AdminUsersPage() {
                   </div>
                   <Badge variant={u.active ? "default" : "secondary"}>{u.active ? "Activo" : "Inactivo"}</Badge>
                 </div>
-                <div className="flex justify-end border-t pt-3">
-                  <Button variant="outline" size="sm" className="w-full" disabled>Ver Perfil</Button>
+                <div className="flex justify-end gap-2 border-t pt-3">
+                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteUser(u.uid)}>Eliminar</Button>
                 </div>
               </CardContent>
             </Card>

@@ -74,6 +74,7 @@ export interface Message {
   senderUid: string;
   senderRole: UserRole;
   senderAlias: string;
+  senderName?: string; // Nombre real para vista de admin
   type: MessageType;
   text: string;
   fileUrl?: string;

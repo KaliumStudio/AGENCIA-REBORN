@@ -1,6 +1,6 @@
 import { db } from '@/lib/firebase';
 import { 
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, 
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, orderBy, serverTimestamp 
 } from 'firebase/firestore';
 import { Batch, BatchStatus, VideoSpecification } from '@/types';
@@ -38,7 +38,6 @@ export const batchService = {
       createdAt: serverTimestamp(),
     });
     
-    // Escritura no bloqueante
     setDoc(newDoc, batchData)
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -48,7 +47,6 @@ export const batchService = {
         }));
       });
     
-    // Crear el chat asociado inmediatamente
     chatService.getOrCreateChat(
       newDoc.id, 
       data.clientId, 
@@ -91,6 +89,20 @@ export const batchService = {
         requestResourceData: updateData
       }));
     });
+  },
+
+  async deleteBatch(id: string) {
+    const docRef = doc(db, 'batches', id);
+    const chatRef = doc(db, 'chats', id);
+    
+    deleteDoc(docRef).catch(async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete'
+      }));
+    });
+    
+    deleteDoc(chatRef).catch(() => {});
   },
 
   async assignEditors(id: string, editorUids: string[]) {

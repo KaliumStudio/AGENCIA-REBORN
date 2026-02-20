@@ -7,6 +7,7 @@ import {
 import { Chat, Message, MessageType, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { userService } from './user.service';
 
 const stripUndefined = (obj: any) => {
   return Object.fromEntries(
@@ -100,13 +101,17 @@ export const chatService = {
   ) {
     if (!chatId || !senderUid) return;
 
-    const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
+    const [chatSnap, userProfile] = await Promise.all([
+      getDoc(doc(db, 'chats', chatId)),
+      userService.getProfile(senderUid)
+    ]);
     
     if (!chatSnap.exists()) return;
     const chatData = chatSnap.data() as Chat;
 
     let senderAlias = 'Cliente';
+    let senderName = userProfile?.displayName || 'Desconocido';
+
     if (role !== 'client') {
       const editorAliases = chatData.editorAliases || {};
       senderAlias = editorAliases[senderUid] || (role === 'admin' ? 'Administrador' : 'Editor');
@@ -114,7 +119,7 @@ export const chatService = {
       if (role === 'editor' && !editorAliases[senderUid]) {
         const randomHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(4, '0');
         senderAlias = `Editor #${randomHex}`;
-        updateDoc(chatRef, { [`editorAliases.${senderUid}`]: senderAlias }).catch(() => {});
+        updateDoc(doc(db, 'chats', chatId), { [`editorAliases.${senderUid}`]: senderAlias }).catch(() => {});
       }
     }
 
@@ -124,6 +129,7 @@ export const chatService = {
       senderUid,
       senderRole: role,
       senderAlias,
+      senderName,
       type,
       text,
       fileUrl: fileData?.url || null,
@@ -142,7 +148,7 @@ export const chatService = {
       }));
     });
 
-    updateDoc(chatRef, { lastMessageAt: serverTimestamp() }).catch(() => {});
+    updateDoc(doc(db, 'chats', chatId), { lastMessageAt: serverTimestamp() }).catch(() => {});
   },
 
   subscribeToMessages(chatId: string, currentUid: string, role: UserRole, callback: (messages: Message[]) => void) {

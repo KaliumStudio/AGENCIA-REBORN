@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { UserProfile, UserRole } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -23,7 +23,6 @@ export const userService = {
     const { uid, ...data } = profile;
     const docRef = doc(db, 'users', uid);
     
-    // Non-blocking write
     setDoc(docRef, data, { merge: true })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -32,6 +31,16 @@ export const userService = {
           requestResourceData: data
         }));
       });
+  },
+
+  async deleteUser(uid: string) {
+    const docRef = doc(db, 'users', uid);
+    deleteDoc(docRef).catch(async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'delete'
+      }));
+    });
   },
 
   updateProfile(uid: string, profile: Partial<UserProfile>) {
