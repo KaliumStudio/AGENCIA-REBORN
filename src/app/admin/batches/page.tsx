@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -11,6 +12,17 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { Users, Search, RefreshCw, MessageSquare, Trash2 } from 'lucide-react';
 import { NewBatchDialog } from '@/components/batches/new-batch-dialog';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
@@ -48,20 +60,12 @@ export default function AdminBatchesPage() {
   }, [profile]);
 
   const handleDeleteBatch = (id: string) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar esta tanda? Esta acción no se puede deshacer.")) return;
-    
     // Optimistic UI: remove from list immediately
     const previousBatches = [...batches];
     setBatches(prev => prev.filter(b => b.id !== id));
     
-    try {
-      batchService.deleteBatch(id);
-      toast({ title: "Tanda eliminada", description: "El registro ha sido borrado correctamente." });
-    } catch (error) {
-      // Revert if error occurs (rare with firestore offline-first)
-      setBatches(previousBatches);
-      toast({ title: "Error al eliminar", variant: "destructive" });
-    }
+    batchService.deleteBatch(id);
+    toast({ title: "Tanda eliminada", description: "El registro ha sido borrado correctamente." });
   };
 
   const filteredBatches = batches.filter(b => 
@@ -153,9 +157,28 @@ export default function AdminBatchesPage() {
                       <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }}>
                         <Users className="mr-2 h-4 w-4" /> Asignar
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBatch(batch.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar esta tanda?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción eliminará permanentemente la tanda "{batch.title}" y todos sus mensajes de chat asociados.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteBatch(batch.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Eliminar definitivamente
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -188,9 +211,23 @@ export default function AdminBatchesPage() {
                     <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }}>
                       Asignar
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteBatch(batch.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Eliminar tanda?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>No</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteBatch(batch.id)} className="bg-destructive text-white">Eliminar</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>

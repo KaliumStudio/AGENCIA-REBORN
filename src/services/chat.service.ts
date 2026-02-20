@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, setDoc, updateDoc, 
@@ -101,6 +102,7 @@ export const chatService = {
   ) {
     if (!chatId || !senderUid) return;
 
+    // Fetch user profile to get real display name
     const [chatSnap, userProfile] = await Promise.all([
       getDoc(doc(db, 'chats', chatId)),
       userService.getProfile(senderUid)
@@ -129,7 +131,7 @@ export const chatService = {
       senderUid,
       senderRole: role,
       senderAlias,
-      senderName,
+      senderName, // Admin can see this
       type,
       text,
       fileUrl: fileData?.url || null,

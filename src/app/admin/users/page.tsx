@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -10,6 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { Shield, User, Edit, Search, RefreshCw, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -33,15 +45,10 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
-  const handleDeleteUser = async (uid: string) => {
-    if (!confirm("¿Eliminar este usuario de la base de datos? (No afectará a Firebase Auth)")) return;
-    try {
-      await userService.deleteUser(uid);
-      toast({ title: "Perfil eliminado" });
-      fetchUsers();
-    } catch (error) {
-      toast({ title: "Error al eliminar", variant: "destructive" });
-    }
+  const handleDeleteUser = (uid: string) => {
+    setUsers(prev => prev.filter(u => u.uid !== uid));
+    userService.deleteUser(uid);
+    toast({ title: "Perfil eliminado correctamente" });
   };
 
   const roleColors: Record<UserRole, string> = {
@@ -132,9 +139,28 @@ export default function AdminUsersPage() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="sm" disabled><Edit className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteUser(u.uid)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar este perfil?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Se borrará el perfil de "{u.displayName}" de la base de datos de CreativeFlow. Esta acción no elimina la cuenta de Firebase Auth del usuario.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteUser(u.uid)} className="bg-destructive text-white">
+                              Confirmar Eliminación
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -164,7 +190,21 @@ export default function AdminUsersPage() {
                   <Badge variant={u.active ? "default" : "secondary"}>{u.active ? "Activo" : "Inactivo"}</Badge>
                 </div>
                 <div className="flex justify-end gap-2 border-t pt-3">
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteUser(u.uid)}>Eliminar</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-destructive">Eliminar</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+                        <AlertDialogDescription>Esta acción es permanente para el portal.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>No</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteUser(u.uid)} className="bg-destructive text-white">Eliminar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>
