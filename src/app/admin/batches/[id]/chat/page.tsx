@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Send, ArrowLeft, Loader2, Info, FileText, Download, ShieldCheck } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Info, FileText, Download, ShieldCheck, User } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -72,7 +72,7 @@ export default function AdminChatPage() {
     const text = newMessage;
     setNewMessage('');
 
-    await chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
+    chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
     chatService.markAsRead(chatId, profile.uid);
   };
 
@@ -102,7 +102,7 @@ export default function AdminChatPage() {
                 <div className="min-w-0">
                   <h3 className="font-bold text-sm md:text-base line-clamp-1">{batch.title}</h3>
                   <p className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3 text-primary" /> Modo Administrador (Visibilidad Total)
+                    <ShieldCheck className="h-3 w-3 text-primary" /> Modo Administrador (Visibilidad Total de Nombres)
                   </p>
                 </div>
               </div>
@@ -113,11 +113,19 @@ export default function AdminChatPage() {
                 {messages.map((m) => (
                   <div key={m.id} className={cn("flex flex-col", m.senderUid === profile?.uid ? "items-end" : "items-start")}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">
-                        {m.senderUid === profile?.uid ? "Tú" : (
-                          m.senderRole === 'editor' ? (
-                            <span className="text-primary">{m.senderName} ({m.senderAlias})</span>
-                          ) : m.senderAlias
+                      <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                        {m.senderUid === profile?.uid ? (
+                          "Tú (Admin)"
+                        ) : (
+                          <>
+                            {m.senderRole === 'editor' ? (
+                              <span className="text-primary flex items-center gap-1">
+                                <User className="h-3 w-3" /> {m.senderName || m.senderAlias}
+                              </span>
+                            ) : (
+                              m.senderAlias
+                            )}
+                          </>
                         )}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
@@ -182,7 +190,7 @@ export default function AdminChatPage() {
                   <p className="capitalize">{batch.status}</p>
                 </div>
                 <div className="pt-2 border-t text-[10px] text-muted-foreground italic">
-                  Como administrador, puedes ver los nombres reales de los editores que participan en este chat. El cliente solo ve sus seudónimos (ej: Editor #A1B2).
+                  Como administrador, visualizas los nombres reales de los editores para facilitar la gestión. El cliente solo verá el seudónimo asignado.
                 </div>
               </CardContent>
             </Card>

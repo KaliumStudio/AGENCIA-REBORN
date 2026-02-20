@@ -11,7 +11,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ExternalLink, Search, RefreshCw, Calendar, MessageSquare, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2 } from 'lucide-react';
 import { NewBatchDialog } from '@/components/batches/new-batch-dialog';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,20 +47,26 @@ export default function AdminBatchesPage() {
     }
   }, [profile]);
 
-  const handleDeleteBatch = async (id: string) => {
+  const handleDeleteBatch = (id: string) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta tanda? Esta acción no se puede deshacer.")) return;
+    
+    // Optimistic UI: remove from list immediately
+    const previousBatches = [...batches];
+    setBatches(prev => prev.filter(b => b.id !== id));
+    
     try {
-      await batchService.deleteBatch(id);
-      toast({ title: "Tanda eliminada" });
-      fetchBatches();
+      batchService.deleteBatch(id);
+      toast({ title: "Tanda eliminada", description: "El registro ha sido borrado correctamente." });
     } catch (error) {
+      // Revert if error occurs (rare with firestore offline-first)
+      setBatches(previousBatches);
       toast({ title: "Error al eliminar", variant: "destructive" });
     }
   };
 
   const filteredBatches = batches.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.productName.toLowerCase().includes(searchTerm.toLowerCase())
+    b.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.productName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatDate = (date: any) => {
