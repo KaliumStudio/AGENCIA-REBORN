@@ -60,12 +60,16 @@ export default function AdminBatchesPage() {
   }, [profile]);
 
   const handleDeleteBatch = (id: string) => {
-    // Optimistic UI: remove from list immediately
-    const previousBatches = [...batches];
+    // UI optimista: eliminar de la lista inmediatamente
     setBatches(prev => prev.filter(b => b.id !== id));
     
+    // Llamar al servicio sin bloquear la interfaz
     batchService.deleteBatch(id);
-    toast({ title: "Tanda eliminada", description: "El registro ha sido borrado correctamente." });
+    
+    toast({ 
+      title: "Tanda eliminada", 
+      description: "El registro ha sido borrado correctamente del sistema." 
+    });
   };
 
   const filteredBatches = batches.filter(b => 
@@ -168,12 +172,15 @@ export default function AdminBatchesPage() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>¿Eliminar esta tanda?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta acción eliminará permanentemente la tanda "{batch.title}" y todos sus mensajes de chat asociados.
+                              Esta acción eliminará permanentemente la tanda "{batch.title}" y todos sus mensajes de chat asociados. El borrado es irreversible.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteBatch(batch.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteBatch(batch.id)} 
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
                               Eliminar definitivamente
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -224,7 +231,12 @@ export default function AdminBatchesPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>No</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteBatch(batch.id)} className="bg-destructive text-white">Eliminar</AlertDialogAction>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteBatch(batch.id)} 
+                            className="bg-destructive text-white"
+                          >
+                            Eliminar
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>

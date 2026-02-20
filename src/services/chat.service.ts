@@ -118,6 +118,7 @@ export const chatService = {
       const editorAliases = chatData.editorAliases || {};
       senderAlias = editorAliases[senderUid] || (role === 'admin' ? 'Administrador' : 'Editor');
       
+      // Si es un editor y no tiene alias en este chat, asignarle uno aleatorio para anonimato ante el cliente
       if (role === 'editor' && !editorAliases[senderUid]) {
         const randomHex = Math.floor(Math.random() * 16777215).toString(16).toUpperCase().padStart(4, '0');
         senderAlias = `Editor #${randomHex}`;
@@ -130,8 +131,8 @@ export const chatService = {
       chatId,
       senderUid,
       senderRole: role,
-      senderAlias,
-      senderName, // Admin can see this
+      senderAlias, // Lo que ve el cliente (Anónimo)
+      senderName,  // Lo que ve el administrador (Real)
       type,
       text,
       fileUrl: fileData?.url || null,
