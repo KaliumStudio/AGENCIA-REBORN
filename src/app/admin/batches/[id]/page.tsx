@@ -12,7 +12,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
