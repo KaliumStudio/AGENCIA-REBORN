@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -71,7 +72,7 @@
             "properties": {
               "script": { "type": "string" },
               "notes": { "type": "string" },
-              "format": { "type": "string", "enum": ["UGC IA", "CINEMATICO", "POV", "PODCAST"] }
+              "format": { "type": "string", "enum": ["UGC IA", "CINEMATICO", "POV", "PODCAST", "IMAGEN"] }
             }
           }
         },

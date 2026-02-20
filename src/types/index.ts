@@ -1,3 +1,4 @@
+
 export type UserRole = 'admin' | 'editor' | 'client';
 
 export interface UserProfile {
@@ -28,7 +29,7 @@ export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'a
 export interface VideoSpecification {
   script?: string;
   notes?: string;
-  format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST';
+  format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST' | 'IMAGEN';
 }
 
 export interface Batch {

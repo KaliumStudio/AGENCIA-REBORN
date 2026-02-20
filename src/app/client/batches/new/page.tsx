@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, Trash2, Video } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Video, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { VideoSpecification } from '@/types';
 
@@ -147,7 +148,7 @@ export default function NewBatchPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referenceLinks">Videos de Referencia <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="referenceLinks">Videos / Imágenes de Referencia <span className="text-destructive">*</span></Label>
                   <Textarea 
                     id="referenceLinks" 
                     placeholder="Link de Drive, Biblioteca de anuncios, TikTok, etc." 
@@ -177,7 +178,7 @@ export default function NewBatchPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Video className="h-5 w-5 text-primary" /> Especificaciones por Video
+                  <Video className="h-5 w-5 text-primary" /> Especificaciones de Creativos
                 </h2>
                 <Badge variant="secondary" className="px-3 py-1">
                   Total: {videoSpecs.length} Creativos
@@ -187,7 +188,10 @@ export default function NewBatchPage() {
               {videoSpecs.map((spec, index) => (
                 <Card key={index} className="relative overflow-hidden group border-l-4 border-l-accent">
                   <CardHeader className="py-4 flex flex-row items-center justify-between bg-slate-50/50">
-                    <CardTitle className="text-base">Video #{index + 1}</CardTitle>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      {spec.format === 'IMAGEN' ? <ImageIcon className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                      Creativo #{index + 1}
+                    </CardTitle>
                     {videoSpecs.length > 1 && (
                       <Button 
                         variant="ghost" 
@@ -203,9 +207,9 @@ export default function NewBatchPage() {
                   <CardContent className="p-6 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="md:col-span-2 space-y-2">
-                        <Label>Guion (Opcional)</Label>
+                        <Label>{spec.format === 'IMAGEN' ? 'Texto / Detalles de Imagen (Opcional)' : 'Guion (Opcional)'}</Label>
                         <Textarea 
-                          placeholder="Pega aquí el guion o estructura..." 
+                          placeholder={spec.format === 'IMAGEN' ? "Pega aquí el texto, copy o detalles visuales..." : "Pega aquí el guion o estructura..."} 
                           value={spec.script || ''} 
                           onChange={e => updateVideoSpec(index, 'script', e.target.value)}
                           className="min-h-[100px]"
@@ -226,13 +230,14 @@ export default function NewBatchPage() {
                               <SelectItem value="CINEMATICO">CINEMATICO</SelectItem>
                               <SelectItem value="POV">POV</SelectItem>
                               <SelectItem value="PODCAST">PODCAST</SelectItem>
+                              <SelectItem value="IMAGEN">IMAGEN</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Nota para este video</Label>
+                          <Label>Nota para este creativo</Label>
                           <Input 
-                            placeholder="Ej: Usar música movida" 
+                            placeholder="Ej: Usar colores llamativos" 
                             value={spec.notes || ''} 
                             onChange={e => updateVideoSpec(index, 'notes', e.target.value)}
                           />
@@ -250,7 +255,7 @@ export default function NewBatchPage() {
                 onClick={addVideoSpec}
               >
                 <Plus className="h-6 w-6" />
-                <span>Agregar otro video a esta tanda</span>
+                <span>Agregar otro anuncio a esta tanda</span>
               </Button>
             </div>
 
