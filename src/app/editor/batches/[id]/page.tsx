@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
@@ -22,28 +23,28 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function EditorBatchDetailPage() {
   const { id } = useParams();
   const { profile, loading: authLoading } = useAuth();
-  const [batch, setBatch] = useState<Batch | null>(null);
   const [driveLink, setDriveLink] = useState('');
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (id) {
-      batchService.getBatch(id as string).then(data => {
-        setBatch(data);
-        if (data?.driveLink) setDriveLink(data.driveLink);
-        setLoading(false);
-      }).catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-    }
+  const batchRef = useMemoFirebase(() => {
+    return id ? doc(db, 'batches', id as string) : null;
   }, [id]);
+
+  const { data: batch, isLoading: loadingBatch } = useDoc<Batch>(batchRef);
+
+  useEffect(() => {
+    if (batch?.driveLink) {
+      setDriveLink(batch.driveLink);
+    }
+  }, [batch?.driveLink]);
 
   const formatDate = (date: any, formatStr: string) => {
     if (!date) return 'N/A';
@@ -84,11 +85,10 @@ export default function EditorBatchDetailPage() {
     });
     
     toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
-    setBatch(prev => prev ? { ...prev, driveLink, status: 'delivered' } : null);
     setSubmitting(false);
   };
 
-  if (loading || authLoading) {
+  if (loadingBatch || authLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -98,7 +98,7 @@ export default function EditorBatchDetailPage() {
     );
   }
 
-  if (!batch) return <DashboardLayout>No se encontró la tanda.</DashboardLayout>;
+  if (!batch) return <DashboardLayout><div className="text-center py-12">No se encontró la tanda.</div></DashboardLayout>;
 
   return (
     <RoleGuard allowedRoles={['editor']}>
@@ -131,9 +131,9 @@ export default function EditorBatchDetailPage() {
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <LinkIcon className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Landing Page</p>
-                    <a href={batch.landingPage} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline truncate block">
+                    <a href={batch.landingPage} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:underline truncate block text-primary">
                       Abrir enlace <ExternalLink className="inline h-3 w-3 ml-1" />
                     </a>
                   </div>
@@ -144,7 +144,7 @@ export default function EditorBatchDetailPage() {
                   <div className="p-2 bg-accent/10 rounded-lg">
                     <Video className="h-5 w-5 text-accent" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias</p>
                     <p className="text-sm font-medium truncate">{batch.referenceLinks}</p>
                   </div>
@@ -158,20 +158,22 @@ export default function EditorBatchDetailPage() {
                 <Card key={index} className="overflow-hidden">
                   <CardHeader className="py-3 bg-muted/30">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold">Video #{index + 1}</CardTitle>
-                      <Badge variant="outline">{spec.format}</Badge>
+                      <CardTitle className="text-sm font-bold">Item #{index + 1}</CardTitle>
+                      <Badge variant="outline" className="bg-white">{spec.format}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
                     {spec.script && (
                       <div>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Guion / Estructura</p>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
+                          {spec.format === 'IMAGEN' ? 'Detalles de Imagen' : 'Guion / Estructura'}
+                        </p>
                         <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap">{spec.script}</p>
                       </div>
                     )}
                     {spec.notes && (
-                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 mt-0.5 text-accent" />
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground bg-slate-50 p-2 rounded border border-dashed">
+                        <FileText className="h-4 w-4 mt-0.5 text-accent shrink-0" />
                         <span>{spec.notes}</span>
                       </div>
                     )}
@@ -211,7 +213,7 @@ export default function EditorBatchDetailPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" onClick={handleDeliver} disabled={submitting}>
+                <Button className="w-full" onClick={handleDeliver} disabled={submitting || batch.status === 'approved'}>
                   <Send className="mr-2 h-4 w-4" /> 
                   {submitting ? "Procesando..." : "Enviar Entrega y Notificar"}
                 </Button>
@@ -269,11 +271,11 @@ export default function EditorBatchDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Producto</p>
-                  <p className="font-semibold">{batch.productName}</p>
+                  <p className="font-semibold text-lg text-primary">{batch.productName}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold">Creativos Solicitados</p>
-                  <p className="text-2xl font-bold text-primary">{batch.creativeCount}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold">Total Piezas</p>
+                  <p className="text-3xl font-bold">{batch.creativeCount}</p>
                 </div>
               </CardContent>
             </Card>

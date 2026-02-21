@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -20,15 +21,16 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescri
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function ClientChatPage() {
   const { id } = useParams();
   const { profile, loading: authLoading } = useAuth();
-  const [batch, setBatch] = useState<Batch | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState<string | null>(null);
-  const [loadingChat, setLoadingChat] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -36,26 +38,25 @@ export default function ClientChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const batchRef = useMemoFirebase(() => {
+    return id ? doc(db, 'batches', id as string) : null;
+  }, [id]);
+
+  const { data: batch, isLoading: loadingBatch } = useDoc<Batch>(batchRef);
+
   useEffect(() => {
-    if (id && profile) {
-      batchService.getBatch(id as string).then(async (b) => {
-        if (b) {
-          setBatch(b);
-          try {
-            const cid = await chatService.getOrCreateChat(
-              b.id, 
-              b.clientId, 
-              b.clientUserUid || profile.uid, 
-              b.assignedEditorUids, 
-              profile.uid
-            );
-            setChatId(cid);
-          } catch (err) { console.error("Error al inicializar chat:", err); }
-        }
-        setLoadingChat(false);
-      });
+    if (batch && profile && !chatId) {
+      chatService.getOrCreateChat(
+        batch.id, 
+        batch.clientId, 
+        batch.clientUserUid || profile.uid, 
+        batch.assignedEditorUids, 
+        profile.uid
+      ).then((cid) => {
+        setChatId(cid);
+      }).catch(err => console.error("Error al inicializar chat:", err));
     }
-  }, [id, profile]);
+  }, [batch, profile, chatId]);
 
   useEffect(() => {
     if (chatId && profile) {
@@ -79,6 +80,15 @@ export default function ClientChatPage() {
     
     await chatService.sendMessage(chatId, profile.uid, profile.role, 'text', text);
     chatService.markAsRead(chatId, profile.uid);
+  };
+
+  const handleApprove = () => {
+    if (!batch) return;
+    batchService.updateBatchStatus(batch.id, 'approved');
+    toast({ 
+      title: "Tanda aprobada", 
+      description: "¡Excelente! Has marcado este proyecto como finalizado.",
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +140,7 @@ export default function ClientChatPage() {
     } finally { setAnalyzing(false); }
   };
 
-  if (authLoading || loadingChat) {
+  if (authLoading || loadingBatch) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-[60dvh] gap-4">
@@ -154,7 +164,10 @@ export default function ClientChatPage() {
                   <Link href={`/client/batches/${batch.id}`}><ArrowLeft className="h-5 w-5" /></Link>
                 </Button>
                 <div>
-                  <h3 className="font-bold text-sm md:text-base line-clamp-1">{batch.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm md:text-base line-clamp-1">{batch.title}</h3>
+                    {batch.status === 'approved' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                  </div>
                   <p className="text-[10px] md:text-xs text-muted-foreground">Chat directo</p>
                 </div>
               </div>
@@ -172,15 +185,19 @@ export default function ClientChatPage() {
                       <Button variant="outline" className="w-full justify-start h-12" onClick={analyzeFeedback} disabled={analyzing}>
                         <Sparkles className="mr-2 h-4 w-4" /> {analyzing ? "Analizando..." : "Análisis IA"}
                       </Button>
-                      <Button variant="default" className="w-full justify-start h-12" onClick={() => batchService.updateBatchStatus(batch.id, 'approved')}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar Tanda
-                      </Button>
+                      {batch.status !== 'approved' && (
+                        <Button variant="default" className="w-full justify-start h-12" onClick={handleApprove}>
+                          <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar Tanda
+                        </Button>
+                      )}
                     </div>
                   </SheetContent>
                 </Sheet>
-                <Button size="sm" onClick={() => batchService.updateBatchStatus(batch.id, 'approved')} className="hidden lg:flex">
-                  <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar
-                </Button>
+                {batch.status !== 'approved' && (
+                  <Button size="sm" onClick={handleApprove} className="hidden lg:flex">
+                    <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar
+                  </Button>
+                )}
               </div>
             </div>
 
