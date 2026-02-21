@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Phone } from 'lucide-react';
+import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Eye } from 'lucide-react';
 import { NewClientDialog } from '@/components/clients/new-client-dialog';
 import { EditClientDialog } from '@/components/clients/edit-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function AdminClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -108,6 +109,11 @@ export default function AdminClientsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" asChild title="Ver historial">
+                        <Link href={`/admin/clients/${client.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}><Edit className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="sm" className={client.active ? "text-destructive" : "text-green-600"} onClick={() => handleToggleStatus(client)}>
                         {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
@@ -139,6 +145,9 @@ export default function AdminClientsPage() {
                 <div className="flex items-center justify-between border-t pt-4">
                   <div className="text-sm font-medium text-slate-600">{client.contact}</div>
                   <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/admin/clients/${client.id}`}><Eye className="h-4 w-4" /></Link>
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => setEditingClient(client)}><Edit className="h-4 w-4" /></Button>
                     <Button variant="outline" size="sm" className={client.active ? "text-destructive" : "text-green-600"} onClick={() => handleToggleStatus(client)}>
                       {client.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
