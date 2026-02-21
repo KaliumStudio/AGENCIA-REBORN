@@ -4,7 +4,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { batchService } from '@/services/batch.service';
-import { Batch } from '@/types';
+import { clientService } from '@/services/client.service';
+import { userService } from '@/services/user.service';
+import { Batch, Client, UserProfile } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -12,7 +14,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
@@ -23,14 +25,35 @@ import { Separator } from '@/components/ui/separator';
 export default function AdminBatchDetailPage() {
   const { id } = useParams();
   const [batch, setBatch] = useState<Batch | null>(null);
+  const [client, setClient] = useState<Client | null>(null);
+  const [clientUser, setClientUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      batchService.getBatch(id as string).then((data) => {
-        setBatch(data);
-        setLoading(false);
-      });
+      const loadData = async () => {
+        try {
+          const batchData = await batchService.getBatch(id as string);
+          if (batchData) {
+            setBatch(batchData);
+            
+            // Cargar datos del cliente y usuario en paralelo
+            const [clientData, userData] = await Promise.all([
+              clientService.getClient(batchData.clientId),
+              userService.getProfile(batchData.clientUserUid)
+            ]);
+            
+            setClient(clientData);
+            setClientUser(userData);
+          }
+        } catch (error) {
+          console.error("Error loading admin batch detail data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadData();
     }
   }, [id]);
 
@@ -227,12 +250,26 @@ export default function AdminBatchDetailPage() {
                     </div>
                   </div>
 
+                  <Separator />
+
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Cliente Solicitante</p>
-                    <div className="text-sm font-semibold truncate">
-                      UID: {batch.clientUserUid}
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Cliente y Solicitante</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-slate-400" />
+                        <div>
+                          <p className="text-sm font-bold">{client?.name || 'Cargando...'}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{batch.clientId}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-slate-400" />
+                        <div>
+                          <p className="text-sm font-bold">{clientUser?.displayName || 'Cargando...'}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{batch.clientUserUid}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-muted-foreground">ID Empresa: {batch.clientId}</div>
                   </div>
                 </div>
               </CardContent>
