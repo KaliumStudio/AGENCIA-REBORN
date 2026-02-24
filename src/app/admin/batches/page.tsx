@@ -4,7 +4,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
-import { Batch } from '@/types';
+import { clientService } from '@/services/client.service';
+import { Batch, Client } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,7 +24,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2 } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function AdminBatchesPage() {
   const { profile } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [clients, setClients] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
@@ -43,8 +45,16 @@ export default function AdminBatchesPage() {
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const data = await batchService.getAllBatches();
-      setBatches(data);
+      const [batchesData, clientsData] = await Promise.all([
+        batchService.getAllBatches(),
+        clientService.getAllClients()
+      ]);
+      
+      const clientMap: Record<string, string> = {};
+      clientsData.forEach(c => { clientMap[c.id] = c.name; });
+      
+      setClients(clientMap);
+      setBatches(batchesData);
     } catch (error) {
       console.error("Error fetching batches:", error);
     } finally {
@@ -59,7 +69,6 @@ export default function AdminBatchesPage() {
   }, [profile]);
 
   const handleDeleteBatch = (id: string) => {
-    // Eliminación optimista
     setBatches(prev => prev.filter(b => b.id !== id));
     batchService.deleteBatch(id);
     toast({ 
@@ -70,7 +79,8 @@ export default function AdminBatchesPage() {
 
   const filteredBatches = batches.filter(b => 
     b.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+    b.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    clients[b.clientId]?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatDate = (date: any) => {
@@ -104,7 +114,7 @@ export default function AdminBatchesPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               className="pl-9 h-11 md:h-10" 
-              placeholder="Buscar por título o producto..." 
+              placeholder="Buscar por título, producto o cliente..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -117,6 +127,7 @@ export default function AdminBatchesPage() {
               <TableRow className="bg-muted/50">
                 <TableHead>Creación</TableHead>
                 <TableHead>Tanda / Producto</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Editores</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
@@ -128,6 +139,7 @@ export default function AdminBatchesPage() {
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-10" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-40 ml-auto" /></TableCell>
@@ -135,7 +147,7 @@ export default function AdminBatchesPage() {
                 ))
               ) : filteredBatches.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
+                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
                 </TableRow>
               ) : filteredBatches.map((batch) => (
                 <TableRow key={batch.id}>
@@ -143,6 +155,12 @@ export default function AdminBatchesPage() {
                   <TableCell>
                     <div className="font-semibold">{batch.title}</div>
                     <div className="text-xs text-primary font-medium">{batch.productName}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-sm font-medium">{clients[batch.clientId] || 'Cargando...'}</span>
+                    </div>
                   </TableCell>
                   <TableCell><StatusBadge status={batch.status} /></TableCell>
                   <TableCell>
@@ -212,6 +230,7 @@ export default function AdminBatchesPage() {
                   </div>
                 </div>
                 <CardTitle className="text-lg">{batch.title}</CardTitle>
+                <div className="text-xs font-bold text-slate-500 mb-1">{clients[batch.clientId]}</div>
                 <div className="text-xs text-primary font-bold">{batch.productName}</div>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-4">

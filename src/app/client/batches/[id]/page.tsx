@@ -8,7 +8,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Edit, Loader2 } from 'lucide-react';
+import { ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Edit, Loader2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,9 +16,12 @@ import { Badge } from '@/components/ui/badge';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { batchService } from '@/services/batch.service';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ClientBatchDetailPage() {
   const { id } = useParams();
+  const { toast } = useToast();
 
   const batchRef = useMemoFirebase(() => {
     return id ? doc(db, 'batches', id as string) : null;
@@ -30,6 +33,15 @@ export default function ClientBatchDetailPage() {
     if (!date) return 'N/A';
     const d = date.toDate ? date.toDate() : new Date(date);
     return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
+  };
+
+  const handleApprove = () => {
+    if (!batch) return;
+    batchService.updateBatchStatus(batch.id, 'approved');
+    toast({ 
+      title: "Tanda aprobada", 
+      description: "¡Excelente! Has marcado este proyecto como finalizado.",
+    });
   };
 
   if (isLoading) {
@@ -54,6 +66,7 @@ export default function ClientBatchDetailPage() {
   );
 
   const isEditable = batch.status !== 'approved';
+  const showApproveButton = batch.status === 'delivered' || batch.status === 'revisions' || batch.status === 'in_progress';
 
   return (
     <RoleGuard allowedRoles={['client']}>
@@ -71,7 +84,12 @@ export default function ClientBatchDetailPage() {
               Producto: <span className="font-semibold text-foreground">{batch.productName}</span> • Creado el {formatDate(batch.createdAt, "PPP")}
             </p>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            {showApproveButton && (
+              <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none">
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar Tanda
+              </Button>
+            )}
             {isEditable && (
               <Button variant="outline" asChild className="flex-1 md:flex-none">
                 <Link href={`/client/batches/${batch.id}/edit`}>
@@ -79,7 +97,7 @@ export default function ClientBatchDetailPage() {
                 </Link>
               </Button>
             )}
-            <Button asChild className="flex-1 md:flex-none">
+            <Button variant="secondary" asChild className="flex-1 md:flex-none">
               <Link href={`/client/batches/${batch.id}/chat`}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Ir al Chat
               </Link>
@@ -89,6 +107,22 @@ export default function ClientBatchDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {batch.status === 'delivered' && (
+              <Card className="border-primary bg-primary/5 shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-primary flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" /> Revisión Final
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm">El equipo ha realizado una entrega. Revisa el material en el link de abajo y, si estás conforme, pulsa el botón de aprobar.</p>
+                  <Button onClick={handleApprove} className="w-full bg-primary text-white">
+                    Confirmar Aprobación de Tanda
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="bg-primary/5 border-primary/20">
                 <CardContent className="p-4 flex items-center gap-3">
