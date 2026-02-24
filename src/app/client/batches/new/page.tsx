@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
@@ -15,9 +15,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, Trash2, Video, Image as ImageIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ArrowLeft, Save, Plus, Trash2, Video, Image as ImageIcon, Info, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { VideoSpecification } from '@/types';
+import { cn } from '@/lib/utils';
 
 export default function NewBatchPage() {
   const { profile } = useAuth();
@@ -30,8 +32,14 @@ export default function NewBatchPage() {
   const [videoSpecs, setVideoSpecs] = useState<VideoSpecification[]>([{ format: 'UGC IA' }]);
   
   const [loading, setLoading] = useState(false);
+  const [currentHour, setCurrentHour] = useState<number | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Evitar problemas de hidratación obteniendo la hora solo en el cliente
+    setCurrentHour(new Date().getHours());
+  }, []);
 
   const addVideoSpec = () => {
     setVideoSpecs([...videoSpecs, { format: 'UGC IA' }]);
@@ -107,6 +115,26 @@ export default function NewBatchPage() {
             </Button>
             <h1 className="text-3xl font-bold tracking-tight">Nueva Solicitud de Producción</h1>
           </div>
+
+          {currentHour !== null && (
+            <Alert className={cn(
+              "mb-8 border-l-4 shadow-sm",
+              currentHour < 10 ? "bg-emerald-50 border-l-emerald-500 text-emerald-900" : "bg-amber-50 border-l-amber-500 text-amber-900"
+            )}>
+              <div className="flex items-start gap-3">
+                <Clock className={cn("h-5 w-5 mt-0.5", currentHour < 10 ? "text-emerald-600" : "text-amber-600")} />
+                <div>
+                  <AlertTitle className="font-bold mb-1">Información de Tiempos</AlertTitle>
+                  <AlertDescription className="text-sm opacity-90 leading-relaxed">
+                    {currentHour < 10 
+                      ? "Tu solicitud ha ingresado antes de las 10 AM: la tanda se comenzará a trabajar en el mismo día y se entregará al día siguiente."
+                      : "Tu solicitud ha ingresado después de las 10 AM: la tanda se va a comenzar a trabajar al día siguiente, y estará lista al otro día siguiente después de comenzarla a trabajar."
+                    }
+                  </AlertDescription>
+                </div>
+              </div>
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <Card className="shadow-lg border-t-4 border-t-primary">
@@ -274,7 +302,7 @@ export default function NewBatchPage() {
                   <Link href="/client/batches">Cancelar</Link>
                 </Button>
                 <Button type="submit" disabled={loading} size="lg" className="px-8">
-                  {loading ? "Creando..." : <><Save className="mr-2 h-4 w-4" /> Confirmar Solicitud</>}
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" /> Confirmar Solicitud</>}
                 </Button>
               </CardFooter>
             </Card>
