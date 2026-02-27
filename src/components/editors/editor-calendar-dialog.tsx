@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Loader2, Layers, CheckCircle2, Building2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface EditorCalendarDialogProps {
   open: boolean;

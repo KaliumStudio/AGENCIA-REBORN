@@ -7,6 +7,7 @@ import { Batch, UserProfile } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Loader2, Building2, Layers } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
