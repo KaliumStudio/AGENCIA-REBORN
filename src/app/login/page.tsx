@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Palette } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -40,12 +40,14 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 p-3 rounded-xl">
-              <Palette className="w-8 h-8 text-primary" />
+            <div className="bg-primary p-3 rounded-xl shadow-lg rotate-3 hover:rotate-0 transition-transform duration-300">
+              <div className="flex items-center justify-center text-white font-black text-2xl tracking-tighter">
+                AM
+              </div>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">AM Agency Portal</CardTitle>
-          <CardDescription>Ingresa tus credenciales para acceder</CardDescription>
+          <CardTitle className="text-2xl font-bold tracking-tight">AGENCIA AM</CardTitle>
+          <CardDescription>Ingresa tus credenciales para acceder al portal</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -54,7 +56,7 @@ export default function LoginPage() {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="tu@agencia.com" 
+                placeholder="tu@agenciaam.com" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -72,7 +74,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="w-full h-11 text-base font-bold shadow-md" type="submit" disabled={loading}>
               {loading ? "Cargando..." : "Entrar al Portal"}
             </Button>
           </CardFooter>

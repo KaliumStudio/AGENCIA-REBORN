@@ -70,7 +70,6 @@ export function SidebarNav() {
     }
   };
 
-  // Lógica de estado de notificaciones
   const hasTokens = Array.isArray(profile?.fcmTokens) 
     ? profile.fcmTokens.length > 0 
     : (profile?.fcmTokens ? Object.keys(profile.fcmTokens).length > 0 : false);
@@ -101,27 +100,30 @@ export function SidebarNav() {
     <Sidebar className="border-r border-sidebar-border bg-white">
       <SidebarHeader className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg">
-            <span className="font-bold text-xl">CF</span>
+          <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg rotate-3">
+            <span className="font-black text-xl tracking-tighter">AM</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-none">CreativeFlow</h1>
-            <p className="text-xs text-muted-foreground mt-1 capitalize">{profile?.role}</p>
+            <h1 className="font-black text-lg leading-none tracking-tighter text-slate-900">AGENCIA AM</h1>
+            <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">{profile?.role}</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menú Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="font-bold text-slate-400">NAVEGACIÓN</SidebarGroupLabel>
           <SidebarMenu>
             {currentMenu.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton 
                   isActive={pathname === item.href}
                   onClick={() => router.push(item.href)}
-                  className="transition-all duration-200"
+                  className={cn(
+                    "transition-all duration-200 h-11 px-4",
+                    pathname === item.href ? "bg-primary/10 text-primary font-bold" : "hover:bg-slate-50"
+                  )}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className={cn("w-5 h-5", pathname === item.href ? "text-primary" : "text-slate-500")} />
                   <span className="flex-1">{item.label}</span>
                   {item.label === 'Mis Tandas' && unreadCount > 0 && (
                     <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
@@ -134,53 +136,53 @@ export function SidebarNav() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
+      <SidebarFooter className="p-4 border-t border-sidebar-border bg-slate-50/50">
         {profile && (
           <div className="mb-4 space-y-1">
             {isActive ? (
               <div className="flex flex-col gap-1">
-                <SidebarMenuButton disabled className="text-green-600 bg-green-50 cursor-default hover:bg-green-50">
-                  <Bell className="w-5 h-5" />
-                  <span>Notificaciones activas</span>
+                <SidebarMenuButton disabled className="text-green-600 bg-green-50/50 border border-green-100 cursor-default hover:bg-green-50/50 h-9">
+                  <Bell className="w-4 h-4" />
+                  <span className="text-xs font-bold">Push Activo</span>
                 </SidebarMenuButton>
                 <button 
                   onClick={handleDisableNotifications}
                   disabled={notifLoading}
-                  className="text-[10px] text-muted-foreground hover:text-destructive transition-colors text-left px-2 flex items-center gap-1"
+                  className="text-[10px] text-muted-foreground hover:text-destructive transition-colors text-left px-2 flex items-center gap-1 font-medium mt-1"
                 >
-                  <XCircle className="w-3 h-3" /> Desactivar todas
+                  <XCircle className="w-3 h-3" /> Desactivar alertas
                 </button>
               </div>
             ) : isPending ? (
               <SidebarMenuButton
                 onClick={handleEnableNotifications}
                 disabled={notifLoading}
-                className="text-amber-600 animate-pulse"
+                className="text-amber-600 animate-pulse bg-amber-50 border border-amber-100 h-9"
               >
-                {notifLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-                <span>Reactivar push</span>
+                {notifLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                <span className="text-xs font-bold">Reactivar push</span>
               </SidebarMenuButton>
             ) : (
               <SidebarMenuButton
                 onClick={handleEnableNotifications}
                 disabled={notifLoading}
-                className="text-primary"
+                className="text-primary bg-primary/5 border border-primary/10 hover:bg-primary/10 h-9"
               >
-                {notifLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <BellOff className="w-5 h-5" />}
-                <span>Activar notificaciones</span>
+                {notifLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellOff className="w-4 h-4" />}
+                <span className="text-xs font-bold">Activar avisos</span>
               </SidebarMenuButton>
             )}
           </div>
         )}
         <div className="mb-4 px-2">
-          <p className="text-sm font-medium truncate">{profile?.displayName}</p>
-          <p className="text-xs text-muted-foreground truncate">{auth.currentUser?.email}</p>
+          <p className="text-sm font-bold text-slate-900 truncate">{profile?.displayName}</p>
+          <p className="text-[10px] text-muted-foreground truncate font-medium">{auth.currentUser?.email}</p>
         </div>
         <SidebarMenuButton 
           onClick={handleLogout} 
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10 font-bold h-10 transition-colors"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
           <span>Cerrar Sesión</span>
         </SidebarMenuButton>
       </SidebarFooter>

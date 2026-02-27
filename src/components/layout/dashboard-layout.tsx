@@ -1,4 +1,3 @@
-
 "use client";
 
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -17,7 +16,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="lg:hidden" />
             <Separator orientation="vertical" className="mr-2 h-4 lg:hidden" />
             <div className="flex-1 flex items-center justify-between">
-              <span className="font-bold text-slate-900 md:hidden">CreativeFlow</span>
+              <div className="md:hidden flex items-center gap-2">
+                <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-white font-bold text-xs">
+                  AM
+                </div>
+                <span className="font-black text-slate-900 tracking-tighter">AGENCIA AM</span>
+              </div>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 lg:p-10">
