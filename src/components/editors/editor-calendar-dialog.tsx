@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -66,7 +65,7 @@ export function EditorCalendarDialog({ open, onOpenChange }: EditorCalendarDialo
       <DialogContent className="max-w-4xl p-0 overflow-hidden">
         <div className="flex flex-col md:flex-row h-[90dvh] md:h-[600px]">
           {/* Calendario Lateral */}
-          <div className="w-full md:w-80 bg-slate-50 border-r p-6 flex flex-col items-center">
+          <div className="w-full md:w-80 bg-slate-50 border-r p-6 flex flex-col">
             <DialogHeader className="w-full mb-6 text-left">
               <DialogTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5 text-primary" /> Historial de Producción
@@ -74,14 +73,14 @@ export function EditorCalendarDialog({ open, onOpenChange }: EditorCalendarDialo
               <DialogDescription>Consolidado de entregas diarias.</DialogDescription>
             </DialogHeader>
             
-            <div className="bg-white rounded-xl shadow-sm border p-2">
+            <div className="bg-white rounded-xl shadow-sm border p-2 flex justify-center">
               <Calendar
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
                 locale={es}
                 modifiers={modifiers}
-                modifiersStyles={modifiersStyles}
+                styles={modifiersStyles}
                 className="rounded-md border-none"
               />
             </div>
@@ -98,7 +97,7 @@ export function EditorCalendarDialog({ open, onOpenChange }: EditorCalendarDialo
           </div>
 
           {/* Listado de Entregas */}
-          <div className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 flex flex-col bg-white overflow-hidden">
             <div className="p-6 border-b bg-white sticky top-0 z-10">
               <h3 className="font-bold text-lg">
                 {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Selecciona un día'}
