@@ -198,7 +198,8 @@ export default function AdminBatchDetailPage() {
                     <p className="text-sm font-medium whitespace-pre-wrap">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
-              </div>
+              </Card>
+            </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -250,7 +251,6 @@ export default function AdminBatchDetailPage() {
               </Card>
             )}
 
-            {/* Nueva sección de entrega para el Administrador */}
             <Card className="border-primary shadow-md">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
