@@ -11,7 +11,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Eye, MessageSquare, FolderKanban, Building2 } from 'lucide-react';
+import { Eye, MessageSquare, FolderKanban, Building2, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -87,9 +87,13 @@ export default function EditorBatchesPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4 flex-1">
-                  <p className="text-sm text-muted-foreground line-clamp-3">
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
                     Producto: <span className="font-semibold text-foreground">{batch.productName}</span>
                   </p>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-bold">
+                    <Layers className="h-3 w-3" />
+                    {batch.creativeCount} Creativos
+                  </div>
                 </CardContent>
                 <CardFooter className="mt-auto pt-4 flex gap-2 border-t bg-slate-50/30">
                   <Button variant="outline" size="sm" className="flex-1" asChild>

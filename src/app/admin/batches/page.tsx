@@ -24,7 +24,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2 } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -129,6 +129,7 @@ export default function AdminBatchesPage() {
                 <TableHead>Tanda / Producto</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="text-center">Piezas</TableHead>
                 <TableHead>Editores</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -141,13 +142,14 @@ export default function AdminBatchesPage() {
                     <TableCell><Skeleton className="h-4 w-40" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-10" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-40 ml-auto" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredBatches.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
+                   <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
                 </TableRow>
               ) : filteredBatches.map((batch) => (
                 <TableRow key={batch.id}>
@@ -163,6 +165,11 @@ export default function AdminBatchesPage() {
                     </div>
                   </TableCell>
                   <TableCell><StatusBadge status={batch.status} /></TableCell>
+                  <TableCell className="text-center">
+                    <span className="inline-flex items-center justify-center bg-slate-100 rounded-full w-7 h-7 text-xs font-bold text-slate-700">
+                      {batch.creativeCount}
+                    </span>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -231,7 +238,12 @@ export default function AdminBatchesPage() {
                 </div>
                 <CardTitle className="text-lg">{batch.title}</CardTitle>
                 <div className="text-xs font-bold text-slate-500 mb-1">{clients[batch.clientId]}</div>
-                <div className="text-xs text-primary font-bold">{batch.productName}</div>
+                <div className="text-xs text-primary font-bold flex items-center justify-between">
+                  <span>{batch.productName}</span>
+                  <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 flex items-center gap-1">
+                    <Layers className="h-3 w-3" /> {batch.creativeCount} piezas
+                  </span>
+                </div>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-4">
                 <div className="flex items-center justify-between border-t pt-4">

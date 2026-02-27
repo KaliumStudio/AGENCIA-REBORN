@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -9,7 +10,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, MessageSquare, FolderKanban, Loader2, Edit } from 'lucide-react';
+import { Plus, Eye, MessageSquare, FolderKanban, Loader2, Edit, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -83,26 +84,29 @@ export default function ClientBatchesPage() {
                     </span>
                   </div>
                   <CardTitle className="text-xl mt-3 line-clamp-1">{batch.title}</CardTitle>
-                  <CardDescription className="line-clamp-2 mt-1 min-h-[3rem]">
-                    Producto: {batch.productName}
+                  <CardDescription className="mt-1">
+                    <span className="font-bold text-slate-900 block truncate">{batch.productName}</span>
+                    <span className="flex items-center gap-1 text-primary font-semibold text-xs mt-1 bg-primary/5 w-fit px-2 py-0.5 rounded">
+                      <Layers className="h-3 w-3" /> {batch.creativeCount} Creativos
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardFooter className="mt-auto pt-4 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Button variant="outline" size="sm" className="flex-1 px-0" asChild title="Ver detalles">
                     <Link href={`/client/batches/${batch.id}`}>
-                      <Eye className="mr-1 h-4 w-4" /> Ver
+                      <Eye className="h-4 w-4" />
                     </Link>
                   </Button>
                   {batch.status !== 'approved' && (
-                    <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Button variant="outline" size="sm" className="flex-1 px-0" asChild title="Editar">
                       <Link href={`/client/batches/${batch.id}/edit`}>
-                        <Edit className="mr-1 h-4 w-4" /> Edit
+                        <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
                   )}
-                  <Button variant="secondary" size="sm" className="flex-1" asChild>
+                  <Button variant="secondary" size="sm" className="flex-1 px-0" asChild title="Chat">
                     <Link href={`/client/batches/${batch.id}/chat`}>
-                      <MessageSquare className="mr-1 h-4 w-4" /> Chat
+                      <MessageSquare className="h-4 w-4" />
                     </Link>
                   </Button>
                 </CardFooter>
