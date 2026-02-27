@@ -143,8 +143,8 @@ export default function ClientBatchDetailPage() {
                     <Video className="h-5 w-5 text-accent" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias</p>
-                    <p className="text-sm font-medium truncate">{batch.referenceLinks}</p>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias Visuales</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap break-words">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
               </Card>
