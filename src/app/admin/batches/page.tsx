@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function AdminBatchesPage() {
   const { profile } = useAuth();
@@ -152,7 +153,13 @@ export default function AdminBatchesPage() {
                    <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
                 </TableRow>
               ) : filteredBatches.map((batch) => (
-                <TableRow key={batch.id}>
+                <TableRow 
+                  key={batch.id}
+                  className={cn(
+                    "transition-colors",
+                    batch.status === 'delivered' && "bg-green-50/60 hover:bg-green-100/60"
+                  )}
+                >
                   <TableCell className="text-xs text-muted-foreground">{formatDate(batch.createdAt)}</TableCell>
                   <TableCell>
                     <div className="font-semibold">{batch.title}</div>
@@ -228,7 +235,13 @@ export default function AdminBatchesPage() {
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
           ) : filteredBatches.map((batch) => (
-            <Card key={batch.id} className="shadow-sm">
+            <Card 
+              key={batch.id} 
+              className={cn(
+                "shadow-sm transition-colors",
+                batch.status === 'delivered' && "bg-green-50/60 border-green-100"
+              )}
+            >
               <CardHeader className="p-4 pb-2">
                 <div className="flex justify-between items-start mb-2">
                   <StatusBadge status={batch.status} />
