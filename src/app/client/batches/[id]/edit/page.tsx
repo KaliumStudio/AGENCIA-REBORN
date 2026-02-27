@@ -89,7 +89,7 @@ export default function EditBatchPage() {
 
     setSaving(true);
     try {
-      batchService.updateBatch(id as string, {
+      await batchService.updateBatch(id as string, {
         title: title || `Tanda ${productName}`,
         productName,
         creativeCount: videoSpecs.length,
@@ -100,7 +100,7 @@ export default function EditBatchPage() {
         deliveryDeadlineTime,
         // Fallback for old fields
         brief: `Producto: ${productName}. Landing: ${landingPage}. Referencias: ${referenceLinks}`,
-      });
+      }, profile.uid, profile.displayName);
       
       toast({ title: "Tanda actualizada", description: "Los cambios se han guardado correctamente." });
       router.push(`/client/batches/${id}`);
@@ -185,7 +185,7 @@ export default function EditBatchPage() {
                     value={referenceLinks} 
                     onChange={e => setReferenceLinks(e.target.value)}
                     required
-                    className="min-h-[80px]"
+                    className="min-h-[80px] whitespace-pre-wrap"
                   />
                 </div>
 
@@ -242,7 +242,7 @@ export default function EditBatchPage() {
                           placeholder={spec.format === 'IMAGEN' ? "Pega aquí el texto, copy o detalles visuales..." : "Pega aquí el guion o estructura..."} 
                           value={spec.script || ''} 
                           onChange={e => updateVideoSpec(index, 'script', e.target.value)}
-                          className="min-h-[100px]"
+                          className="min-h-[100px] whitespace-pre-wrap"
                         />
                       </div>
                       <div className="space-y-4">
@@ -297,6 +297,7 @@ export default function EditBatchPage() {
                   placeholder="Instrucciones generales para toda la tanda..." 
                   value={additionalNotes} 
                   onChange={e => setAdditionalNotes(e.target.value)}
+                  className="whitespace-pre-wrap"
                 />
               </CardContent>
               <CardFooter className="flex justify-end gap-3 border-t bg-slate-50 p-6">

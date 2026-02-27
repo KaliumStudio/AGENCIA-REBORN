@@ -1,9 +1,10 @@
+
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp 
+  query, where, orderBy, serverTimestamp, arrayUnion 
 } from 'firebase/firestore';
-import { Batch, BatchStatus, VideoSpecification } from '@/types';
+import { Batch, BatchStatus, VideoSpecification, EditHistoryEntry } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { chatService } from './chat.service';
@@ -36,6 +37,12 @@ export const batchService = {
       ...data,
       status: 'new',
       createdAt: serverTimestamp(),
+      editHistory: [{
+        uid: data.createdBy,
+        userName: 'Sistema (Creación)',
+        timestamp: new Date(),
+        action: 'Tanda creada'
+      }]
     });
     
     setDoc(newDoc, batchData)
@@ -79,9 +86,20 @@ export const batchService = {
     });
   },
 
-  updateBatch(id: string, data: Partial<Batch>) {
+  async updateBatch(id: string, data: Partial<Batch>, editorUid: string, editorName: string) {
     const docRef = doc(db, 'batches', id);
-    const updateData = stripUndefined(data);
+    const historyEntry: EditHistoryEntry = {
+      uid: editorUid,
+      userName: editorName,
+      timestamp: new Date(),
+      action: 'Actualización de detalles'
+    };
+
+    const updateData = {
+      ...stripUndefined(data),
+      editHistory: arrayUnion(historyEntry)
+    };
+
     updateDoc(docRef, updateData).catch(async (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
@@ -105,7 +123,7 @@ export const batchService = {
     deleteDoc(chatRef).catch(() => {});
   },
 
-  async assignEditors(id: string, editorUids: string[]) {
+  async assignEditors(id: string, editorUids: string[], adminUid: string, adminName: string) {
     const batchRef = doc(db, 'batches', id);
     
     const batchSnap = await getDoc(batchRef);
@@ -114,9 +132,17 @@ export const batchService = {
 
     const status: BatchStatus = editorUids.length > 0 ? 'in_progress' : 'new';
     
+    const historyEntry: EditHistoryEntry = {
+      uid: adminUid,
+      userName: adminName,
+      timestamp: new Date(),
+      action: `Asignación de editores (${editorUids.length})`
+    };
+
     updateDoc(batchRef, { 
       assignedEditorUids: editorUids,
-      status
+      status,
+      editHistory: arrayUnion(historyEntry)
     }).catch(async (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: batchRef.path,
@@ -129,13 +155,22 @@ export const batchService = {
     chatService.syncChatMembers(id, memberUids);
   },
 
-  submitDelivery(id: string, driveLink: string, uid: string) {
+  submitDelivery(id: string, driveLink: string, uid: string, userName: string) {
     const docRef = doc(db, 'batches', id);
+    
+    const historyEntry: EditHistoryEntry = {
+      uid: uid,
+      userName: userName,
+      timestamp: new Date(),
+      action: 'Entrega de material realizada'
+    };
+
     const updateData = { 
       driveLink,
       status: 'delivered' as BatchStatus,
       deliveredAt: serverTimestamp(),
-      deliveredBy: uid
+      deliveredBy: uid,
+      editHistory: arrayUnion(historyEntry)
     };
     
     updateDoc(docRef, updateData).catch(async (error) => {

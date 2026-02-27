@@ -32,6 +32,13 @@ export interface VideoSpecification {
   format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST' | 'IMAGEN';
 }
 
+export interface EditHistoryEntry {
+  uid: string;
+  userName: string;
+  timestamp: any;
+  action: string;
+}
+
 export interface Batch {
   id: string;
   clientId: string;
@@ -51,6 +58,7 @@ export interface Batch {
   createdBy: string;
   deliveredAt?: any;
   deliveredBy?: string;
+  editHistory?: EditHistoryEntry[];
   // Deprecated fields kept for backward compatibility if necessary
   brief?: string;
   dueDate?: string;

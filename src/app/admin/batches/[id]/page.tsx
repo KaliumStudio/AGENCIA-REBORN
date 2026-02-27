@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
@@ -87,7 +87,7 @@ export default function AdminBatchDetailPage() {
     setSubmitting(true);
     
     try {
-      await batchService.submitDelivery(batch.id, driveLink, profile.uid);
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName);
       
       const chatId = await chatService.getOrCreateChat(
         batch.id, 
@@ -198,7 +198,7 @@ export default function AdminBatchDetailPage() {
                     <p className="text-sm font-medium whitespace-pre-wrap">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
-              </Card>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -288,6 +288,38 @@ export default function AdminBatchDetailPage() {
                   </div>
                 )}
               </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5 text-slate-500" /> Historial de Actividad
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {batch.editHistory && batch.editHistory.length > 0 ? (
+                    batch.editHistory.slice().reverse().map((entry, idx) => (
+                      <div key={idx} className="flex items-start gap-3 text-sm pb-4 border-b last:border-0 last:pb-0">
+                        <div className="mt-1 p-1 bg-slate-100 rounded-full">
+                          <User className="h-3 w-3 text-slate-500" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <span className="font-bold text-slate-900">{entry.userName}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {formatDate(entry.timestamp, "dd/MM HH:mm")}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 mt-0.5">{entry.action}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">No hay registros de edición todavía.</p>
+                  )}
+                </div>
+              </CardContent>
             </Card>
           </div>
 

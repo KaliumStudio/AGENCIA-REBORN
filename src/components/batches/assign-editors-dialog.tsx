@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Users } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
 
 interface AssignEditorsDialogProps {
   batch: Batch;
@@ -19,6 +21,7 @@ interface AssignEditorsDialogProps {
 }
 
 export function AssignEditorsDialog({ batch, onUpdate, open, onOpenChange }: AssignEditorsDialogProps) {
+  const { profile } = useAuth();
   const [editors, setEditors] = useState<UserProfile[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,9 +35,10 @@ export function AssignEditorsDialog({ batch, onUpdate, open, onOpenChange }: Ass
   }, [open, batch]);
 
   const handleSave = async () => {
+    if (!profile) return;
     setLoading(true);
     try {
-      await batchService.assignEditors(batch.id, selectedIds);
+      await batchService.assignEditors(batch.id, selectedIds, profile.uid, profile.displayName);
       toast({ title: "Editores asignados correctamente" });
       onUpdate();
       onOpenChange(false);

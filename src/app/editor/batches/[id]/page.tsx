@@ -66,26 +66,32 @@ export default function EditorBatchDetailPage() {
 
     setSubmitting(true);
     
-    batchService.submitDelivery(batch.id, driveLink, profile.uid);
-    
-    chatService.getOrCreateChat(
-      batch.id, 
-      batch.clientId, 
-      batch.clientUserUid, 
-      batch.assignedEditorUids, 
-      profile.uid
-    ).then(chatId => {
-      chatService.sendMessage(
+    try {
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName);
+      
+      const chatId = await chatService.getOrCreateChat(
+        batch.id, 
+        batch.clientId, 
+        batch.clientUserUid, 
+        batch.assignedEditorUids, 
+        profile.uid
+      );
+
+      await chatService.sendMessage(
         chatId, 
         profile.uid, 
         profile.role, 
         'drive_link', 
         `Nueva entrega realizada. Link: ${driveLink}`
       );
-    });
-    
-    toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
-    setSubmitting(false);
+      
+      toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "No se pudo registrar la entrega.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loadingBatch || authLoading) {
