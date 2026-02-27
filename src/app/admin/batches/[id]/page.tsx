@@ -6,56 +6,113 @@ import { useParams } from 'next/navigation';
 import { batchService } from '@/services/batch.service';
 import { clientService } from '@/services/client.service';
 import { userService } from '@/services/user.service';
-import { Batch, Client, UserProfile } from '@/types';
+import { chatService } from '@/services/chat.service';
+import { useAuth } from '@/context/auth-context';
+import { Batch, Client, UserProfile, BatchStatus } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminBatchDetailPage() {
   const { id } = useParams();
-  const [batch, setBatch] = useState<Batch | null>(null);
+  const { profile } = useAuth();
+  const { toast } = useToast();
+  
   const [client, setClient] = useState<Client | null>(null);
   const [clientUser, setClientUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingExtras, setLoadingExtras] = useState(true);
+  const [driveLink, setDriveLink] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const batchRef = useMemoFirebase(() => {
+    return id ? doc(db, 'batches', id as string) : null;
+  }, [id]);
+
+  const { data: batch, isLoading: loadingBatch } = useDoc<Batch>(batchRef);
 
   useEffect(() => {
-    if (id) {
-      const loadData = async () => {
+    if (batch) {
+      if (batch.driveLink && !driveLink) {
+        setDriveLink(batch.driveLink);
+      }
+      
+      const loadExtras = async () => {
         try {
-          const batchData = await batchService.getBatch(id as string);
-          if (batchData) {
-            setBatch(batchData);
-            
-            // Cargar datos del cliente y usuario en paralelo
-            const [clientData, userData] = await Promise.all([
-              clientService.getClient(batchData.clientId),
-              userService.getProfile(batchData.clientUserUid)
-            ]);
-            
-            setClient(clientData);
-            setClientUser(userData);
-          }
+          const [clientData, userData] = await Promise.all([
+            clientService.getClient(batch.clientId),
+            userService.getProfile(batch.clientUserUid)
+          ]);
+          setClient(clientData);
+          setClientUser(userData);
         } catch (error) {
-          console.error("Error loading admin batch detail data:", error);
+          console.error("Error loading admin batch detail extras:", error);
         } finally {
-          setLoading(false);
+          setLoadingExtras(false);
         }
       };
 
-      loadData();
+      loadExtras();
     }
-  }, [id]);
+  }, [batch]);
+
+  const handleDeliver = async () => {
+    if (!driveLink.trim().startsWith('https://')) {
+      toast({ 
+        title: "Link inválido", 
+        description: "Debes ingresar una URL válida de Google Drive.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (!batch || !profile) return;
+
+    setSubmitting(true);
+    
+    try {
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid);
+      
+      const chatId = await chatService.getOrCreateChat(
+        batch.id, 
+        batch.clientId, 
+        batch.clientUserUid, 
+        batch.assignedEditorUids, 
+        profile.uid
+      );
+
+      await chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        'drive_link', 
+        `Entrega realizada por Administrador. Link: ${driveLink}`
+      );
+      
+      toast({ title: "Tanda entregada", description: "El material ha sido registrado y el cliente notificado." });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "No se pudo procesar la entrega.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const formatDate = (date: any, formatStr: string) => {
     if (!date) return 'N/A';
@@ -63,7 +120,7 @@ export default function AdminBatchDetailPage() {
     return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
   };
 
-  if (loading) {
+  if (loadingBatch) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -138,11 +195,10 @@ export default function AdminBatchDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias Visuales</p>
-                    <p className="text-sm font-medium whitespace-pre-wrap break-words">{batch.referenceLinks}</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
-              </Card>
-            </div>
+              </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -194,26 +250,45 @@ export default function AdminBatchDetailPage() {
               </Card>
             )}
 
-            {batch.driveLink && (
-              <Card className="border-green-200 bg-green-50/30">
-                <CardHeader className="py-4">
-                  <CardTitle className="text-green-700 flex items-center gap-2 text-base">
-                    Material Entregado
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col md:flex-row items-center justify-between bg-white mx-4 mb-4 rounded-lg border p-4 gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm">Google Drive</p>
-                    <p className="text-xs text-muted-foreground truncate">{batch.driveLink}</p>
+            {/* Nueva sección de entrega para el Administrador */}
+            <Card className="border-primary shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5 text-primary" /> Gestión de Entrega (Admin)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="drive">Link de Carpeta Google Drive</Label>
+                  <Input 
+                    id="drive" 
+                    placeholder="https://drive.google.com/drive/folders/..." 
+                    value={driveLink} 
+                    onChange={e => setDriveLink(e.target.value)}
+                  />
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-blue-50 p-2 rounded">
+                    <Info className="h-3 w-3 text-blue-500" />
+                    Como administrador, puedes realizar la entrega directamente si es necesario.
                   </div>
-                  <Button asChild size="sm" className="shrink-0 w-full md:w-auto bg-green-600 hover:bg-green-700">
-                    <a href={batch.driveLink} target="_blank" rel="noopener noreferrer">
-                      Abrir Carpeta <ExternalLink className="ml-2 h-3 w-3" />
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4">
+                <Button className="w-full" onClick={handleDeliver} disabled={submitting || batch.status === 'approved'}>
+                  {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {submitting ? "Procesando..." : "Cargar Entrega y Notificar Cliente"}
+                </Button>
+                {batch.driveLink && (
+                  <div className="w-full p-3 bg-muted/50 rounded-lg text-sm flex justify-between items-center border">
+                    <span className="truncate max-w-[200px] font-mono text-xs">{batch.driveLink}</span>
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={batch.driveLink} target="_blank" rel="noopener noreferrer">
+                        Ver Carpeta <ExternalLink className="ml-2 h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardFooter>
+            </Card>
           </div>
 
           <div className="space-y-6">
@@ -258,14 +333,14 @@ export default function AdminBatchDetailPage() {
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-slate-400" />
                         <div>
-                          <p className="text-sm font-bold">{client?.name || 'Cargando...'}</p>
+                          <p className="text-sm font-bold">{loadingExtras ? '...' : (client?.name || 'No encontrado')}</p>
                           <p className="text-[10px] text-muted-foreground font-mono">{batch.clientId}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-slate-400" />
                         <div>
-                          <p className="text-sm font-bold">{clientUser?.displayName || 'Cargando...'}</p>
+                          <p className="text-sm font-bold">{loadingExtras ? '...' : (clientUser?.displayName || 'No encontrado')}</p>
                           <p className="text-[10px] text-muted-foreground font-mono">{batch.clientUserUid}</p>
                         </div>
                       </div>
