@@ -10,14 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw, Edit, Scissors, Calendar, CreditCard, Layers } from 'lucide-react';
+import { RefreshCw, Edit, Scissors, Calendar, CreditCard, Layers, PlusCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditEditorDialog } from '@/components/editors/edit-editor-dialog';
+import { AssignBatchToEditorDialog } from '@/components/editors/assign-batch-to-editor-dialog';
+import { EditorCalendarDialog } from '@/components/editors/editor-calendar-dialog';
 
 export default function AdminEditorsPage() {
   const [editors, setEditors] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEditor, setEditingEditor] = useState<UserProfile | null>(null);
+  const [assigningToEditor, setAssigningToEditor] = useState<UserProfile | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const fetchEditors = async () => {
     setLoading(true);
@@ -34,11 +38,16 @@ export default function AdminEditorsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Editores</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Administra las capacidades y pagos de tu equipo creativo.</p>
+            <p className="text-sm md:text-base text-muted-foreground">Administra las capacidades y monitorea la producción de tu equipo.</p>
           </div>
-          <Button variant="outline" size="icon" onClick={fetchEditors} disabled={loading} className="h-11 w-11">
-            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" onClick={() => setIsCalendarOpen(true)} className="h-11 px-6 border-primary text-primary hover:bg-primary/5 font-bold">
+              <Calendar className="mr-2 h-4 w-4" /> Ver Calendario de Editores
+            </Button>
+            <Button variant="outline" size="icon" onClick={fetchEditors} disabled={loading} className="h-11 w-11">
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden hidden md:block">
@@ -90,9 +99,14 @@ export default function AdminEditorsPage() {
                     <Badge className="capitalize bg-accent/10 text-accent border-accent/20">{editor.editorDetails?.paymentPeriod || 'No definido'}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" onClick={() => setEditingEditor(editor)}>
-                      <Edit className="h-4 w-4 mr-2" /> Editar Perfil
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setAssigningToEditor(editor)} className="bg-primary/5 border-primary/20 text-primary">
+                        <PlusCircle className="h-4 w-4 mr-2" /> Asignarle Tanda
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setEditingEditor(editor)}>
+                        <Edit className="h-4 w-4 mr-2" /> Perfil
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -106,7 +120,10 @@ export default function AdminEditorsPage() {
               <CardContent className="p-4 space-y-4">
                 <div className="flex justify-between items-center border-b pb-2">
                   <div className="font-bold">{editor.displayName}</div>
-                  <Button variant="ghost" size="icon" onClick={() => setEditingEditor(editor)}><Edit className="h-4 w-4" /></Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => setAssigningToEditor(editor)} className="text-primary"><PlusCircle className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setEditingEditor(editor)}><Edit className="h-4 w-4" /></Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
@@ -129,6 +146,22 @@ export default function AdminEditorsPage() {
             open={!!editingEditor} 
             onOpenChange={(o) => !o && setEditingEditor(null)} 
             onUpdated={fetchEditors} 
+          />
+        )}
+
+        {assigningToEditor && (
+          <AssignBatchToEditorDialog
+            editor={assigningToEditor}
+            open={!!assigningToEditor}
+            onOpenChange={(o) => !o && setAssigningToEditor(null)}
+            onUpdated={fetchEditors}
+          />
+        )}
+
+        {isCalendarOpen && (
+          <EditorCalendarDialog
+            open={isCalendarOpen}
+            onOpenChange={setIsCalendarOpen}
           />
         )}
       </DashboardLayout>
