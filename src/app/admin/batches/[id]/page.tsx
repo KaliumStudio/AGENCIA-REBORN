@@ -198,7 +198,7 @@ export default function AdminBatchDetailPage() {
                     <p className="text-sm font-medium whitespace-pre-wrap">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
-              </div>
+              </Card>
             </div>
 
             <div className="space-y-4">
