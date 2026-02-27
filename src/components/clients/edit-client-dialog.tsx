@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Edit } from 'lucide-react';
+import { Edit, Zap } from 'lucide-react';
 
 interface EditClientDialogProps {
   client: Client;
@@ -22,7 +23,8 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
   const [formData, setFormData] = useState({
     name: '',
     contact: '',
-    contactEmail: ''
+    contactEmail: '',
+    creativeQuota: 0
   });
 
   const { toast } = useToast();
@@ -32,7 +34,8 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
       setFormData({
         name: client.name,
         contact: client.contact,
-        contactEmail: client.contactEmail || ''
+        contactEmail: client.contactEmail || '',
+        creativeQuota: client.creativeQuota || 0
       });
     }
   }, [open, client]);
@@ -41,7 +44,10 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     e.preventDefault();
     setLoading(true);
     try {
-      await clientService.updateClient(client.id, formData);
+      await clientService.updateClient(client.id, {
+        ...formData,
+        creativeQuota: Number(formData.creativeQuota)
+      });
       toast({ title: "Cliente actualizado" });
       onOpenChange(false);
       onClientUpdated();
@@ -60,21 +66,38 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" /> Editar Cliente
             </DialogTitle>
-            <DialogDescription>Actualiza la información de contacto de la empresa.</DialogDescription>
+            <DialogDescription>Actualiza la información y el cupo de creativos.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Nombre</Label>
               <Input id="edit-name" required className="h-11" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-contact">Contacto</Label>
-              <Input id="edit-contact" required className="h-11" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-contact">Contacto</Label>
+                <Input id="edit-contact" required className="h-11" value={formData.contact} onChange={e => setFormData({...formData, contact: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-quota" className="flex items-center gap-1 text-primary">
+                  <Zap className="h-3 w-3 text-amber-500" /> Cupo de Piezas
+                </Label>
+                <Input 
+                  id="edit-quota" 
+                  type="number" 
+                  className="h-11 font-bold" 
+                  value={formData.creativeQuota} 
+                  onChange={e => setFormData({...formData, creativeQuota: parseInt(e.target.value) || 0})} 
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email</Label>
               <Input id="edit-email" type="email" className="h-11" value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})} />
             </div>
+
             <DialogFooter className="flex-col md:flex-row gap-2 pt-4">
               <Button variant="outline" type="button" onClick={() => onOpenChange(false)} className="h-11 md:h-10">Cancelar</Button>
               <Button type="submit" disabled={loading} className="h-11 md:h-10">

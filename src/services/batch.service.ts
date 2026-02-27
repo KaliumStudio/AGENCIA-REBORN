@@ -2,9 +2,9 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp, arrayUnion 
+  query, where, orderBy, serverTimestamp, arrayUnion, increment 
 } from 'firebase/firestore';
-import { Batch, BatchStatus, VideoSpecification, EditHistoryEntry } from '@/types';
+import { Batch, BatchStatus, VideoSpecification, EditHistoryEntry, Client } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { chatService } from './chat.service';
@@ -155,9 +155,15 @@ export const batchService = {
     chatService.syncChatMembers(id, memberUids);
   },
 
-  submitDelivery(id: string, driveLink: string, uid: string, userName: string) {
+  async submitDelivery(id: string, driveLink: string, uid: string, userName: string) {
     const docRef = doc(db, 'batches', id);
-    
+    const batchSnap = await getDoc(docRef);
+    if (!batchSnap.exists()) return;
+    const batchData = batchSnap.data() as Batch;
+
+    // Solo descontar si no estaba ya entregada para evitar dobles descuentos
+    const isFirstDelivery = batchData.status !== 'delivered' && batchData.status !== 'approved';
+
     const historyEntry: EditHistoryEntry = {
       uid: uid,
       userName: userName,
@@ -173,13 +179,26 @@ export const batchService = {
       editHistory: arrayUnion(historyEntry)
     };
     
-    updateDoc(docRef, updateData).catch(async (error) => {
+    await updateDoc(docRef, updateData).catch(async (error) => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: docRef.path,
         operation: 'update',
         requestResourceData: updateData
       }));
     });
+
+    // Lógica de cupos de creativos
+    if (isFirstDelivery && batchData.clientId) {
+      // Formato IMAGEN = 0.5, Otros = 1.0
+      const quotaCost = (batchData.videoSpecs || []).reduce((acc, spec) => {
+        return acc + (spec.format === 'IMAGEN' ? 0.5 : 1.0);
+      }, 0);
+
+      const clientRef = doc(db, 'clients', batchData.clientId);
+      updateDoc(clientRef, {
+        creativeQuota: increment(-quotaCost)
+      }).catch(err => console.error("Error updating client quota:", err));
+    }
   },
 
   async getBatchesByClient(clientId: string): Promise<Batch[]> {

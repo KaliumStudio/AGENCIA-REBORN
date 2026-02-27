@@ -1,6 +1,15 @@
 
 export type UserRole = 'admin' | 'editor' | 'client';
 
+export interface EditorDetails {
+  dailyCapacity: number;
+  workingDays: string[];
+  specializedFormats: string[];
+  payPerCreative: number;
+  paymentContract: 'pago fijo' | 'pago por creativos acumulados';
+  paymentPeriod: 'quincenal' | 'mensual' | 'express';
+}
+
 export interface UserProfile {
   uid: string;
   role: UserRole;
@@ -12,6 +21,7 @@ export interface UserProfile {
     email: boolean;
     push: boolean;
   };
+  editorDetails?: EditorDetails;
 }
 
 export interface Client {
@@ -19,6 +29,7 @@ export interface Client {
   name: string;
   contact: string;
   contactEmail?: string;
+  creativeQuota?: number;
   active: boolean;
   createdAt: any;
   createdBy: string;
@@ -59,7 +70,6 @@ export interface Batch {
   deliveredAt?: any;
   deliveredBy?: string;
   editHistory?: EditHistoryEntry[];
-  // Deprecated fields kept for backward compatibility if necessary
   brief?: string;
   dueDate?: string;
 }
@@ -83,7 +93,7 @@ export interface Message {
   senderUid: string;
   senderRole: UserRole;
   senderAlias: string;
-  senderName?: string; // Nombre real para vista de admin
+  senderName?: string;
   type: MessageType;
   text: string;
   fileUrl?: string;

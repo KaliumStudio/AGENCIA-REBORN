@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   ArrowLeft, Building2, Mail, User, Calendar, 
-  FolderKanban, Eye, MessageSquare, Loader2 
+  FolderKanban, Eye, MessageSquare, Loader2, Zap 
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -97,6 +98,18 @@ export default function AdminClientDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500 fill-amber-500" /> Saldo de Piezas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-black text-primary">{client.creativeQuota || 0}</div>
+                <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold">Piezas de cupo disponibles</p>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Información de Contacto</CardTitle>
@@ -147,7 +160,7 @@ export default function AdminClientDetailPage() {
                   <div>
                     <p className="text-[10px] text-slate-400 uppercase font-bold">En Progreso</p>
                     <p className="text-3xl font-bold text-primary">
-                      {batches.filter(b => b.status === 'in_progress').length}
+                      {batches.filter(b => b.status === 'in_progress' || b.status === 'new').length}
                     </p>
                   </div>
                 </div>
@@ -169,6 +182,7 @@ export default function AdminClientDetailPage() {
                   <TableRow className="bg-muted/50">
                     <TableHead>Fecha</TableHead>
                     <TableHead>Tanda / Producto</TableHead>
+                    <TableHead>Piezas</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -176,7 +190,7 @@ export default function AdminClientDetailPage() {
                 <TableBody>
                   {batches.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">
+                      <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
                         Este cliente aún no ha solicitado ninguna tanda.
                       </TableCell>
                     </TableRow>
@@ -188,6 +202,9 @@ export default function AdminClientDetailPage() {
                       <TableCell>
                         <div className="font-semibold text-sm">{batch.title}</div>
                         <div className="text-[10px] text-primary uppercase font-bold">{batch.productName}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs font-bold text-slate-600">{batch.creativeCount} pz</span>
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={batch.status} className="text-[10px]" />

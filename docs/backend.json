@@ -27,6 +27,17 @@
         "active": {
           "type": "boolean",
           "description": "Indicates whether the user account is active."
+        },
+        "editorDetails": {
+          "type": "object",
+          "properties": {
+            "dailyCapacity": { "type": "number" },
+            "workingDays": { "type": "array", "items": { "type": "string" } },
+            "specializedFormats": { "type": "array", "items": { "type": "string" } },
+            "payPerCreative": { "type": "number" },
+            "paymentContract": { "type": "string", "enum": ["pago fijo", "pago por creativos acumulados"] },
+            "paymentPeriod": { "type": "string", "enum": ["quincenal", "mensual", "express"] }
+          }
         }
       },
       "required": ["id", "role", "displayName", "active"]
@@ -37,19 +48,13 @@
       "type": "object",
       "description": "Represents a client of the AM Agency.",
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "contact": {
-          "type": "string"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "contact": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "creativeQuota": { "type": "number", "description": "Remaining creative pieces for the client." },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name", "contact", "createdAt"]
     },

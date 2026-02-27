@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
 import { notificationService } from '@/services/notification.service';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle, Scissors } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
@@ -83,6 +84,7 @@ export function SidebarNav() {
       { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
       { label: 'Tandas', icon: FolderKanban, href: '/admin/batches' },
       { label: 'Clientes', icon: Building2, href: '/admin/clients' },
+      { label: 'Editores', icon: Scissors, href: '/admin/editors' },
       { label: 'Usuarios', icon: Users, href: '/admin/users' },
     ],
     editor: [
@@ -125,7 +127,7 @@ export function SidebarNav() {
                 >
                   <item.icon className={cn("w-5 h-5", pathname === item.href ? "text-primary" : "text-slate-500")} />
                   <span className="flex-1">{item.label}</span>
-                  {item.label === 'Mis Tandas' && unreadCount > 0 && (
+                  {(item.label === 'Mis Tandas' || item.label === 'Tandas') && unreadCount > 0 && (
                     <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
                       {unreadCount}
                     </Badge>

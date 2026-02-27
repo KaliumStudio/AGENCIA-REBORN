@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Eye } from 'lucide-react';
+import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Eye, Zap } from 'lucide-react';
 import { NewClientDialog } from '@/components/clients/new-client-dialog';
 import { EditClientDialog } from '@/components/clients/edit-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,7 +49,10 @@ export default function AdminClientsPage() {
     }
   };
 
-  const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredClients = clients.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.contact.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <RoleGuard allowedRoles={['admin']}>
@@ -56,7 +60,7 @@ export default function AdminClientsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clientes</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Gestiona las empresas y organizaciones clientes.</p>
+            <p className="text-sm md:text-base text-muted-foreground">Gestiona las empresas y su saldo de creativos.</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" size="icon" onClick={fetchClients} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
@@ -70,19 +74,19 @@ export default function AdminClientsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             className="pl-9 h-11 md:h-10" 
-            placeholder="Buscar cliente..." 
+            placeholder="Buscar empresa o contacto..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
 
-        {/* Desktop View */}
         <div className="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Nombre</TableHead>
-                <TableHead>Contacto</TableHead>
+                <TableHead>Empresa</TableHead>
+                <TableHead>Cupo Disponible</TableHead>
+                <TableHead>Contacto Principal</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -92,14 +96,27 @@ export default function AdminClientsPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
                     <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                   </TableRow>
                 ))
+              ) : filteredClients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">No se encontraron clientes.</TableCell>
+                </TableRow>
               ) : filteredClients.map((client) => (
                 <TableRow key={client.id}>
-                  <TableCell className="font-semibold">{client.name}</TableCell>
+                  <TableCell className="font-bold text-slate-900">{client.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-amber-500 fill-amber-500" />
+                      <span className={`font-black text-base ${client.creativeQuota && client.creativeQuota <= 5 ? 'text-destructive' : 'text-primary'}`}>
+                        {client.creativeQuota || 0} Piezas
+                      </span>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium">{client.contact}</div>
                     <div className="text-xs text-muted-foreground">{client.contactEmail || "Sin email"}</div>
@@ -126,7 +143,6 @@ export default function AdminClientsPage() {
           </Table>
         </div>
 
-        {/* Mobile View */}
         <div className="md:hidden space-y-4">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
@@ -136,8 +152,9 @@ export default function AdminClientsPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-lg">{client.name}</h3>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                      <Mail className="h-3 w-3" /> {client.contactEmail || 'Sin email'}
+                    <div className="flex items-center gap-2 mt-1">
+                      <Zap className="h-3 w-3 text-amber-500" />
+                      <span className="text-xs font-bold text-primary">{client.creativeQuota || 0} piezas restantes</span>
                     </div>
                   </div>
                   <Badge variant={client.active ? "default" : "secondary"}>{client.active ? "Activo" : "Inactivo"}</Badge>
