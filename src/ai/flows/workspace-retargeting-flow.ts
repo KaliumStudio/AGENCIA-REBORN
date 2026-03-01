@@ -1,7 +1,6 @@
-
 'use server';
 /**
- * @fileOverview A flow for generating retargeting ad images using Gemini 2.5 Flash Image (Nano Banana).
+ * @fileOverview A flow for generating retargeting ad images using Gemini 2.0 Flash (Nano Banana 2).
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,9 +29,9 @@ const generateRetargetingFlow = ai.defineFlow(
     outputSchema: GenerateRetargetingOutputSchema,
   },
   async (input) => {
-    // Nano Banana (Gemini 2.5 Flash Image) is excellent for specialized ad generation
+    // Gemini 2.0 Flash is excellent for specialized ad generation
     const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image',
+      model: 'googleai/gemini-2.0-flash',
       prompt: [
         { text: `Generate a high-conversion retargeting advertisement image for ${input.productName}. 
                  Offer: ${input.offerDetails}. 
