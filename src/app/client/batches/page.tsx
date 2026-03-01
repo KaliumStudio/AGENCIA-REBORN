@@ -10,7 +10,8 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, MessageSquare, FolderKanban, Loader2, Edit, Layers } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Plus, Eye, MessageSquare, FolderKanban, Loader2, Edit, Layers, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -58,6 +59,14 @@ export default function ClientBatchesPage() {
             </Link>
           </Button>
         </div>
+
+        <Alert className="mb-8 border-l-4 border-l-amber-500 bg-amber-50 shadow-sm">
+          <CalendarClock className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="font-bold text-amber-900 mb-1">Planificación de Fin de Semana</AlertTitle>
+          <AlertDescription className="text-amber-800 text-sm leading-relaxed">
+            Recuerda que los <strong>sábados y domingos no se producen creativos</strong>. Te sugerimos realizar tus pedidos con antelación durante la semana para stockearte y contar con material suficiente para el fin de semana.
+          </AlertDescription>
+        </Alert>
 
         {loading ? (
           <div className="flex justify-center items-center h-48">
