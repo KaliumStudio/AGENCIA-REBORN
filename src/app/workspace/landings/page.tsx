@@ -10,12 +10,12 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, Header, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Layout, Sparkles, Store, ArrowLeft, 
   Settings2, Zap, Monitor, Smartphone, 
   Plus, Trash2, Copy, Download, Code2,
-  ChevronUp, ChevronDown
+  ChevronUp, ChevronDown, CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -101,7 +101,7 @@ export default function LandingGeneratorPage() {
           
           <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
             <Button 
-              variant={viewMode === 'desktop' ? 'white' : 'ghost'} 
+              variant={viewMode === 'desktop' ? 'outline' : 'ghost'} 
               size="sm" 
               className={cn("h-8 px-3", viewMode === 'desktop' && "shadow-sm bg-white")}
               onClick={() => setViewMode('desktop')}
@@ -109,7 +109,7 @@ export default function LandingGeneratorPage() {
               <Monitor className="h-4 w-4 mr-2" /> Escritorio
             </Button>
             <Button 
-              variant={viewMode === 'mobile' ? 'white' : 'ghost'} 
+              variant={viewMode === 'mobile' ? 'outline' : 'ghost'} 
               size="sm" 
               className={cn("h-8 px-3", viewMode === 'mobile' && "shadow-sm bg-white")}
               onClick={() => setViewMode('mobile')}
@@ -368,14 +368,14 @@ export default function LandingGeneratorPage() {
       {/* Modal de Exportación */}
       <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
         <DialogContent className="max-w-2xl">
-          <Header>
+          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-500" /> Exportar para Tienda Nube
             </DialogTitle>
             <DialogDescription>
               Copia el siguiente código y pégalo en una "Sección de Código" o en el editor HTML de tu Tienda Nube.
             </DialogDescription>
-          </Header>
+          </DialogHeader>
           <div className="bg-slate-900 rounded-xl p-4 mt-4 relative group">
             <ScrollArea className="h-64 font-mono text-[10px] text-slate-300 leading-relaxed">
               <pre className="whitespace-pre-wrap">{exportToTiendaNube(widgets)}</pre>
