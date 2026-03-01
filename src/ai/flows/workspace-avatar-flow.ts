@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for generating advanced AI Avatars using Gemini 2.5 Flash Image (Nano Banana).
@@ -32,6 +31,26 @@ export type GenerateAvatarOutput = z.infer<typeof GenerateAvatarOutputSchema>;
 
 export async function generateAvatar(input: GenerateAvatarInput): Promise<GenerateAvatarOutput> {
   return generateAvatarFlow(input);
+}
+
+/**
+ * Helper to call ai.generate with automatic retries for transient server errors (like 503).
+ */
+async function generateWithRetry(params: any, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await ai.generate(params);
+    } catch (error: any) {
+      const isTransient = error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('overloaded');
+      if (isTransient && attempt < maxRetries - 1) {
+        console.warn(`AI Model unavailable (attempt ${attempt + 1}/${maxRetries}). Retrying in ${2 * (attempt + 1)}s...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error('Failed to generate image after multiple attempts.');
 }
 
 const generateAvatarFlow = ai.defineFlow(
@@ -79,7 +98,7 @@ const generateAvatarFlow = ai.defineFlow(
 
       promptParts.push({ text: promptText });
 
-      const { media } = await ai.generate({
+      const { media } = await generateWithRetry({
         model: 'googleai/gemini-2.5-flash-image',
         prompt: promptParts,
         config: {
