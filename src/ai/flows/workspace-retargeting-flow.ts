@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview A flow for generating retargeting ad images using Gemini 2.5 Flash Image (Nano Banana).
+ * @fileOverview A flow for generating retargeting ad images using Nano Banana Pro (Gemini 3 Pro Image).
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,7 +30,7 @@ const generateRetargetingFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image',
+      model: 'googleai/gemini-3-pro-image-preview',
       prompt: [
         { text: `Generate a high-conversion retargeting advertisement image for ${input.productName}. 
                  Offer: ${input.offerDetails}. 

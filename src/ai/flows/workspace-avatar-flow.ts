@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview A flow for generating advanced AI Avatars using Gemini 2.5 Flash Image (Nano Banana).
+ * @fileOverview A flow for generating advanced AI Avatars using Nano Banana Pro (Gemini 3 Pro Image).
  * 
  * This flow allows generating characters based on demographic data, physical traits,
  * location settings, and can incorporate reference images or product images.
@@ -99,7 +99,7 @@ const generateAvatarFlow = ai.defineFlow(
       promptParts.push({ text: promptText });
 
       const { media } = await generateWithRetry({
-        model: 'googleai/gemini-2.5-flash-image',
+        model: 'googleai/gemini-3-pro-image-preview',
         prompt: promptParts,
         config: {
           responseModalities: ['TEXT', 'IMAGE'],
