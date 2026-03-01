@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef } from 'react';
@@ -7,7 +6,6 @@ import { generateAvatar } from '@/ai/flows/workspace-avatar-flow';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -15,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   UserCircle, Sparkles, Loader2, Download, RefreshCw, 
   ArrowLeft, Upload, Image as ImageIcon, Briefcase, 
-  MapPin, User, Layout, Layers, Package
+  MapPin, User, Layout, Layers, Package, Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -23,6 +21,7 @@ import { cn } from '@/lib/utils';
 export default function AvatarGeneratorPage() {
   const [formData, setFormData] = useState({
     age: '',
+    gender: 'sin_especificar',
     country: '',
     holdingProduct: false,
     location: 'casa',
@@ -62,6 +61,7 @@ export default function AvatarGeneratorPage() {
         ...formData,
         archetype: formData.archetype as any,
         aspectRatio: formData.aspectRatio as any,
+        gender: formData.gender as any,
         referenceImageDataUri: referenceImg || undefined,
         productImageDataUri: productImg || undefined,
       });
@@ -104,8 +104,21 @@ export default function AvatarGeneratorPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
-              {/* Demografía */}
+              {/* Género y Edad */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2"><Users className="h-3.5 w-3.5" /> Género</Label>
+                  <Select value={formData.gender} onValueChange={v => setFormData({...formData, gender: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sin_especificar">Aleatorio</SelectItem>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="femenino">Femenino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Edad</Label>
                   <Input 
@@ -114,6 +127,10 @@ export default function AvatarGeneratorPage() {
                     onChange={e => setFormData({...formData, age: e.target.value})}
                   />
                 </div>
+              </div>
+
+              {/* País y Perfil */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> País/Etnia</Label>
                   <Input 
@@ -122,10 +139,6 @@ export default function AvatarGeneratorPage() {
                     onChange={e => setFormData({...formData, country: e.target.value})}
                   />
                 </div>
-              </div>
-
-              {/* Perfil y Ubicación */}
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2"><Briefcase className="h-3.5 w-3.5" /> Perfil/Rol</Label>
                   <Select value={formData.archetype} onValueChange={v => setFormData({...formData, archetype: v})}>
@@ -141,6 +154,10 @@ export default function AvatarGeneratorPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Ubicación y Rasgos */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5" /> Lugar</Label>
                   <Select value={formData.location} onValueChange={v => setFormData({...formData, location: v})}>
@@ -157,16 +174,14 @@ export default function AvatarGeneratorPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              {/* Rasgos Físicos */}
-              <div className="space-y-2">
-                <Label>Rasgos Físicos Específicos</Label>
-                <Input 
-                  placeholder="Ej: Pelo rubio, ojos verdes, barba corta..." 
-                  value={formData.physicalTraits}
-                  onChange={e => setFormData({...formData, physicalTraits: e.target.value})}
-                />
+                <div className="space-y-2">
+                  <Label>Rasgos Físicos</Label>
+                  <Input 
+                    placeholder="Ej: Pelo rubio, barba..." 
+                    value={formData.physicalTraits}
+                    onChange={e => setFormData({...formData, physicalTraits: e.target.value})}
+                  />
+                </div>
               </div>
 
               {/* Producto */}
@@ -238,13 +253,13 @@ export default function AvatarGeneratorPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Cantidad</Label>
+                  <Label className="flex items-center gap-2"><Layers className="h-3.5 w-3.5" /> Cantidad (Máx 4)</Label>
                   <Select value={formData.count.toString()} onValueChange={v => setFormData({...formData, count: parseInt(v)})}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                      {[1, 2, 3, 4].map(num => (
                         <SelectItem key={num} value={num.toString()}>{num} {num === 1 ? 'Imagen' : 'Imágenes'}</SelectItem>
                       ))}
                     </SelectContent>
@@ -284,9 +299,7 @@ export default function AvatarGeneratorPage() {
               {results.length > 0 ? (
                 <div className={cn(
                   "grid gap-6",
-                  results.length === 1 ? "grid-cols-1" : 
-                  results.length <= 4 ? "grid-cols-1 md:grid-cols-2" : 
-                  "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                  results.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
                 )}>
                   {results.map((url, idx) => (
                     <div key={idx} className="relative group animate-in fade-in slide-in-from-bottom-4 duration-500">

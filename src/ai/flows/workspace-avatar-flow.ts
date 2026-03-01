@@ -11,13 +11,14 @@ import { z } from 'genkit';
 
 const GenerateAvatarInputSchema = z.object({
   age: z.string().optional().describe('Age of the avatar.'),
+  gender: z.enum(['masculino', 'femenino', 'sin_especificar']).optional().default('sin_especificar').describe('Gender of the avatar.'),
   country: z.string().optional().describe('Country or ethnicity of the avatar.'),
   holdingProduct: z.boolean().optional().describe('Whether the avatar is holding a product.'),
   location: z.string().optional().describe('The environment where the avatar is (e.g., home, cafe, work).'),
   physicalTraits: z.string().optional().describe('Specific physical characteristics.'),
   archetype: z.enum(['authority', 'sports', 'common', 'creative', 'professional', 'casual']).optional().describe('The persona or role of the avatar.'),
   aspectRatio: z.enum(['1:1', '9:16', '16:9']).optional().default('1:1'),
-  count: z.number().min(1).max(10).optional().default(1),
+  count: z.number().min(1).max(4).optional().default(1),
   productImageDataUri: z.string().optional().describe('Data URI of the product image.'),
   referenceImageDataUri: z.string().optional().describe('Data URI of a reference face or style image.'),
   additionalInstructions: z.string().optional().describe('Any other specific details.'),
@@ -77,6 +78,7 @@ const generateAvatarFlow = ai.defineFlow(
       let promptText = `Generate a casual, home-made style avatar portrait. The image should look like a realistic selfie or a simple photo taken with an iPhone 11, with natural lighting and NO background blur or bokeh effect. The entire background should be sharp and clear. The person MUST be standing directly in front of the camera, facing forward. `;
       
       const details = [];
+      if (input.gender && input.gender !== 'sin_especificar') details.push(`Gender: ${input.gender}`);
       if (input.age) details.push(`Age: ${input.age}`);
       if (input.country) details.push(`Origin/Ethnicity: ${input.country}`);
       if (input.archetype) details.push(`Role/Archetype: ${input.archetype} persona`);
