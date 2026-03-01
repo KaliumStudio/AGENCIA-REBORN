@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserCircle, Image as ImageIcon, Layout, ShoppingBag, ArrowRight, Sparkles, Zap, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export default function WorkspaceHubPage() {
   const tools = [
     {
       title: "Generador de Avatares IA",
-      description: "Crea personajes y avatares realistas para tus marcas usando Imagen 4.",
+      description: "Crea personajes y avatares realistas para tus marcas usando Nano Banana Pro.",
       icon: UserCircle,
       href: "/workspace/avatars",
       status: "active",
@@ -30,9 +31,9 @@ export default function WorkspaceHubPage() {
       title: "Landing Pages IA",
       description: "Generación automática de estructuras para Shopify y Tienda Nube.",
       icon: Layout,
-      href: "#",
-      status: "coming_soon",
-      badge: "Próximamente"
+      href: "/workspace/landings",
+      status: "active",
+      badge: "Integración"
     },
     {
       title: "E-commerce Optimizer",
@@ -112,8 +113,4 @@ export default function WorkspaceHubPage() {
       </div>
     </DashboardLayout>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }
