@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
 import { notificationService } from '@/services/notification.service';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle, Scissors } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle, Scissors, Sparkles } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
@@ -83,16 +83,19 @@ export function SidebarNav() {
     admin: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
       { label: 'Tandas', icon: FolderKanban, href: '/admin/batches' },
+      { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace' },
       { label: 'Clientes', icon: Building2, href: '/admin/clients' },
       { label: 'Editores', icon: Scissors, href: '/admin/editors' },
       { label: 'Usuarios', icon: Users, href: '/admin/users' },
     ],
     editor: [
       { label: 'Mis Tandas', icon: FolderKanban, href: '/editor/batches' },
+      { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace' },
     ],
     client: [
       { label: 'Mis Tandas', icon: FolderKanban, href: '/client/batches' },
       { label: 'Nueva Tanda', icon: FolderKanban, href: '/client/batches/new' },
+      { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace' },
     ]
   };
 
@@ -118,14 +121,14 @@ export function SidebarNav() {
             {currentMenu.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton 
-                  isActive={pathname === item.href}
+                  isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   onClick={() => router.push(item.href)}
                   className={cn(
                     "transition-all duration-200 h-11 px-4",
-                    pathname === item.href ? "bg-primary/10 text-primary font-bold" : "hover:bg-slate-50"
+                    (pathname === item.href || pathname.startsWith(item.href + '/')) ? "bg-primary/10 text-primary font-bold" : "hover:bg-slate-50"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", pathname === item.href ? "text-primary" : "text-slate-500")} />
+                  <item.icon className={cn("w-5 h-5", (pathname === item.href || pathname.startsWith(item.href + '/')) ? "text-primary" : "text-slate-500")} />
                   <span className="flex-1">{item.label}</span>
                   {(item.label === 'Mis Tandas' || item.label === 'Tandas') && unreadCount > 0 && (
                     <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
