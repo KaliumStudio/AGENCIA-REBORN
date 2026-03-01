@@ -1,10 +1,6 @@
 
 import { WidgetInstance } from '@/types/landing-builder';
 
-/**
- * Convierte la lista de widgets en un código HTML/JS autocontenido
- * optimizado para las restricciones de Tienda Nube.
- */
 export function exportToTiendaNube(widgets: WidgetInstance[]): string {
   let html = `<div id="am-landing-container" style="font-family: sans-serif; overflow: hidden; width: 100%;">`;
   let scripts = ``;
@@ -13,38 +9,54 @@ export function exportToTiendaNube(widgets: WidgetInstance[]): string {
     switch (w.type) {
       case 'hero':
         html += `
-          <section style="background-color: ${w.props.bgColor}; color: ${w.props.textColor}; padding: 60px 20px; text-align: center; min-height: ${w.props.height}; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <h1 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; line-height: 1.2;">${w.props.title}</h1>
-            <p style="font-size: 1.2rem; opacity: 0.9; max-width: 600px; margin-bottom: 30px;">${w.props.subtitle}</p>
-            <a href="#" style="background-color: ${w.props.textColor}; color: ${w.props.bgColor}; padding: 15px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">${w.props.buttonText}</a>
+          <section style="background-color: ${w.props.bgColor}; color: ${w.props.textColor}; padding: 80px 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <h1 style="font-size: 2.8rem; font-weight: 900; margin-bottom: 15px; line-height: 1.1; max-width: 800px;">${w.props.title}</h1>
+            <p style="font-size: 1.3rem; opacity: 0.9; max-width: 600px; margin-bottom: 40px;">${w.props.subtitle}</p>
+            <a href="#" style="background-color: ${w.props.textColor}; color: ${w.props.bgColor}; padding: 18px 50px; border-radius: 12px; text-decoration: none; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transition: transform 0.3s ease;">${w.props.buttonText}</a>
           </section>
         `;
         break;
 
       case 'benefits':
-        html += `<div style="display: flex; flex-wrap: wrap; padding: 40px 10px; justify-content: center; background: #f9f9f9;">`;
+        html += `<div style="display: flex; flex-wrap: wrap; padding: 60px 10px; justify-content: center; background: #ffffff; gap: 20px;">`;
         w.props.items.forEach((item: any) => {
           html += `
-            <div style="flex: 1; min-width: 250px; padding: 20px; text-align: center;">
-              <div class="am-icon" data-icon="${item.icon}" style="width: 48px; height: 48px; margin: 0 auto 15px; color: #2962FF;"></div>
-              <h3 style="font-size: 1.1rem; font-weight: bold; margin-bottom: 5px;">${item.title}</h3>
-              <p style="font-size: 0.9rem; color: #666;">${item.desc}</p>
+            <div style="flex: 1; min-width: 280px; max-width: 350px; padding: 30px; text-align: center; border: 1px solid #eee; border-radius: 20px; background: #fafafa;">
+              <div class="am-icon" data-icon="${item.icon}" style="width: 50px; height: 50px; margin: 0 auto 20px; color: #2962FF;"></div>
+              <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; color: #111;">${item.title}</h3>
+              <p style="font-size: 0.95rem; color: #555; line-height: 1.5;">${item.desc}</p>
             </div>
           `;
         });
         html += `</div>`;
         break;
 
+      case 'testimonials':
+        html += `<div style="padding: 60px 20px; background: #f0f4ff;">
+          <h2 style="text-align: center; margin-bottom: 40px; font-weight: 900;">Lo que dicen nuestros clientes</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">`;
+        w.props.items.forEach((item: any) => {
+          html += `
+            <div style="background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+              <div style="color: #FFC107; margin-bottom: 15px;">${'★'.repeat(item.rating)}</div>
+              <p style="font-style: italic; color: #444; margin-bottom: 20px; font-size: 1rem; line-height: 1.6;">"${item.text}"</p>
+              <p style="font-weight: 800; font-size: 0.9rem; color: #111;">— ${item.name}</p>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+        break;
+
       case 'timer':
         const timerId = `am-timer-${idx}`;
         html += `
-          <div id="${timerId}" style="background: ${w.props.bgColor}; color: ${w.props.textColor}; padding: 20px; text-align: center; font-weight: bold;">
-            <div style="font-size: 0.8rem; margin-bottom: 5px; letter-spacing: 1px;">${w.props.label}</div>
-            <div style="font-size: 1.5rem; display: flex; justify-content: center; gap: 15px;">
-              <div><span class="days">00</span><small style="display:block; font-size: 0.6rem;">DÍAS</small></div>
-              <div><span class="hours">00</span><small style="display:block; font-size: 0.6rem;">HS</small></div>
-              <div><span class="minutes">00</span><small style="display:block; font-size: 0.6rem;">MIN</small></div>
-              <div><span class="seconds">00</span><small style="display:block; font-size: 0.6rem;">SEG</small></div>
+          <div id="${timerId}" style="background: ${w.props.bgColor}; color: ${w.props.textColor}; padding: 30px 20px; text-align: center;">
+            <div style="font-size: 0.9rem; font-weight: 900; margin-bottom: 15px; letter-spacing: 2px;">${w.props.label}</div>
+            <div style="display: flex; justify-content: center; gap: 20px; font-family: monospace;">
+              <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 10px; min-width: 70px;"><span style="font-size: 2rem; display: block;" class="days">00</span><small style="font-size: 0.7rem; opacity: 0.8;">DÍAS</small></div>
+              <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 10px; min-width: 70px;"><span style="font-size: 2rem; display: block;" class="hours">00</span><small style="font-size: 0.7rem; opacity: 0.8;">HS</small></div>
+              <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 10px; min-width: 70px;"><span style="font-size: 2rem; display: block;" class="minutes">00</span><small style="font-size: 0.7rem; opacity: 0.8;">MIN</small></div>
+              <div style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 10px; min-width: 70px;"><span style="font-size: 2rem; display: block;" class="seconds">00</span><small style="font-size: 0.7rem; opacity: 0.8;">SEG</small></div>
             </div>
           </div>
         `;
@@ -67,40 +79,26 @@ export function exportToTiendaNube(widgets: WidgetInstance[]): string {
         `;
         break;
 
-      case 'whatsapp':
-        html += `
-          <a id="am-wa-float" href="https://wa.me/${w.props.phone}?text=${encodeURIComponent(w.props.message)}" target="_blank" style="position: fixed; bottom: 20px; right: 20px; background: #25d366; color: white; padding: 12px 20px; border-radius: 50px; text-decoration: none; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; font-weight: bold; font-size: 14px;">
-            <div class="am-icon" data-icon="MessageCircle" style="width: 20px; height: 20px;"></div>
-            ${w.props.label}
-          </a>
-        `;
+      case 'custom_code':
+        html += `<div class="am-custom-widget">${w.props.html}</div>`;
         break;
     }
   });
 
   html += `</div>`;
 
-  // Script para inyectar iconos de Lucide (Tienda Nube borra etiquetas SVG)
   const iconScript = `
     (function() {
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/lucide@latest';
       script.onload = () => {
         lucide.createIcons({
-          attrs: {
-            'stroke-width': 2,
-            'stroke': 'currentColor',
-            'fill': 'none'
-          }
+          attrs: { 'stroke-width': 2, 'stroke': 'currentColor', 'fill': 'none' }
         });
       };
       document.head.appendChild(script);
     })();
   `;
 
-  return `${html}
-<script>
-${iconScript}
-${scripts}
-</script>`;
+  return `${html}<script>${iconScript}${scripts}</script>`;
 }

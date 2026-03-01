@@ -1,5 +1,9 @@
 
-import { Layout, CheckCircle2, MessageCircle, Clock, MousePointer2, Type, ImageIcon, ArrowDown } from 'lucide-react';
+import { 
+  Layout, CheckCircle2, MessageCircle, Clock, 
+  MousePointer2, MessageSquare, Code2, 
+  Star, Image as ImageIcon, ArrowDownCircle
+} from 'lucide-react';
 import { WidgetDefinition } from '@/types/landing-builder';
 
 export const WIDGET_REGISTRY: WidgetDefinition[] = [
@@ -30,13 +34,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     }
   },
   {
-    type: 'whatsapp',
-    label: 'Botón Flotante WA',
-    icon: MessageCircle,
+    type: 'testimonials',
+    label: 'Testimonios',
+    icon: MessageSquare,
     defaultProps: {
-      phone: '5491100000000',
-      message: 'Hola! Quiero más info',
-      label: '¿Dudas? Habla con nosotros'
+      items: [
+        { name: 'María G.', text: 'Increíble calidad, llegó súper rápido. Recomiendo!', rating: 5 },
+        { name: 'Juan P.', text: 'El producto superó mis expectativas.', rating: 5 }
+      ]
     }
   },
   {
@@ -44,7 +49,7 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     label: 'Contador Oferta',
     icon: Clock,
     defaultProps: {
-      endTime: '2025-12-31T23:59:59',
+      endTime: new Date(Date.now() + 86400000).toISOString(),
       label: 'LA OFERTA TERMINA EN:',
       bgColor: '#ff0000',
       textColor: '#ffffff'
@@ -59,6 +64,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
       subtext: 'Pocas unidades disponibles',
       url: '#',
       bgColor: '#00c853'
+    }
+  },
+  {
+    type: 'custom_code',
+    label: 'Código Personalizado',
+    icon: Code2,
+    defaultProps: {
+      html: '<div style="padding: 20px; text-align: center; border: 2px dashed #ccc;">Inserta tu HTML aquí</div>'
     }
   }
 ];
