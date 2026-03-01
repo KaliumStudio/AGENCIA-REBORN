@@ -157,7 +157,7 @@ export default function AdminBatchesPage() {
                   key={batch.id}
                   className={cn(
                     "transition-colors",
-                    batch.status === 'delivered' && "bg-green-50/60 hover:bg-green-100/60"
+                    (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 hover:bg-green-100/60"
                   )}
                 >
                   <TableCell className="text-xs text-muted-foreground">{formatDate(batch.createdAt)}</TableCell>
@@ -239,7 +239,7 @@ export default function AdminBatchesPage() {
               key={batch.id} 
               className={cn(
                 "shadow-sm transition-colors",
-                batch.status === 'delivered' && "bg-green-50/60 border-green-100"
+                (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 border-green-100"
               )}
             >
               <CardHeader className="p-4 pb-2">

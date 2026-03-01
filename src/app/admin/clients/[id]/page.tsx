@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function AdminClientDetailPage() {
   const { id } = useParams();
@@ -195,7 +196,13 @@ export default function AdminClientDetailPage() {
                       </TableCell>
                     </TableRow>
                   ) : batches.map((batch) => (
-                    <TableRow key={batch.id}>
+                    <TableRow 
+                      key={batch.id}
+                      className={cn(
+                        "transition-colors",
+                        (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 hover:bg-green-100/60"
+                      )}
+                    >
                       <TableCell className="text-xs text-muted-foreground">
                         {formatDate(batch.createdAt)}
                       </TableCell>
