@@ -18,7 +18,7 @@ const GenerateAvatarInputSchema = z.object({
   physicalTraits: z.string().optional().describe('Specific physical characteristics.'),
   archetype: z.enum(['authority', 'sports', 'common', 'creative', 'professional', 'casual']).optional().describe('The persona or role of the avatar.'),
   aspectRatio: z.enum(['1:1', '9:16', '16:9']).optional().default('1:1'),
-  count: z.number().min(1).max(4).optional().default(1),
+  count: z.number().min(1).max(10).optional().default(1),
   productImageDataUri: z.string().optional().describe('Data URI of the product image.'),
   referenceImageDataUri: z.string().optional().describe('Data URI of a reference face or style image.'),
   additionalInstructions: z.string().optional().describe('Any other specific details.'),
@@ -43,8 +43,6 @@ const generateAvatarFlow = ai.defineFlow(
   async (input) => {
     const results: string[] = [];
     
-    // We loop based on count, although Nano Banana usually generates one at a time.
-    // For production speed we'll limit to sequential or handle as a single complex prompt.
     for (let i = 0; i < (input.count || 1); i++) {
       const promptParts: any[] = [];
 
@@ -57,7 +55,7 @@ const generateAvatarFlow = ai.defineFlow(
       }
 
       // Construct descriptive prompt
-      let promptText = `Generate a high-quality, professional avatar portrait. `;
+      let promptText = `Generate a casual, home-made style avatar portrait. The image should look like a realistic selfie or a simple photo taken with an iPhone 11, with natural lighting and NO background blur or bokeh effect. The entire background should be sharp and clear. The person MUST be standing directly in front of the camera, facing forward. `;
       
       const details = [];
       if (input.age) details.push(`Age: ${input.age}`);
@@ -67,7 +65,7 @@ const generateAvatarFlow = ai.defineFlow(
       if (input.location) details.push(`Location: set in a ${input.location}`);
       
       if (input.holdingProduct) {
-        promptText += `The person MUST be holding the product shown in the image naturally. `;
+        promptText += `The person MUST be holding the product shown in the image naturally in their hands. `;
       }
       
       if (input.referenceImageDataUri) {
@@ -77,7 +75,7 @@ const generateAvatarFlow = ai.defineFlow(
       promptText += `Details: ${details.join(', ')}. `;
       if (input.additionalInstructions) promptText += `Additional context: ${input.additionalInstructions}. `;
       
-      promptText += `The lighting should be cinematic and professional. The output should be a single, clean image.`;
+      promptText += `The output should be a single, clean, realistic image that looks like a regular consumer photo.`;
 
       promptParts.push({ text: promptText });
 

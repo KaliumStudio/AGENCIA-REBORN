@@ -244,10 +244,9 @@ export default function AvatarGeneratorPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">1 Imagen</SelectItem>
-                      <SelectItem value="2">2 Imágenes</SelectItem>
-                      <SelectItem value="3">3 Imágenes</SelectItem>
-                      <SelectItem value="4">4 Imágenes</SelectItem>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <SelectItem key={num} value={num.toString()}>{num} {num === 1 ? 'Imagen' : 'Imágenes'}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -260,7 +259,7 @@ export default function AvatarGeneratorPage() {
                 disabled={generating}
               >
                 {generating ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creando Personaje...</>
+                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creando Personajes...</>
                 ) : (
                   <><Sparkles className="mr-2 h-5 w-5" /> Generar con Nano Banana Pro</>
                 )}
@@ -285,7 +284,9 @@ export default function AvatarGeneratorPage() {
               {results.length > 0 ? (
                 <div className={cn(
                   "grid gap-6",
-                  results.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+                  results.length === 1 ? "grid-cols-1" : 
+                  results.length <= 4 ? "grid-cols-1 md:grid-cols-2" : 
+                  "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 )}>
                   {results.map((url, idx) => (
                     <div key={idx} className="relative group animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -330,7 +331,7 @@ export default function AvatarGeneratorPage() {
                       <Sparkles className="h-10 w-10 text-primary animate-pulse" />
                     </div>
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tighter">DISEÑANDO AVATARES...</h2>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">DISEÑANDO AVATARES...</h2>
                   <p className="text-muted-foreground mt-2 animate-pulse font-medium">Nano Banana Pro está procesando tus referencias</p>
                   <div className="mt-8 flex gap-1">
                     {[1, 2, 3].map(i => (
@@ -348,9 +349,9 @@ export default function AvatarGeneratorPage() {
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h4 className="font-bold text-lg">Integración Visual Avanzada</h4>
+                <h4 className="font-bold text-lg">Estilo Realista iPhone 11</h4>
                 <p className="text-sm text-slate-400 leading-relaxed max-w-md">
-                  Estamos usando el motor **Nano Banana Pro**. Al adjuntar una imagen de producto, la IA intentará posicionarlo en las manos del avatar manteniendo la coherencia de luz y sombras.
+                  Hemos optimizado el motor para generar fotos con aspecto de "usuario común". Sin bokeh artificial, luz natural y pose frontal para máxima autenticidad.
                 </p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full -mr-16 -mt-16" />
