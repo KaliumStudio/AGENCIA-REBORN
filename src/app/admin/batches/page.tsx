@@ -30,8 +30,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User, Calendar } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
+import { EditorCalendarDialog } from '@/components/editors/editor-calendar-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -48,6 +49,7 @@ export default function AdminBatchesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchBatches = async () => {
@@ -110,7 +112,10 @@ export default function AdminBatchesPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Tandas</h1>
             <p className="text-sm md:text-base text-muted-foreground">Supervisión centralizada del flujo creativo.</p>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            <Button variant="outline" onClick={() => setIsCalendarOpen(true)} className="h-11 md:h-10 px-4 border-primary text-primary hover:bg-primary/5 font-bold">
+              <Calendar className="mr-2 h-4 w-4" /> Calendario
+            </Button>
             <Button variant="outline" size="icon" onClick={fetchBatches} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
@@ -336,6 +341,13 @@ export default function AdminBatchesPage() {
             open={isAssignOpen}
             onOpenChange={setIsAssignOpen}
             onUpdate={fetchBatches} 
+          />
+        )}
+
+        {isCalendarOpen && (
+          <EditorCalendarDialog
+            open={isCalendarOpen}
+            onOpenChange={setIsCalendarOpen}
           />
         )}
       </DashboardLayout>
