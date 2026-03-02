@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
@@ -29,6 +29,7 @@ import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 
 export default function AdminBatchDetailPage() {
   const { id } = useParams();
@@ -37,9 +38,11 @@ export default function AdminBatchDetailPage() {
   
   const [client, setClient] = useState<Client | null>(null);
   const [clientUser, setClientUser] = useState<UserProfile | null>(null);
+  const [assignedEditors, setAssignedEditors] = useState<UserProfile[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(true);
   const [driveLink, setDriveLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
 
   const batchRef = useMemoFirebase(() => {
     return id ? doc(db, 'batches', id as string) : null;
@@ -55,12 +58,21 @@ export default function AdminBatchDetailPage() {
       
       const loadExtras = async () => {
         try {
-          const [clientData, userData] = await Promise.all([
+          const [clientData, userData, allUsers] = await Promise.all([
             clientService.getClient(batch.clientId),
-            userService.getProfile(batch.clientUserUid)
+            userService.getProfile(batch.clientUserUid),
+            userService.getAllUsers()
           ]);
+          
           setClient(clientData);
           setClientUser(userData);
+          
+          if (batch.assignedEditorUids && batch.assignedEditorUids.length > 0) {
+            const editors = allUsers.filter(u => batch.assignedEditorUids.includes(u.uid));
+            setAssignedEditors(editors);
+          } else {
+            setAssignedEditors([]);
+          }
         } catch (error) {
           console.error("Error loading admin batch detail extras:", error);
         } finally {
@@ -325,8 +337,11 @@ export default function AdminBatchDetailPage() {
 
           <div className="space-y-6">
             <Card className="shadow-sm border-t-4 border-primary">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-lg">Gestión de Tanda</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsAssignOpen(true)} title="Asignar editores">
+                  <Users className="h-4 w-4 text-primary" />
+                </Button>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -349,11 +364,28 @@ export default function AdminBatchDetailPage() {
                   
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Editores Asignados</p>
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <User className="h-4 w-4 text-primary" />
-                      {batch.assignedEditorUids?.length > 0 
-                        ? `${batch.assignedEditorUids.length} Profesionales` 
-                        : 'Sin asignar'}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Users className="h-4 w-4 text-primary" />
+                          {batch.assignedEditorUids?.length > 0 
+                            ? `${batch.assignedEditorUids.length} Profesionales` 
+                            : 'Sin asignar'}
+                        </div>
+                        <Button variant="link" size="sm" className="h-auto p-0 text-[10px] font-bold uppercase" onClick={() => setIsAssignOpen(true)}>
+                          {batch.assignedEditorUids?.length > 0 ? 'Cambiar' : 'Asignar ahora'}
+                        </Button>
+                      </div>
+                      
+                      {assignedEditors.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {assignedEditors.map(ed => (
+                            <Badge key={ed.uid} variant="outline" className="text-[9px] h-5 bg-slate-50">
+                              {ed.displayName}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -364,16 +396,16 @@ export default function AdminBatchDetailPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-slate-400" />
-                        <div>
-                          <p className="text-sm font-bold">{loadingExtras ? '...' : (client?.name || 'No encontrado')}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">{batch.clientId}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold truncate">{loadingExtras ? '...' : (client?.name || 'No encontrado')}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono truncate">{batch.clientId}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-slate-400" />
-                        <div>
-                          <p className="text-sm font-bold">{loadingExtras ? '...' : (clientUser?.displayName || 'No encontrado')}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">{batch.clientUserUid}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold truncate">{loadingExtras ? '...' : (clientUser?.displayName || 'No encontrado')}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono truncate">{batch.clientUserUid}</p>
                         </div>
                       </div>
                     </div>
@@ -401,6 +433,18 @@ export default function AdminBatchDetailPage() {
             </Card>
           </div>
         </div>
+
+        {batch && (
+          <AssignEditorsDialog 
+            batch={batch} 
+            open={isAssignOpen}
+            onOpenChange={setIsAssignOpen}
+            onUpdate={() => {
+              // useDoc se actualiza solo por tiempo real, pero refrescamos extras si es necesario
+              toast({ title: "Asignación actualizada" });
+            }} 
+          />
+        )}
       </DashboardLayout>
     </RoleGuard>
   );

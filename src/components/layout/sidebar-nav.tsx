@@ -95,7 +95,6 @@ export function SidebarNav() {
     client: [
       { label: 'Mis Tandas', icon: FolderKanban, href: '/client/batches' },
       { label: 'Nueva Tanda', icon: FolderKanban, href: '/client/batches/new' },
-      { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace' },
     ]
   };
 

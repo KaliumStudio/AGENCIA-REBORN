@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { batchService } from '@/services/batch.service';
 import { clientService } from '@/services/client.service';
-import { Batch, Client } from '@/types';
+import { userService } from '@/services/user.service';
+import { Batch, Client, UserProfile } from '@/types';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -24,7 +25,12 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -37,6 +43,7 @@ export default function AdminBatchesPage() {
   const { profile } = useAuth();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [clients, setClients] = useState<Record<string, string>>({});
+  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null);
@@ -46,14 +53,19 @@ export default function AdminBatchesPage() {
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const [batchesData, clientsData] = await Promise.all([
+      const [batchesData, clientsData, usersData] = await Promise.all([
         batchService.getAllBatches(),
-        clientService.getAllClients()
+        clientService.getAllClients(),
+        userService.getAllUsers()
       ]);
       
       const clientMap: Record<string, string> = {};
       clientsData.forEach(c => { clientMap[c.id] = c.name; });
       
+      const uMap: Record<string, string> = {};
+      usersData.forEach(u => { uMap[u.uid] = u.displayName; });
+      
+      setUsersMap(uMap);
       setClients(clientMap);
       setBatches(batchesData);
     } catch (error) {
@@ -178,10 +190,29 @@ export default function AdminBatchesPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{batch.assignedEditorUids?.length || 0}</span>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-bold text-primary">{batch.assignedEditorUids?.length || 0}</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase px-2 mb-2">Editores Asignados</p>
+                          {batch.assignedEditorUids && batch.assignedEditorUids.length > 0 ? (
+                            batch.assignedEditorUids.map(uid => (
+                              <div key={uid} className="flex items-center gap-2 p-1.5 text-xs font-medium bg-slate-50 rounded border">
+                                <User className="h-3 w-3 text-primary" />
+                                {usersMap[uid] || 'Cargando...'}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-[10px] text-center italic text-muted-foreground py-2">Sin editores asignados</p>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
