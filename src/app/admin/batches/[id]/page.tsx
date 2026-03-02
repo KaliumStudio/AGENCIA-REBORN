@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users, Edit
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
@@ -176,6 +176,11 @@ export default function AdminBatchDetailPage() {
             </p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
+            <Button variant="outline" asChild className="flex-1 md:flex-none">
+              <Link href={`/admin/batches/${batch.id}/edit`}>
+                <Edit className="mr-2 h-4 w-4" /> Editar Brief
+              </Link>
+            </Button>
             <Button variant="outline" asChild className="flex-1 md:flex-none">
               <Link href={`/admin/batches/${batch.id}/chat`}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Supervisar Chat

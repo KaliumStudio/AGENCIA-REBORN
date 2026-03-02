@@ -12,28 +12,28 @@ import { cn } from '@/lib/utils';
 export default function WorkspaceHubPage() {
   const tools = [
     {
-      title: "Generador de Avatares IA",
-      description: "Crea personajes y avatares realistas para tus marcas usando Nano Banana Pro.",
-      icon: UserCircle,
-      href: "/workspace/avatars",
-      status: "active",
-      badge: "Nuevo"
-    },
-    {
       title: "Retargeting Ads IA",
       description: "Diseña piezas publicitarias de alto impacto optimizadas para re-impactar clientes.",
       icon: ImageIcon,
       href: "/workspace/retargeting",
       status: "active",
-      badge: "Beta"
+      badge: "Operativo"
+    },
+    {
+      title: "Generador de Avatares IA",
+      description: "Crea personajes y avatares realistas para tus marcas usando Nano Banana Pro.",
+      icon: UserCircle,
+      href: "#",
+      status: "coming_soon",
+      badge: "En Mantenimiento"
     },
     {
       title: "Landing Pages IA",
       description: "Generación automática de estructuras para Shopify y Tienda Nube.",
       icon: Layout,
-      href: "/workspace/landings",
-      status: "active",
-      badge: "Integración"
+      href: "#",
+      status: "coming_soon",
+      badge: "Próximamente"
     },
     {
       title: "E-commerce Optimizer",
@@ -41,7 +41,7 @@ export default function WorkspaceHubPage() {
       icon: ShoppingBag,
       href: "#",
       status: "coming_soon",
-      badge: "En Desarrollo"
+      badge: "Próximamente"
     }
   ];
 
@@ -51,7 +51,7 @@ export default function WorkspaceHubPage() {
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <Sparkles className="h-8 w-8 text-primary" /> Área de Trabajo
         </h1>
-        <p className="text-muted-foreground mt-2">Herramientas creativas impulsadas por IA para acelerar tu producción.</p>
+        <p className="text-muted-foreground mt-2">Herramientas creativas impulsadas por IA para acelerar tu producción interna.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -76,11 +76,11 @@ export default function WorkspaceHubPage() {
             <CardContent>
               {tool.status === 'active' ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-primary/60">
-                  <Zap className="h-3 w-3" /> Potenciado por AGENCIA AM AI
+                  <Zap className="h-3 w-3" /> Potenciado por Nano Banana Pro
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                  <Lock className="h-3 w-3" /> Acceso próximamente
+                  <Lock className="h-3 w-3" /> Herramienta Deshabilitada
                 </div>
               )}
             </CardContent>
@@ -103,11 +103,11 @@ export default function WorkspaceHubPage() {
 
       <div className="mt-12 p-8 bg-slate-900 rounded-2xl text-white relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2">¿Necesitas una herramienta personalizada?</h2>
+          <h2 className="text-2xl font-bold mb-2">Modo Producción Interna</h2>
           <p className="text-slate-400 text-sm max-w-xl mb-6">
-            Estamos expandiendo nuestra suite de IA constantemente. Si tienes una necesidad específica de automatización creativa, contáctanos.
+            Esta sección es exclusiva para el equipo de Agencia AM. Usa estas herramientas para acelerar el cumplimiento de briefs y mejorar la calidad de las entregas finales.
           </p>
-          <Button variant="secondary" className="font-bold">Hablar con Soporte</Button>
+          <Button variant="secondary" className="font-bold">Consultar Documentación IA</Button>
         </div>
         <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
       </div>
