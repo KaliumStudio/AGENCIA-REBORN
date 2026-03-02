@@ -212,7 +212,7 @@ export default function AdminBatchDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias Visuales</p>
-                    <p className="text-sm font-medium whitespace-pre-wrap">{batch.referenceLinks}</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap break-words">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -242,13 +242,13 @@ export default function AdminBatchDetailPage() {
                           <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
                             {spec.format === 'IMAGEN' ? 'Detalles de Imagen' : 'Guion / Estructura'}
                           </p>
-                          <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap">{spec.script}</p>
+                          <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap break-words">{spec.script}</p>
                         </div>
                       )}
                       {spec.notes && (
                         <div className="flex items-start gap-2 text-sm text-muted-foreground bg-amber-50/50 p-2 rounded">
                           <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-                          <span><strong>Nota:</strong> {spec.notes}</span>
+                          <span className="break-words"><strong>Nota:</strong> {spec.notes}</span>
                         </div>
                       )}
                     </CardContent>
@@ -262,7 +262,7 @@ export default function AdminBatchDetailPage() {
                 <CardHeader className="py-3">
                   <CardTitle className="text-sm">Instrucciones Adicionales</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap">
+                <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                   {batch.additionalNotes}
                 </CardContent>
               </Card>
