@@ -305,6 +305,8 @@ export default function AdminNewBatchPage() {
                               <SelectItem value="POV">POV</SelectItem>
                               <SelectItem value="PODCAST">PODCAST</SelectItem>
                               <SelectItem value="IMAGEN">IMAGEN</SelectItem>
+                              <SelectItem value="TRADUCCIÓN SIMPLE">TRADUCCIÓN SIMPLE</SelectItem>
+                              <SelectItem value="UGC IA + CINEMATICO">UGC IA + CINEMATICO</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

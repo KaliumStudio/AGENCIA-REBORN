@@ -40,7 +40,7 @@ export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'a
 export interface VideoSpecification {
   script?: string;
   notes?: string;
-  format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST' | 'IMAGEN';
+  format?: 'UGC IA' | 'CINEMATICO' | 'POV' | 'PODCAST' | 'IMAGEN' | 'TRADUCCIÓN SIMPLE' | 'UGC IA + CINEMATICO';
 }
 
 export interface EditHistoryEntry {

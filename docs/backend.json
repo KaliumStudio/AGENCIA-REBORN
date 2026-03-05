@@ -77,7 +77,7 @@
             "properties": {
               "script": { "type": "string" },
               "notes": { "type": "string" },
-              "format": { "type": "string", "enum": ["UGC IA", "CINEMATICO", "POV", "PODCAST", "IMAGEN"] }
+              "format": { "type": "string", "enum": ["UGC IA", "CINEMATICO", "POV", "PODCAST", "IMAGEN", "TRADUCCIÓN SIMPLE", "UGC IA + CINEMATICO"] }
             }
           }
         },

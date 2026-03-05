@@ -20,7 +20,7 @@ interface EditEditorDialogProps {
   onUpdated: () => void;
 }
 
-const FORMATS = ["UGC IA", "CINEMATICO", "POV", "PODCAST", "IMAGEN"];
+const FORMATS = ["UGC IA", "CINEMATICO", "POV", "PODCAST", "IMAGEN", "TRADUCCIÓN SIMPLE", "UGC IA + CINEMATICO"];
 const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 export function EditEditorDialog({ editor, open, onOpenChange, onUpdated }: EditEditorDialogProps) {
