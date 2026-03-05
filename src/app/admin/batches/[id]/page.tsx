@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
-  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users, Edit
+  Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users, Edit, CheckCircle2, XCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
@@ -99,7 +99,7 @@ export default function AdminBatchDetailPage() {
     setSubmitting(true);
     
     try {
-      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName);
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName, true);
       
       const chatId = await chatService.getOrCreateChat(
         batch.id, 
@@ -121,6 +121,66 @@ export default function AdminBatchDetailPage() {
     } catch (err) {
       console.error(err);
       toast({ title: "Error", description: "No se pudo procesar la entrega.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApproveReview = async () => {
+    if (!batch || !profile) return;
+    setSubmitting(true);
+    try {
+      await batchService.approveDelivery(batch.id, profile.uid, profile.displayName);
+      
+      const chatId = await chatService.getOrCreateChat(
+        batch.id, 
+        batch.clientId, 
+        batch.clientUserUid, 
+        batch.assignedEditorUids, 
+        profile.uid
+      );
+
+      await chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        'system', 
+        `✅ Entrega Aprobada por Administrador. El material ya está visible para el cliente.`
+      );
+
+      toast({ title: "Entrega Aprobada", description: "La tanda ahora es visible para el cliente." });
+    } catch (err) {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectReview = async () => {
+    if (!batch || !profile) return;
+    setSubmitting(true);
+    try {
+      await batchService.rejectDelivery(batch.id, profile.uid, profile.displayName);
+      
+      const chatId = await chatService.getOrCreateChat(
+        batch.id, 
+        batch.clientId, 
+        batch.clientUserUid, 
+        batch.assignedEditorUids, 
+        profile.uid
+      );
+
+      await chatService.sendMessage(
+        chatId, 
+        profile.uid, 
+        profile.role, 
+        'revision_request', 
+        `❌ Entrega RECHAZADA por Admin. Por favor, revisen el material enviado y vuelvan a entregar.`
+      );
+
+      toast({ title: "Entrega Rechazada", description: "Se ha notificado a los editores para corregir." });
+    } catch (err) {
+      toast({ title: "Error", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -188,6 +248,30 @@ export default function AdminBatchDetailPage() {
             </Button>
           </div>
         </div>
+
+        {batch.status === 'pending_review' && (
+          <Alert className="mb-8 border-orange-500 bg-orange-50 shadow-md animate-in fade-in slide-in-from-top-2">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+              <div className="flex items-start gap-3">
+                <Info className="h-6 w-6 text-orange-600 mt-1" />
+                <div>
+                  <AlertTitle className="text-orange-900 font-black text-lg uppercase tracking-tighter">REVISIÓN PENDIENTE</AlertTitle>
+                  <AlertDescription className="text-orange-800">
+                    Un editor ha enviado material. Revisa el link de Drive y decide si es apto para el cliente.
+                  </AlertDescription>
+                </div>
+              </div>
+              <div className="flex gap-3 shrink-0">
+                <Button variant="destructive" onClick={handleRejectReview} disabled={submitting}>
+                  <XCircle className="mr-2 h-4 w-4" /> Rechazar
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleApproveReview} disabled={submitting}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Aprobar y Entregar
+                </Button>
+              </div>
+            </div>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">

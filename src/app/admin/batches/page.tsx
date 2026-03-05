@@ -30,7 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User, Calendar } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User, Calendar, Info } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { EditorCalendarDialog } from '@/components/editors/editor-calendar-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -174,7 +174,9 @@ export default function AdminBatchesPage() {
                   key={batch.id}
                   className={cn(
                     "transition-colors",
-                    (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 hover:bg-green-100/60"
+                    (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 hover:bg-green-100/60",
+                    batch.status === 'pending_review' && "bg-orange-50/60 animate-pulse",
+                    batch.status === 'rejected' && "bg-red-50/60"
                   )}
                 >
                   <TableCell className="text-xs text-muted-foreground">{formatDate(batch.createdAt)}</TableCell>
@@ -188,7 +190,14 @@ export default function AdminBatchesPage() {
                       <span className="text-sm font-medium">{clients[batch.clientId] || 'Cargando...'}</span>
                     </div>
                   </TableCell>
-                  <TableCell><StatusBadge status={batch.status} /></TableCell>
+                  <TableCell>
+                    <div className="flex flex-col items-start gap-1">
+                      <StatusBadge status={batch.status} />
+                      {batch.status === 'pending_review' && (
+                        <span className="text-[9px] font-black text-orange-600 animate-bounce uppercase">¡Requiere Acción!</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-center">
                     <span className="inline-flex items-center justify-center bg-slate-100 rounded-full w-7 h-7 text-xs font-bold text-slate-700">
                       {batch.creativeCount}
@@ -221,9 +230,9 @@ export default function AdminBatchesPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" asChild title="Ver detalles">
+                      <Button variant={batch.status === 'pending_review' ? 'default' : 'outline'} size="sm" asChild title="Ver detalles">
                         <Link href={`/admin/batches/${batch.id}`}>
-                          <Eye className="h-4 w-4" />
+                          {batch.status === 'pending_review' ? <><Info className="h-4 w-4 mr-1" /> REVISAR</> : <Eye className="h-4 w-4" />}
                         </Link>
                       </Button>
                       <Button variant="outline" size="sm" asChild title="Supervisar chat">
@@ -275,7 +284,9 @@ export default function AdminBatchesPage() {
               key={batch.id} 
               className={cn(
                 "shadow-sm transition-colors",
-                (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 border-green-100"
+                (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 border-green-100",
+                batch.status === 'pending_review' && "bg-orange-50 border-orange-200",
+                batch.status === 'rejected' && "bg-red-50"
               )}
             >
               <CardHeader className="p-4 pb-2">
@@ -297,8 +308,10 @@ export default function AdminBatchesPage() {
               <CardContent className="p-4 pt-0 space-y-4">
                 <div className="flex items-center justify-between border-t pt-4">
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/admin/batches/${batch.id}`}><Eye className="h-4 w-4" /></Link>
+                    <Button variant={batch.status === 'pending_review' ? 'default' : 'outline'} size="sm" asChild>
+                      <Link href={`/admin/batches/${batch.id}`}>
+                        {batch.status === 'pending_review' ? 'REVISAR' : <Eye className="h-4 w-4" />}
+                      </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/admin/batches/${batch.id}/chat`}><MessageSquare className="h-4 w-4" /></Link>

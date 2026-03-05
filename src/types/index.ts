@@ -35,7 +35,7 @@ export interface Client {
   createdBy: string;
 }
 
-export type BatchStatus = 'new' | 'in_progress' | 'delivered' | 'revisions' | 'approved';
+export type BatchStatus = 'new' | 'in_progress' | 'pending_review' | 'delivered' | 'revisions' | 'approved' | 'rejected';
 
 export interface VideoSpecification {
   script?: string;

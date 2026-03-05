@@ -155,25 +155,25 @@ export const batchService = {
     chatService.syncChatMembers(id, memberUids);
   },
 
-  async submitDelivery(id: string, driveLink: string, uid: string, userName: string) {
+  async submitDelivery(id: string, driveLink: string, uid: string, userName: string, isAdmin: boolean = false) {
     const docRef = doc(db, 'batches', id);
     const batchSnap = await getDoc(docRef);
     if (!batchSnap.exists()) return;
     const batchData = batchSnap.data() as Batch;
 
-    // Solo descontar si no estaba ya entregada para evitar dobles descuentos
-    const isFirstDelivery = batchData.status !== 'delivered' && batchData.status !== 'approved';
+    // Si entrega un editor, va a revisión. Si entrega un admin, va directo a entregado.
+    const targetStatus: BatchStatus = isAdmin ? 'delivered' : 'pending_review';
 
     const historyEntry: EditHistoryEntry = {
       uid: uid,
       userName: userName,
       timestamp: new Date(),
-      action: 'Entrega de material realizada'
+      action: isAdmin ? 'Entrega directa realizada por Admin' : 'Entrega enviada para revisión administrativa'
     };
 
     const updateData = { 
       driveLink,
-      status: 'delivered' as BatchStatus,
+      status: targetStatus,
       deliveredAt: serverTimestamp(),
       deliveredBy: uid,
       editHistory: arrayUnion(historyEntry)
@@ -187,18 +187,65 @@ export const batchService = {
       }));
     });
 
-    // Lógica de cupos de creativos
-    if (isFirstDelivery && batchData.clientId) {
-      // Formato IMAGEN = 0.5, Otros = 1.0
-      const quotaCost = (batchData.videoSpecs || []).reduce((acc, spec) => {
-        return acc + (spec.format === 'IMAGEN' ? 0.5 : 1.0);
-      }, 0);
-
-      const clientRef = doc(db, 'clients', batchData.clientId);
-      updateDoc(clientRef, {
-        creativeQuota: increment(-quotaCost)
-      }).catch(err => console.error("Error updating client quota:", err));
+    // Si el admin entrega directo, descontamos cupo ya
+    if (isAdmin && batchData.clientId && batchData.status !== 'delivered' && batchData.status !== 'approved') {
+      await this.discountQuota(batchData);
     }
+  },
+
+  async approveDelivery(batchId: string, adminUid: string, adminName: string) {
+    const docRef = doc(db, 'batches', batchId);
+    const batchSnap = await getDoc(docRef);
+    if (!batchSnap.exists()) return;
+    const batchData = batchSnap.data() as Batch;
+
+    const historyEntry: EditHistoryEntry = {
+      uid: adminUid,
+      userName: adminName,
+      timestamp: new Date(),
+      action: 'Entrega aprobada por Administrador'
+    };
+
+    const updateData = {
+      status: 'delivered' as BatchStatus,
+      editHistory: arrayUnion(historyEntry)
+    };
+
+    await updateDoc(docRef, updateData);
+    
+    // Descontar cupo al aprobar
+    if (batchData.clientId) {
+      await this.discountQuota(batchData);
+    }
+  },
+
+  async rejectDelivery(batchId: string, adminUid: string, adminName: string) {
+    const docRef = doc(db, 'batches', batchId);
+    const historyEntry: EditHistoryEntry = {
+      uid: adminUid,
+      userName: adminName,
+      timestamp: new Date(),
+      action: 'Entrega RECHAZADA por Administrador'
+    };
+
+    await updateDoc(docRef, {
+      status: 'rejected' as BatchStatus,
+      editHistory: arrayUnion(historyEntry)
+    });
+  },
+
+  private async discountQuota(batch: Batch) {
+    if (!batch.clientId) return;
+    
+    // Formato IMAGEN = 0.5, Otros = 1.0
+    const quotaCost = (batch.videoSpecs || []).reduce((acc, spec) => {
+      return acc + (spec.format === 'IMAGEN' ? 0.5 : 1.0);
+    }, 0);
+
+    const clientRef = doc(db, 'clients', batch.clientId);
+    await updateDoc(clientRef, {
+      creativeQuota: increment(-quotaCost)
+    }).catch(err => console.error("Error updating client quota:", err));
   },
 
   async getBatchesByClient(clientId: string): Promise<Batch[]> {

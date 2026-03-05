@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, Send, ExternalLink, MessageSquare, Info, 
-  Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Loader2 
+  Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Loader2, AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +67,7 @@ export default function EditorBatchDetailPage() {
     setSubmitting(true);
     
     try {
-      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName);
+      await batchService.submitDelivery(batch.id, driveLink, profile.uid, profile.displayName, false);
       
       const chatId = await chatService.getOrCreateChat(
         batch.id, 
@@ -82,10 +82,10 @@ export default function EditorBatchDetailPage() {
         profile.uid, 
         profile.role, 
         'drive_link', 
-        `Nueva entrega realizada. Link: ${driveLink}`
+        `Nueva entrega enviada para revisión del administrador. Link: ${driveLink}`
       );
       
-      toast({ title: "Tanda entregada", description: "El cliente ha sido notificado automáticamente." });
+      toast({ title: "Entrega enviada", description: "El administrador debe aprobar el material antes de que el cliente lo vea." });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "No se pudo registrar la entrega.", variant: "destructive" });
@@ -105,6 +105,8 @@ export default function EditorBatchDetailPage() {
   }
 
   if (!batch) return <DashboardLayout><div className="text-center py-12">No se encontró la tanda.</div></DashboardLayout>;
+
+  const isLocked = batch.status === 'pending_review' || batch.status === 'delivered' || batch.status === 'approved';
 
   return (
     <RoleGuard allowedRoles={['editor']}>
@@ -129,13 +131,35 @@ export default function EditorBatchDetailPage() {
           </Button>
         </div>
 
+        {batch.status === 'rejected' && (
+          <div className="mb-8 p-4 bg-red-600 text-white rounded-xl shadow-xl flex items-center gap-4 animate-in zoom-in-95">
+            <div className="p-2 bg-white/20 rounded-full">
+              <AlertCircle className="h-8 w-8" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-tighter">Entrega Rechazada</h2>
+              <p className="opacity-90 font-medium">El administrador ha rechazado el material. Revisa el chat para conocer los motivos y vuelve a realizar la entrega.</p>
+            </div>
+          </div>
+        )}
+
+        {batch.status === 'pending_review' && (
+          <div className="mb-8 p-4 bg-orange-100 border-2 border-orange-500 text-orange-900 rounded-xl flex items-center gap-4">
+            <Loader2 className="h-6 w-6 animate-spin text-orange-600" />
+            <div>
+              <p className="font-bold">Entrega en Revisión Administrativa</p>
+              <p className="text-sm">El material está esperando aprobación del administrador. Se te notificará el resultado.</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="bg-primary/5 border-primary/20">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
-                    <LinkIcon className="h-5 w-5 text-primary" />
+                    <Globe className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Landing Page</p>
@@ -199,7 +223,10 @@ export default function EditorBatchDetailPage() {
               </Card>
             )}
 
-            <Card className="border-primary shadow-md">
+            <Card className={cn(
+              "border-primary shadow-md transition-opacity",
+              isLocked && batch.status !== 'rejected' && "opacity-60"
+            )}>
               <CardHeader>
                 <CardTitle>Gestión de Entrega</CardTitle>
               </CardHeader>
@@ -211,6 +238,7 @@ export default function EditorBatchDetailPage() {
                     placeholder="https://drive.google.com/drive/folders/..." 
                     value={driveLink} 
                     onChange={e => setDriveLink(e.target.value)}
+                    disabled={isLocked && batch.status !== 'rejected'}
                   />
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-blue-50 p-2 rounded">
                     <Info className="h-3 w-3 text-blue-500" />
@@ -219,9 +247,9 @@ export default function EditorBatchDetailPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" onClick={handleDeliver} disabled={submitting || batch.status === 'approved'}>
+                <Button className="w-full" onClick={handleDeliver} disabled={submitting || (isLocked && batch.status !== 'rejected')}>
                   <Send className="mr-2 h-4 w-4" /> 
-                  {submitting ? "Procesando..." : "Enviar Entrega y Notificar"}
+                  {submitting ? "Procesando..." : batch.status === 'rejected' ? "Re-Enviar para Revisión" : "Enviar para Revisión del Admin"}
                 </Button>
                 {batch.driveLink && (
                   <div className="w-full p-3 bg-muted/50 rounded-lg text-sm flex justify-between items-center border">

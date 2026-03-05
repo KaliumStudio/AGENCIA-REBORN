@@ -11,10 +11,11 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-import { Eye, MessageSquare, FolderKanban, Building2, Layers } from 'lucide-react';
+import { Eye, MessageSquare, FolderKanban, Building2, Layers, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function EditorBatchesPage() {
   const { profile } = useAuth();
@@ -73,8 +74,17 @@ export default function EditorBatchesPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {batches.map((batch) => (
-              <Card key={batch.id} className="hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden">
-                <CardHeader className="pb-3 bg-slate-50/50">
+              <Card 
+                key={batch.id} 
+                className={cn(
+                  "hover:shadow-md transition-all duration-300 flex flex-col h-full overflow-hidden border-2",
+                  batch.status === 'rejected' ? "bg-red-50 border-red-500 shadow-lg shadow-red-100" : "hover:border-primary/50"
+                )}
+              >
+                <CardHeader className={cn(
+                  "pb-3",
+                  batch.status === 'rejected' ? "bg-red-100/50" : "bg-slate-50/50"
+                )}>
                   <div className="flex justify-between items-start mb-2">
                     <StatusBadge status={batch.status} />
                     <span className="text-[10px] text-muted-foreground uppercase font-bold">
@@ -87,6 +97,12 @@ export default function EditorBatchesPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4 flex-1">
+                  {batch.status === 'rejected' && (
+                    <div className="mb-4 p-2 bg-red-600 text-white rounded-lg flex items-center gap-2 text-xs font-black animate-pulse uppercase tracking-tight">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      ENTREGA RECHAZADA POR ADMIN
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
                     Producto: <span className="font-semibold text-foreground">{batch.productName}</span>
                   </p>
@@ -95,8 +111,11 @@ export default function EditorBatchesPage() {
                     {batch.creativeCount} Creativos
                   </div>
                 </CardContent>
-                <CardFooter className="mt-auto pt-4 flex gap-2 border-t bg-slate-50/30">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                <CardFooter className={cn(
+                  "mt-auto pt-4 flex gap-2 border-t",
+                  batch.status === 'rejected' ? "bg-red-50" : "bg-slate-50/30"
+                )}>
+                  <Button variant={batch.status === 'rejected' ? "destructive" : "outline"} size="sm" className="flex-1" asChild>
                     <Link href={`/editor/batches/${batch.id}`}>
                       <Eye className="mr-2 h-4 w-4" /> Ver Brief
                     </Link>
