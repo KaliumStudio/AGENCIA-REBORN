@@ -57,7 +57,7 @@ export default function WorkspaceHubPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tools.map((tool, idx) => (
           <Card key={idx} className={cn(
-            "relative overflow-hidden transition-all duration-300 group",
+            "relative overflow-hidden transition-all duration-300 group flex flex-col",
             tool.status === 'active' ? "hover:shadow-xl hover:-translate-y-1 border-primary/10" : "opacity-75 grayscale bg-slate-50"
           )}>
             <div className="absolute top-0 right-0 p-4">
@@ -73,7 +73,7 @@ export default function WorkspaceHubPage() {
               <CardTitle className="text-xl">{tool.title}</CardTitle>
               <CardDescription className="line-clamp-2 min-h-[40px]">{tool.description}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               {tool.status === 'active' ? (
                 <div className="flex items-center gap-2 text-xs font-bold text-primary/60">
                   <Zap className="h-3 w-3" /> Potenciado por Nano Banana Pro
@@ -86,13 +86,13 @@ export default function WorkspaceHubPage() {
             </CardContent>
             <CardFooter>
               {tool.status === 'active' ? (
-                <Button className="w-full group-hover:gap-3 transition-all" asChild>
+                <Button className="w-full group-hover:gap-3 transition-all font-bold" asChild>
                   <Link href={tool.href}>
                     Abrir Herramienta <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               ) : (
-                <Button className="w-full" variant="outline" disabled>
+                <Button className="w-full font-bold" variant="outline" disabled>
                   No Disponible
                 </Button>
               )}
@@ -103,7 +103,7 @@ export default function WorkspaceHubPage() {
 
       <div className="mt-12 p-8 bg-slate-900 rounded-2xl text-white relative overflow-hidden">
         <div className="relative z-10">
-          <h2 className="text-2xl font-bold mb-2">Modo Producción Interna</h2>
+          <h2 className="text-2xl font-bold mb-2 uppercase tracking-tighter">Modo Producción Interna</h2>
           <p className="text-slate-400 text-sm max-w-xl mb-6">
             Esta sección es exclusiva para el equipo de Agencia AM. Usa estas herramientas para acelerar el cumplimiento de briefs y mejorar la calidad de las entregas finales.
           </p>

@@ -234,7 +234,7 @@ export const batchService = {
     });
   },
 
-  private async discountQuota(batch: Batch) {
+  async discountQuota(batch: Batch) {
     if (!batch.clientId) return;
     
     // Formato IMAGEN = 0.5, Otros = 1.0

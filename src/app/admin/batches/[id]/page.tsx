@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { 
   ExternalLink, MessageSquare, ArrowLeft, Clock, ShoppingBag, 
   Link as LinkIcon, FileText, Video, User, ShieldCheck, Globe, Info, Building2, Send, Loader2, History, Users, Edit, CheckCircle2, XCircle
