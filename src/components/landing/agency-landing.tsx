@@ -32,7 +32,7 @@ export function AgencyLanding() {
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F3.mp4?alt=media&token=3a7f65d8-885a-4932-a63b-47b270441293",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F4.mp4?alt=media&token=b37e8ec3-f6d1-4a30-b635-b45bb10fbfb9",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F5.mp4?alt=media&token=dd0e163b-9bc8-4e69-924b-683147039af9",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F6.mp4?alt=media&token=187ef28f-0ae5-4da2-9f72-9e85c996f065",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F6.mp4?alt=media&token=187ef28f-0ae5-4da2-9f72-9e85c996f01",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F7.mp4?alt=media&token=ad7ba3a1-c7fe-4dca-b367-e30fed3c3454",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2FCreativo%20n%C2%B08.mp4?alt=media&token=3c929ac1-4194-4a81-a6c5-7886ad92cce8",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2Forden10.mp4?alt=media&token=0cca4e99-e487-42c5-93b1-9351cea6213c"
@@ -178,13 +178,15 @@ export function AgencyLanding() {
                 <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
                   <div className="aspect-[9/16] relative rounded-3xl overflow-hidden bg-white/5 group border border-white/10 shadow-2xl">
                     <video 
-                      src={url} 
                       className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-500"
                       autoPlay 
                       loop 
                       muted 
                       playsInline
-                    />
+                      preload="metadata"
+                    >
+                      <source src={url} type="video/mp4" />
+                    </video>
                     <div className="absolute bottom-6 left-6 right-6">
                       <div className="bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10">
                         <p className="text-xs font-black uppercase text-primary mb-1">Formato UGC IA</p>
@@ -214,7 +216,6 @@ export function AgencyLanding() {
               {retargetingAds.map((url, i) => (
                 <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3">
                   <div className="aspect-square relative rounded-2xl overflow-hidden border border-white/10 group bg-slate-900 flex items-center justify-center">
-                    {/* Background blurred image for consistent aspect ratio look */}
                     <img 
                       src={url} 
                       className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20"
