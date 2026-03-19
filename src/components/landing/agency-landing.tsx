@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   Sparkles, Video, Layout, Image as ImageIcon, 
   Zap, MessageCircle, ArrowRight, CheckCircle2,
-  Play, MousePointer2, Smartphone, Globe
+  Play, MousePointer2, Smartphone, Globe, Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -138,8 +138,8 @@ export function AgencyLanding() {
                   <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform", s.bg)}>
                     <s.icon className={cn("h-7 w-7", s.color)} />
                   </div>
-                  <h3 className="text-xl font-black mb-4">{s.title}</h3>
-                  <p className="text-gray-400 leading-relaxed font-medium">{s.desc}</p>
+                  <h3 className="text-xl font-black mb-4 text-white">{s.title}</h3>
+                  <p className="text-gray-300 leading-relaxed font-medium">{s.desc}</p>
                 </CardContent>
               </Card>
             ))}
