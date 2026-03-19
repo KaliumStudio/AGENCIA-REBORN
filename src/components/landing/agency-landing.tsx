@@ -33,7 +33,15 @@ export function AgencyLanding() {
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F2%20(3).jpg?alt=media&token=72ce6d12-d0a4-42a1-8d9d-4843fdb7499b",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F3%20(1).jpeg?alt=media&token=7d29f650-8514-4606-8e1d-2c584724f2f8",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F5.jpg?alt=media&token=64937132-57c3-4ce4-89df-ef767cf59452",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F6.jpg?alt=media&token=3a0e3e2e-a823-431c-bfac-6c69108892b1"
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F6.jpg?alt=media&token=3a0e3e2e-a823-431c-bfac-6c69108892b1",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F8%20(1).jpg?alt=media&token=8bd7493c-1b00-465a-ac50-023ef53f4f10",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F8.jpg?alt=media&token=536b310c-7f95-4fa6-8e02-7d36ea42e9d5",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F9.png?alt=media&token=78b9068b-0ff1-48b9-a50c-ad0e6d6c7685",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FANGULO%202%20-%20FORMATO%20IMAGEN%20CURIOSA.jpg?alt=media&token=b6984f0b-7cfb-49da-a447-110bc4c0552e",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FChatGPT%20Image%2015%20nov%202025%2C%2020_32_57.png?alt=media&token=348b6132-663a-478d-841b-09ae6abb31aa",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FGlucometer_retargeting_ad_image_1efdf32a58.jpeg?alt=media&token=8bed6c65-d536-4836-b699-8ab413a1f2a5",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FPost%20Promo%C3%A7%C3%A3o%20Sale.png?alt=media&token=b3c6dbfc-f9fe-446a-90e9-6f561fd6de20",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Festatico213124.jpg?alt=media&token=840c6965-baa5-4985-ac00-aeef7701a1c8"
   ];
 
   return (
