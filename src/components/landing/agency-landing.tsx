@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { 
   Sparkles, Video, Layout, Image as ImageIcon, 
   Zap, MessageCircle, ArrowRight, CheckCircle2,
-  Play, MousePointer2, Smartphone, Globe, Menu
+  Play, MousePointer2, Smartphone, Globe, Menu, ExternalLink, Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import {
   CarouselPrevious 
 } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export function AgencyLanding() {
   const whatsappNumber = "+542645691416";
@@ -56,7 +57,31 @@ export function AgencyLanding() {
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FChatGPT%20Image%2015%20nov%202025%2C%2020_32_57.png?alt=media&token=348b6132-663a-478d-841b-09ae6abb31aa",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FGlucometer_retargeting_ad_image_1efdf32a58.jpeg?alt=media&token=8bed6c65-d536-4836-b699-8ab413a1f2a5",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FPost%20Promo%C3%A7%C3%A3o%20Sale.png?alt=media&token=b3c6dbfc-f9fe-446a-90e9-6f561fd6de20",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Festatico213124.jpg?alt=media&token=840c6965-baa5-4985-ac00-aeef7701a1c8"
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpg?alt=media&token=17220032-fe33-454a-b601-05a66e8ed474"
+  ];
+
+  const landingsPortfolio = [
+    {
+      name: "Luxury Watches",
+      niche: "Accesorios",
+      platform: "Tienda Nube",
+      image: "https://picsum.photos/seed/landing1/800/1200",
+      url: "#"
+    },
+    {
+      name: "Glow Skin Care",
+      niche: "Belleza",
+      platform: "Shopify",
+      image: "https://picsum.photos/seed/landing2/800/1200",
+      url: "#"
+    },
+    {
+      name: "Tech Pro Store",
+      niche: "Gadgets",
+      platform: "Tienda Nube",
+      image: "https://picsum.photos/seed/landing3/800/1200",
+      url: "#"
+    }
   ];
 
   return (
@@ -73,6 +98,7 @@ export function AgencyLanding() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-gray-400">
             <a href="#servicios" className="hover:text-white transition-colors">SERVICIOS</a>
             <a href="#videos" className="hover:text-white transition-colors">VIDEOS UGC</a>
+            <a href="#portafolio" className="hover:text-white transition-colors">LANDINGS</a>
             <a href="#estaticos" className="hover:text-white transition-colors">ANUNCIOS</a>
           </nav>
           <div className="flex items-center gap-4">
@@ -205,30 +231,98 @@ export function AgencyLanding() {
         </div>
       </section>
 
+      {/* --- LANDINGS PORTFOLIO --- */}
+      <section id="portafolio" className="py-24 bg-white/[0.02] border-y border-white/5">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">Portafolio de Landings</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto font-medium">Estructuras personalizadas diseñadas para vender. Sin plantillas genéricas, solo código optimizado para conversión.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {landingsPortfolio.map((landing, idx) => (
+              <div key={idx} className="group relative flex flex-col">
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 bg-slate-900 group-hover:border-primary/50 transition-all shadow-2xl">
+                  {/* Browser Mockup Header */}
+                  <div className="absolute top-0 w-full h-6 bg-white/10 backdrop-blur-md border-b border-white/5 flex items-center px-3 gap-1 z-20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500/50" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/50" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500/50" />
+                  </div>
+                  {/* Image with Hover Scroll Effect */}
+                  <div className="w-full h-full pt-6 overflow-hidden">
+                    <img 
+                      src={landing.image} 
+                      alt={landing.name}
+                      className="w-full transition-transform duration-[5000ms] ease-linear group-hover:-translate-y-[70%]"
+                    />
+                  </div>
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
+                    <Button variant="default" className="bg-primary font-bold rounded-full px-6" asChild>
+                      <a href={landing.url} target="_blank">VER LANDING VIVA</a>
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-bold text-white">{landing.name}</h3>
+                      <Badge variant="outline" className="text-[10px] uppercase font-black tracking-widest border-primary/30 text-primary">
+                        {landing.platform}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-500 font-medium">Nicho: {landing.niche}</p>
+                  </div>
+                  <div className="p-2 bg-white/5 rounded-full text-gray-400 group-hover:text-primary transition-colors">
+                    <ExternalLink className="h-5 w-5" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-16 text-center">
+            <div className="inline-flex flex-wrap justify-center gap-8 md:gap-16 opacity-40">
+              <div className="flex items-center gap-2 grayscale brightness-200">
+                <Globe className="h-6 w-6" /> <span className="font-bold">TIENDA NUBE PRO</span>
+              </div>
+              <div className="flex items-center gap-2 grayscale brightness-200">
+                <Layout className="h-6 w-6" /> <span className="font-bold">SHOPIFY EXPERTS</span>
+              </div>
+              <div className="flex items-center gap-2 grayscale brightness-200">
+                <Zap className="h-6 w-6" /> <span className="font-bold">CONVERSION RATE OPTIMIZATION</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* --- STATIC ADS CAROUSEL --- */}
-      <section id="estaticos" className="py-24 bg-white/5 overflow-hidden">
+      <section id="estaticos" className="py-24 overflow-hidden">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl font-black tracking-tighter mb-4 uppercase">Anuncios de Retargeting</h2>
-          <p className="text-gray-400 font-medium mb-12">Piezas estáticas de alto rendimiento para e-commerce.</p>
+          <p className="text-gray-400 font-medium mb-12 italic">Piezas estáticas diseñadas para capturar a los usuarios que no compraron a la primera.</p>
 
-          <Carousel className="w-full max-w-5xl mx-auto">
+          <Carousel className="w-full max-w-6xl mx-auto">
             <CarouselContent className="-ml-4">
               {retargetingAds.map((url, i) => (
-                <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3">
-                  <div className="aspect-square relative rounded-2xl overflow-hidden border border-white/10 group bg-slate-900 flex items-center justify-center">
+                <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                  <div className="aspect-square relative rounded-2xl overflow-hidden border border-white/10 group bg-slate-900 flex items-center justify-center shadow-xl">
                     <img 
                       src={url} 
-                      className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20"
+                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-30"
                       alt=""
                     />
                     <img 
                       src={url} 
-                      className="relative z-10 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                      className="relative z-10 w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
                       alt={`Retargeting Ad ${i + 1}`}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6 z-20">
-                      <p className="text-xs font-bold text-primary mb-1 uppercase tracking-widest text-left">Optimización Meta</p>
-                      <p className="text-sm font-black text-left">Creative Variant #{i + 1}</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6 z-20 text-left">
+                      <p className="text-[10px] font-black text-primary mb-1 uppercase tracking-[0.2em]">Meta Ads Optimization</p>
+                      <p className="text-xs font-bold text-white">Creative Variant #{i + 1}</p>
                     </div>
                   </div>
                 </CarouselItem>
