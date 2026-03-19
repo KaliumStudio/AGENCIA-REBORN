@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -104,41 +103,44 @@ export function SidebarNav() {
   const currentMenu = profile ? menuItems[profile.role] : [];
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-white">
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
+    <Sidebar className="border-r border-white/5 bg-[#030406]">
+      <SidebarHeader className="p-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg rotate-3">
+          <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 rotate-3">
             <span className="font-black text-xl tracking-tighter">AM</span>
           </div>
           <div>
-            <h1 className="font-black text-lg leading-none tracking-tighter text-slate-900">AGENCIA AM</h1>
-            <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">{profile?.role}</p>
+            <h1 className="font-black text-lg leading-none tracking-tighter text-white">AGENCIA AM</h1>
+            <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-widest">{profile?.role}</p>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      
+      <SidebarContent className="py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="font-bold text-slate-400">NAVEGACIÓN</SidebarGroupLabel>
-          <SidebarMenu>
+          <SidebarGroupLabel className="font-black text-gray-600 px-4 mb-2 text-[10px] tracking-widest uppercase">Navegación</SidebarGroupLabel>
+          <SidebarMenu className="px-2 gap-1">
             {currentMenu.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton 
                   isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   onClick={() => router.push(item.href)}
                   className={cn(
-                    "transition-all duration-200 h-11 px-4",
-                    (pathname === item.href || pathname.startsWith(item.href + '/')) ? "bg-primary/10 text-primary font-bold" : "hover:bg-slate-50"
+                    "transition-all duration-300 h-11 px-4 rounded-xl",
+                    (pathname === item.href || pathname.startsWith(item.href + '/')) 
+                      ? "bg-primary text-white font-bold shadow-lg shadow-primary/20" 
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", (pathname === item.href || pathname.startsWith(item.href + '/')) ? "text-primary" : "text-slate-500")} />
-                  <span className="flex-1">{item.label}</span>
+                  <item.icon className="w-5 h-5" />
+                  <span className="flex-1 text-sm">{item.label}</span>
                   {item.badge && (
                     <Badge variant="default" className="ml-auto bg-amber-500 text-[8px] h-4 px-1.5 font-black uppercase text-white border-none">
                       {item.badge}
                     </Badge>
                   )}
                   {(item.label === 'Mis Tandas' || item.label === 'Tandas') && unreadCount > 0 && (
-                    <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                    <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px] bg-red-600 border-none">
                       {unreadCount}
                     </Badge>
                   )}
@@ -148,19 +150,20 @@ export function SidebarNav() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-sidebar-border bg-slate-50/50">
+      
+      <SidebarFooter className="p-4 border-t border-white/5 bg-white/[0.02]">
         {profile && (
           <div className="mb-4 space-y-1">
             {isActive ? (
               <div className="flex flex-col gap-1">
-                <SidebarMenuButton disabled className="text-green-600 bg-green-50/50 border border-green-100 cursor-default hover:bg-green-50/50 h-9">
+                <SidebarMenuButton disabled className="text-emerald-400 bg-emerald-400/5 border border-emerald-400/10 cursor-default hover:bg-emerald-400/5 h-9 rounded-lg">
                   <Bell className="w-4 h-4" />
-                  <span className="text-xs font-bold">Push Activo</span>
+                  <span className="text-[10px] font-black uppercase tracking-tight">Push Activo</span>
                 </SidebarMenuButton>
                 <button 
                   onClick={handleDisableNotifications}
                   disabled={notifLoading}
-                  className="text-[10px] text-muted-foreground hover:text-destructive transition-colors text-left px-2 flex items-center gap-1 font-medium mt-1"
+                  className="text-[9px] text-gray-500 hover:text-red-400 transition-colors text-left px-2 flex items-center gap-1 font-bold mt-1 uppercase"
                 >
                   <XCircle className="w-3 h-3" /> Desactivar alertas
                 </button>
@@ -169,30 +172,30 @@ export function SidebarNav() {
               <SidebarMenuButton
                 onClick={handleEnableNotifications}
                 disabled={notifLoading}
-                className="text-amber-600 animate-pulse bg-amber-50 border border-amber-100 h-9"
+                className="text-amber-400 animate-pulse bg-amber-400/5 border border-amber-400/10 h-9 rounded-lg"
               >
                 {notifLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                <span className="text-xs font-bold">Reactivar push</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">Reactivar push</span>
               </SidebarMenuButton>
             ) : (
               <SidebarMenuButton
                 onClick={handleEnableNotifications}
                 disabled={notifLoading}
-                className="text-primary bg-primary/5 border border-primary/10 hover:bg-primary/10 h-9"
+                className="text-primary bg-primary/5 border border-primary/10 hover:bg-primary/10 h-9 rounded-lg"
               >
                 {notifLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BellOff className="w-4 h-4" />}
-                <span className="text-xs font-bold">Activar avisos</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">Activar avisos</span>
               </SidebarMenuButton>
             )}
           </div>
         )}
         <div className="mb-4 px-2">
-          <p className="text-sm font-bold text-slate-900 truncate">{profile?.displayName}</p>
-          <p className="text-[10px] text-muted-foreground truncate font-medium">{auth.currentUser?.email}</p>
+          <p className="text-xs font-black text-white truncate uppercase tracking-tight">{profile?.displayName}</p>
+          <p className="text-[10px] text-gray-500 truncate font-medium">{auth.currentUser?.email}</p>
         </div>
         <SidebarMenuButton 
           onClick={handleLogout} 
-          className="text-destructive hover:text-destructive hover:bg-destructive/10 font-bold h-10 transition-colors"
+          className="text-red-400 hover:text-white hover:bg-red-600/20 font-black h-10 transition-all rounded-xl uppercase text-[10px] tracking-widest"
         >
           <LogOut className="w-4 h-4" />
           <span>Cerrar Sesión</span>
