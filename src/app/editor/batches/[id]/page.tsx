@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -17,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
   ArrowLeft, Send, ExternalLink, MessageSquare, Info, 
-  Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Loader2, AlertCircle
+  Clock, ShoppingBag, Link as LinkIcon, FileText, Video, Loader2, AlertCircle, Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +25,7 @@ import { es } from 'date-fns/locale';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { cn } from '@/lib/utils';
 
 export default function EditorBatchDetailPage() {
   const { id } = useParams();
