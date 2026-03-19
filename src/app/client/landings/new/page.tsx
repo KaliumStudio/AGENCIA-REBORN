@@ -184,7 +184,7 @@ export default function NewLandingRequestPage() {
                     <div>
                       <p className="text-emerald-900 font-bold mb-2">Acceso vía invitación</p>
                       <p className="text-emerald-800 text-sm leading-relaxed">
-                        En Shopify no es necesario dar tu contraseña. Ve a <strong>Configuración > Usuarios y Permisos</strong> y envía una invitación de acceso a nuestro correo de desarrollo:
+                        En Shopify no es necesario dar tu contraseña. Ve a <strong>Configuración &gt; Usuarios y Permisos</strong> y envía una invitación de acceso a nuestro correo de desarrollo:
                       </p>
                       <div className="mt-3 bg-white p-3 rounded-lg border border-emerald-200 font-mono text-sm select-all">
                         maurifig100102@gmail.com
