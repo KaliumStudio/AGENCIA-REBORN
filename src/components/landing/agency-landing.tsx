@@ -57,30 +57,58 @@ export function AgencyLanding() {
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FChatGPT%20Image%2015%20nov%202025%2C%2020_32_57.png?alt=media&token=348b6132-663a-478d-841b-09ae6abb31aa",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FGlucometer_retargeting_ad_image_1efdf32a58.jpeg?alt=media&token=8bed6c65-d536-4836-b699-8ab413a1f2a5",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2FPost%20Promo%C3%A7%C3%A3o%20Sale.png?alt=media&token=b3c6dbfc-f9fe-446a-90e9-6f561fd6de20",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpg?alt=media&token=17220032-fe33-454a-b601-05a66e8ed474"
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Festatico213124.jpg?alt=media&token=840c6965-baa5-4985-ac00-aeef7701a1c8"
   ];
 
   const landingsPortfolio = [
     {
-      name: "Luxury Watches",
-      niche: "Accesorios",
-      platform: "Tienda Nube",
-      image: "https://picsum.photos/seed/landing1/800/1200",
-      url: "#"
-    },
-    {
-      name: "Glow Skin Care",
-      niche: "Belleza",
+      name: "La Boutique",
+      niche: "Moda y Accesorios",
       platform: "Shopify",
-      image: "https://picsum.photos/seed/landing2/800/1200",
-      url: "#"
+      image: "https://cdn.shopify.com/s/files/1/0750/3832/6831/files/Dos_chicasuna_morocha_y_otra_rubia_argentinas_atra_delpmaspu.jpg?v=1773558824",
+      url: "https://laboutique.lat/"
     },
     {
-      name: "Tech Pro Store",
-      niche: "Gadgets",
+      name: "ZenSleep",
+      niche: "Bienestar y Descanso",
+      platform: "Shopify",
+      image: "https://zensleep.com.ar/cdn/shop/files/unnamed_d5bb83aa-b9f2-4763-bdcf-5f902c56147e.jpg?v=1771029624&width=1100",
+      url: "https://zensleep.com.ar/products/ergocountour-pro-almohada-cervical-premium"
+    },
+    {
+      name: "Auren Moda",
+      niche: "Moda Femenina",
+      platform: "Shopify",
+      image: "https://aurenmoda.com/cdn/shop/files/ad-1772945716006.jpg?v=1772945730&width=533",
+      url: "https://aurenmoda.com/"
+    },
+    {
+      name: "Lumiere Paris",
+      niche: "Cosmética Premium",
+      platform: "Shopify",
+      image: "https://lumiereparis.com.ar/cdn/shop/files/unnamed_a3371ad4-b9cc-4831-9696-b33f1b932887.jpg?v=1771890045&width=990",
+      url: "https://lumiereparis.com.ar/products/lumiere-paris"
+    },
+    {
+      name: "Arcevia Pro",
+      niche: "Cuidado Personal",
       platform: "Tienda Nube",
-      image: "https://picsum.photos/seed/landing3/800/1200",
-      url: "#"
+      image: "https://acdn-us.mitiendanube.com/stores/006/390/104/products/unnamed-1-1-39158f2886fa4c731d17701569160960-1024-1024.webp",
+      url: "https://arceviashop.com/productos/arcevia-pro-exfoliador-2x1-1eu8z/"
+    },
+    {
+      name: "Nutricats",
+      niche: "Suplementos Mascotas",
+      platform: "Shopify",
+      image: "https://nutricats.com.ar/cdn/shop/files/unnamed_3aee6d77-3101-4e43-ab98-6c16e794d911.jpg?v=1771054730&width=990",
+      url: "https://nutricats.com.ar/products/suplemento-de-taurina-para-gatos-frena-la-enfermedad-silenciosa-antes-de-ver-los-sintomas"
+    },
+    {
+      name: "MaxClinic",
+      niche: "Belleza y SkinCare",
+      platform: "Tienda Nube",
+      image: "https://acdn-us.mitiendanube.com/stores/006/390/104/products/unnamed-7defc5253e9840fdf417711214345021-1024-1024.webp",
+      url: "https://arceviashop.com/productos/maxclinic-rosa-vitamina-en-espuma-de-aceite-1543d/"
     }
   ];
 
@@ -260,7 +288,7 @@ export function AgencyLanding() {
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-30">
                     <Button variant="default" className="bg-primary font-bold rounded-full px-6" asChild>
-                      <a href={landing.url} target="_blank">VER LANDING VIVA</a>
+                      <a href={landing.url} target="_blank" rel="noopener noreferrer">VER LANDING VIVA</a>
                     </Button>
                   </div>
                 </div>
