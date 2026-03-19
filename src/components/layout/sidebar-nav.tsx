@@ -13,13 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 export function SidebarNav() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, user, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && profile?.uid) {
@@ -191,7 +196,9 @@ export function SidebarNav() {
         )}
         <div className="mb-4 px-2">
           <p className="text-xs font-black text-white truncate uppercase tracking-tight">{profile?.displayName}</p>
-          <p className="text-[10px] text-gray-500 truncate font-medium">{auth.currentUser?.email}</p>
+          <p className="text-[10px] text-gray-500 truncate font-medium">
+            {mounted ? (user?.email || '') : ''}
+          </p>
         </div>
         <SidebarMenuButton 
           onClick={handleLogout} 
