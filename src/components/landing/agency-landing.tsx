@@ -23,6 +23,21 @@ export function AgencyLanding() {
   const whatsappNumber = "+542645691416";
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
 
+  const ugcVideos = [
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2.mp4?alt=media&token=d6f8ac7c-aece-4b9b-9595-1ce255a1b412",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F1%20(1).mp4?alt=media&token=4e384312-a775-4a85-bfd1-8945f0386056",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F1.mp4?alt=media&token=d7a0cfc4-f63e-43dc-8652-43c0d8af5c72",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F10.mp4?alt=media&token=3e95a7df-48bd-42c7-8307-94ba417023b5",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2%20(1).mp4?alt=media&token=b77061f6-e9ef-4ae4-b6f8-bedb9dae4f01",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F3.mp4?alt=media&token=3a7f65d8-885a-4932-a63b-47b270441293",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F4.mp4?alt=media&token=b37e8ec3-f6d1-4a30-b635-b45bb10fbfb9",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F5.mp4?alt=media&token=dd0e163b-9bc8-4e69-924b-683147039af9",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F6.mp4?alt=media&token=187ef28f-0ae5-4da2-9f72-9e85c996f065",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F7.mp4?alt=media&token=ad7ba3a1-c7fe-4dca-b367-e30fed3c3454",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2FCreativo%20n%C2%B08.mp4?alt=media&token=3c929ac1-4194-4a81-a6c5-7886ad92cce8",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2Forden10.mp4?alt=media&token=0cca4e99-e487-42c5-93b1-9351cea6213c"
+  ];
+
   const retargetingAds = [
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpeg?alt=media&token=348375f6-71e2-4e26-b4cd-6212ed4e2caa",
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpg?alt=media&token=17220032-fe33-454a-b601-05a66e8ed474",
@@ -159,23 +174,21 @@ export function AgencyLanding() {
 
           <Carousel className="w-full">
             <CarouselContent className="-ml-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {ugcVideos.map((url, i) => (
                 <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
-                  <div className="aspect-[9/16] relative rounded-3xl overflow-hidden bg-white/5 group border border-white/10">
-                    <img 
-                      src={`https://picsum.photos/seed/ugc-${i}/600/1067`} 
-                      alt={`Demo Video ${i}`}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
+                  <div className="aspect-[9/16] relative rounded-3xl overflow-hidden bg-white/5 group border border-white/10 shadow-2xl">
+                    <video 
+                      src={url} 
+                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-all duration-500"
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline
                     />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
-                        <Play className="h-6 w-6 text-white fill-white ml-1" />
-                      </div>
-                    </div>
                     <div className="absolute bottom-6 left-6 right-6">
                       <div className="bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10">
                         <p className="text-xs font-black uppercase text-primary mb-1">Formato UGC IA</p>
-                        <p className="text-xs font-medium text-white/80">Demo de producto #0{i}</p>
+                        <p className="text-[10px] font-medium text-white/80">Demo de producto Real #{i + 1}</p>
                       </div>
                     </div>
                   </div>
