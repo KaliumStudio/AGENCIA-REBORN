@@ -30,6 +30,7 @@ export interface Client {
   contact: string;
   contactEmail?: string;
   creativeQuota?: number;
+  imageQuota?: number;
   active: boolean;
   createdAt: any;
   createdBy: string;

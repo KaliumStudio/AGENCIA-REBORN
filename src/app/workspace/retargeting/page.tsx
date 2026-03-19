@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { generateRetargetingImage } from '@/ai/flows/workspace-retargeting-flow';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,11 +11,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ImageIcon, Sparkles, Loader2, Download, RefreshCw, ArrowLeft, Zap, Upload, Package, Layers } from 'lucide-react';
+import { useAuth } from '@/context/auth-context';
+import { clientService } from '@/services/client.service';
+import { useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Client } from '@/types';
+import { ImageIcon, Sparkles, Loader2, Download, RefreshCw, ArrowLeft, Zap, Upload, Package, Layers, MessageCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export default function RetargetingAdPage() {
+  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     productName: '',
     offerDetails: '',
@@ -28,6 +36,15 @@ export default function RetargetingAdPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const whatsappUrl = `https://wa.me/542645691416?text=Hola! Quiero comprar más cupo de imágenes para la herramienta de Retargeting IA.`;
+
+  // Real-time client data to track image quota
+  const clientRef = useMemoFirebase(() => {
+    return profile?.clientId ? doc(db, 'clients', profile.clientId) : null;
+  }, [profile?.clientId]);
+
+  const { data: client, isLoading: loadingClient } = useDoc<Client>(clientRef);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -40,8 +57,19 @@ export default function RetargetingAdPage() {
   };
 
   const handleGenerate = async () => {
+    if (!client) return;
+
     if (!formData.productName || !formData.offerDetails) {
       toast({ title: "Campos incompletos", description: "Nombre y oferta son requeridos.", variant: "destructive" });
+      return;
+    }
+
+    if ((client.imageQuota || 0) < formData.count) {
+      toast({ 
+        title: "Créditos insuficientes", 
+        description: "No tienes suficiente cupo para generar esta cantidad de imágenes.", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -52,8 +80,12 @@ export default function RetargetingAdPage() {
         ...formData,
         productImageDataUri: productImage || undefined,
       });
+      
+      // Deduct quota
+      await clientService.deductImageQuota(client.id, formData.count);
+      
       setResults(output.images);
-      toast({ title: "¡Anuncios generados!", description: "Las piezas de retargeting están listas." });
+      toast({ title: "¡Anuncios generados!", description: `Se han utilizado ${formData.count} créditos de tu cupo.` });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "No se pudo generar la imagen publicitaria.", variant: "destructive" });
@@ -69,17 +101,55 @@ export default function RetargetingAdPage() {
     link.click();
   };
 
+  const hasCredits = (client?.imageQuota || 0) > 0;
+
   return (
     <DashboardLayout>
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/workspace"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Retargeting Ads IA</h1>
-          <p className="text-muted-foreground">Genera creativos optimizados para conversión con Nano Banana IA.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/workspace"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Retargeting Ads IA</h1>
+            <p className="text-muted-foreground">Genera creativos optimizados para conversión con Nano Banana IA.</p>
+          </div>
         </div>
+
+        <Card className="bg-accent/5 border-accent/20 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-accent/10 p-2 rounded-lg">
+              <ImageIcon className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tu Cupo Disponible</p>
+              <p className="text-xl font-black text-accent">{loadingClient ? '...' : (client?.imageQuota || 0)} Imágenes</p>
+            </div>
+            {!hasCredits && !loadingClient && (
+              <Button size="sm" className="bg-[#25D366] hover:bg-[#25D366]/90 text-white font-bold text-xs" asChild>
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-3 w-3 mr-1" /> COMPRAR
+                </a>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {!hasCredits && !loadingClient && (
+        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="p-2 bg-amber-100 rounded-full">
+            <AlertCircle className="h-6 w-6 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900">Créditos de IA agotados</p>
+            <p className="text-xs text-amber-800">Necesitas saldo en tu cuenta para generar nuevas piezas publicitarias. Cada unidad tiene un valor de 2 USD.</p>
+          </div>
+          <Button size="sm" variant="outline" className="border-amber-300 text-amber-900 hover:bg-amber-100" asChild>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">Cargar Saldo</a>
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Panel Lateral de Configuración */}
@@ -178,11 +248,11 @@ export default function RetargetingAdPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6">
+            <CardFooter className="bg-slate-50 border-t p-6 flex flex-col gap-4">
               <Button 
                 className="w-full h-12 text-lg font-bold bg-accent hover:bg-accent/90 shadow-lg" 
                 onClick={handleGenerate}
-                disabled={generating}
+                disabled={generating || !hasCredits}
               >
                 {generating ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Diseñando...</>
@@ -190,6 +260,9 @@ export default function RetargetingAdPage() {
                   <><Sparkles className="mr-2 h-5 w-5" /> Generar Piezas Publicitarias</>
                 )}
               </Button>
+              <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-tighter">
+                Inversión: {formData.count} Créditos IA (Valor Ref: 2 USD c/u)
+              </p>
             </CardFooter>
           </Card>
         </div>
@@ -253,7 +326,7 @@ export default function RetargetingAdPage() {
                   <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase text-center">
                     {formData.count > 1 ? `DISEÑANDO ${formData.count} VARIANTES...` : 'DISEÑANDO TU ANUNCIO...'}
                   </h2>
-                  <p className="text-muted-foreground mt-2 animate-pulse font-medium text-center">Nano Banana Pro está procesando la oferta comercial</p>
+                  <p className="text-muted-foreground mt-2 animate-pulse font-medium text-center px-6">Nano Banana Pro está consumiendo créditos de tu cupo de imágenes</p>
                 </div>
               )}
             </div>
@@ -267,7 +340,7 @@ export default function RetargetingAdPage() {
               <div>
                 <h4 className="font-bold text-lg">Optimizado para Conversión</h4>
                 <p className="text-sm text-slate-400 leading-relaxed max-w-md">
-                  Nuestra IA analiza los hooks de venta y el estilo seleccionado para crear piezas que capturan la atención en el scroll infinito de Instagram.
+                  Nuestra IA analiza los hooks de venta y el estilo seleccionado. Cada generación exitosa descuenta saldo de tu cupo de imágenes IA.
                 </p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 blur-3xl rounded-full -mr-16 -mt-16" />

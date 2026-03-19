@@ -53,6 +53,7 @@
         "contact": { "type": "string" },
         "contactEmail": { "type": "string" },
         "creativeQuota": { "type": "number", "description": "Remaining creative pieces for the client." },
+        "imageQuota": { "type": "number", "description": "Remaining AI image generation credits." },
         "active": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },

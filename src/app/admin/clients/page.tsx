@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Eye, Zap } from 'lucide-react';
+import { Search, Edit, Power, PowerOff, RefreshCw, Mail, Eye, Zap, Image as ImageIcon } from 'lucide-react';
 import { NewClientDialog } from '@/components/clients/new-client-dialog';
 import { EditClientDialog } from '@/components/clients/edit-client-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,7 +60,7 @@ export default function AdminClientsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clientes</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Gestiona las empresas y su saldo de creativos.</p>
+            <p className="text-sm md:text-base text-muted-foreground">Gestiona las empresas y su saldo de creativos e imágenes IA.</p>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" size="icon" onClick={fetchClients} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
@@ -85,8 +85,9 @@ export default function AdminClientsPage() {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>Empresa</TableHead>
-                <TableHead>Cupo Disponible</TableHead>
-                <TableHead>Contacto Principal</TableHead>
+                <TableHead>Cupo Creativos</TableHead>
+                <TableHead>Cupo IA</TableHead>
+                <TableHead>Contacto</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -95,16 +96,12 @@ export default function AdminClientsPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                    <TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">No se encontraron clientes.</TableCell>
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">No se encontraron clientes.</TableCell>
                 </TableRow>
               ) : filteredClients.map((client) => (
                 <TableRow key={client.id}>
@@ -112,14 +109,22 @@ export default function AdminClientsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Zap className="h-4 w-4 text-amber-500 fill-amber-500" />
-                      <span className={`font-black text-base ${client.creativeQuota && client.creativeQuota <= 5 ? 'text-destructive' : 'text-primary'}`}>
-                        {client.creativeQuota || 0} Piezas
+                      <span className={`font-black text-sm ${client.creativeQuota && client.creativeQuota <= 5 ? 'text-destructive' : 'text-primary'}`}>
+                        {client.creativeQuota || 0} Pz
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-accent" />
+                      <span className="font-black text-sm text-accent">
+                        {client.imageQuota || 0} Créditos
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium">{client.contact}</div>
-                    <div className="text-xs text-muted-foreground">{client.contactEmail || "Sin email"}</div>
+                    <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{client.contactEmail || "Sin email"}</div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={client.active ? "default" : "secondary"}>{client.active ? "Activo" : "Inactivo"}</Badge>
@@ -152,9 +157,15 @@ export default function AdminClientsPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-bold text-lg">{client.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Zap className="h-3 w-3 text-amber-500" />
-                      <span className="text-xs font-bold text-primary">{client.creativeQuota || 0} piezas restantes</span>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-3 w-3 text-amber-500" />
+                        <span className="text-xs font-bold text-primary">{client.creativeQuota || 0} piezas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-3 w-3 text-accent" />
+                        <span className="text-xs font-bold text-accent">{client.imageQuota || 0} créditos IA</span>
+                      </div>
                     </div>
                   </div>
                   <Badge variant={client.active ? "default" : "secondary"}>{client.active ? "Activo" : "Inactivo"}</Badge>

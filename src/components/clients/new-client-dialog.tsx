@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Zap } from 'lucide-react';
+import { Building2, Plus, Zap, Image as ImageIcon } from 'lucide-react';
 
 interface NewClientDialogProps {
   onClientCreated: () => void;
@@ -23,7 +23,8 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
     name: '',
     contact: '',
     contactEmail: '',
-    creativeQuota: 0
+    creativeQuota: 0,
+    imageQuota: 0
   });
 
   const { toast } = useToast();
@@ -36,11 +37,12 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
       await clientService.createClient({ 
         ...formData, 
         creativeQuota: Number(formData.creativeQuota),
+        imageQuota: Number(formData.imageQuota),
         createdBy: profile.uid 
       });
       toast({ title: "Cliente creado con éxito" });
       setOpen(false);
-      setFormData({ name: '', contact: '', contactEmail: '', creativeQuota: 0 });
+      setFormData({ name: '', contact: '', contactEmail: '', creativeQuota: 0, imageQuota: 0 });
       onClientCreated();
     } catch (error) {
       toast({ title: "Error al crear cliente", variant: "destructive" });
@@ -60,7 +62,7 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" /> Registrar Nuevo Cliente
             </DialogTitle>
-            <DialogDescription>Agrega los datos de la empresa y su cupo inicial.</DialogDescription>
+            <DialogDescription>Agrega los datos de la empresa y sus cupos iniciales.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -75,7 +77,7 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="creativeQuota" className="flex items-center gap-1">
-                  <Zap className="h-3 w-3 text-amber-500" /> Cupo de Creativos
+                  <Zap className="h-3 w-3 text-amber-500" /> Cupo Creativos
                 </Label>
                 <Input 
                   id="creativeQuota" 
@@ -84,6 +86,22 @@ export function NewClientDialog({ onClientCreated }: NewClientDialogProps) {
                   className="h-11 font-bold text-primary" 
                   value={formData.creativeQuota} 
                   onChange={e => setFormData({...formData, creativeQuota: parseInt(e.target.value) || 0})} 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="imageQuota" className="flex items-center gap-1 text-accent">
+                  <ImageIcon className="h-3 w-3" /> Cupo Imágenes IA
+                </Label>
+                <Input 
+                  id="imageQuota" 
+                  type="number" 
+                  min="0"
+                  className="h-11 font-bold text-accent" 
+                  value={formData.imageQuota} 
+                  onChange={e => setFormData({...formData, imageQuota: parseInt(e.target.value) || 0})} 
                 />
               </div>
             </div>

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Zap } from 'lucide-react';
+import { Edit, Zap, Image as ImageIcon } from 'lucide-react';
 
 interface EditClientDialogProps {
   client: Client;
@@ -24,7 +24,8 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     name: '',
     contact: '',
     contactEmail: '',
-    creativeQuota: 0
+    creativeQuota: 0,
+    imageQuota: 0
   });
 
   const { toast } = useToast();
@@ -35,7 +36,8 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
         name: client.name,
         contact: client.contact,
         contactEmail: client.contactEmail || '',
-        creativeQuota: client.creativeQuota || 0
+        creativeQuota: client.creativeQuota || 0,
+        imageQuota: client.imageQuota || 0
       });
     }
   }, [open, client]);
@@ -46,7 +48,8 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
     try {
       await clientService.updateClient(client.id, {
         ...formData,
-        creativeQuota: Number(formData.creativeQuota)
+        creativeQuota: Number(formData.creativeQuota),
+        imageQuota: Number(formData.imageQuota)
       });
       toast({ title: "Cliente actualizado" });
       onOpenChange(false);
@@ -66,7 +69,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" /> Editar Cliente
             </DialogTitle>
-            <DialogDescription>Actualiza la información y el cupo de creativos.</DialogDescription>
+            <DialogDescription>Actualiza la información y los cupos de producción e IA.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -81,7 +84,7 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-quota" className="flex items-center gap-1 text-primary">
-                  <Zap className="h-3 w-3 text-amber-500" /> Cupo de Piezas
+                  <Zap className="h-3 w-3 text-amber-500" /> Cupo Piezas
                 </Label>
                 <Input 
                   id="edit-quota" 
@@ -91,6 +94,19 @@ export function EditClientDialog({ client, open, onOpenChange, onClientUpdated }
                   onChange={e => setFormData({...formData, creativeQuota: parseInt(e.target.value) || 0})} 
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-image-quota" className="flex items-center gap-1 text-accent">
+                <ImageIcon className="h-3 w-3" /> Cupo Imágenes IA
+              </Label>
+              <Input 
+                id="edit-image-quota" 
+                type="number" 
+                className="h-11 font-bold text-accent" 
+                value={formData.imageQuota} 
+                onChange={e => setFormData({...formData, imageQuota: parseInt(e.target.value) || 0})} 
+              />
             </div>
 
             <div className="space-y-2">

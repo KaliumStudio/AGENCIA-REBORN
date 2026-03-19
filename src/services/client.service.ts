@@ -2,7 +2,7 @@
 import { db } from '@/lib/firebase';
 import { 
   collection, doc, getDoc, getDocs, setDoc, updateDoc, 
-  query, orderBy, serverTimestamp 
+  query, orderBy, serverTimestamp, increment 
 } from 'firebase/firestore';
 import { Client } from '@/types';
 
@@ -39,11 +39,12 @@ export const clientService = {
     return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as Client) : null;
   },
 
-  async createClient(data: { name: string; contact: string; contactEmail?: string; creativeQuota?: number; createdBy: string }) {
+  async createClient(data: { name: string; contact: string; contactEmail?: string; creativeQuota?: number; imageQuota?: number; createdBy: string }) {
     const newDoc = doc(collection(db, 'clients'));
     const clientData = stripUndefined({
       ...data,
       creativeQuota: data.creativeQuota || 0,
+      imageQuota: data.imageQuota || 0,
       active: true,
       createdAt: serverTimestamp(),
     });
@@ -58,5 +59,12 @@ export const clientService = {
 
   async toggleClientStatus(id: string, currentStatus: boolean) {
     await updateDoc(doc(db, 'clients', id), { active: !currentStatus });
+  },
+
+  async deductImageQuota(clientId: string, amount: number) {
+    const clientRef = doc(db, 'clients', clientId);
+    await updateDoc(clientRef, {
+      imageQuota: increment(-amount)
+    });
   }
 };

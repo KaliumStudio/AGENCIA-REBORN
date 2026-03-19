@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { generateAvatar } from '@/ai/flows/workspace-avatar-flow';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,15 +11,22 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import { clientService } from '@/services/client.service';
+import { useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Client } from '@/types';
 import { 
   UserCircle, Sparkles, Loader2, Download, RefreshCw, 
   ArrowLeft, Upload, Image as ImageIcon, Briefcase, 
-  MapPin, User, Layout, Layers, Package, Users
+  MapPin, User, Layout, Layers, Package, Users, MessageCircle, AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export default function AvatarGeneratorPage() {
+  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     age: '',
     gender: 'sin_especificar',
@@ -41,6 +49,15 @@ export default function AvatarGeneratorPage() {
   const prodInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const whatsappUrl = `https://wa.me/542645691416?text=Hola! Quiero comprar más cupo de imágenes para la herramienta de Avatares IA.`;
+
+  // Real-time client data to track image quota
+  const clientRef = useMemoFirebase(() => {
+    return profile?.clientId ? doc(db, 'clients', profile.clientId) : null;
+  }, [profile?.clientId]);
+
+  const { data: client, isLoading: loadingClient } = useDoc<Client>(clientRef);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ref' | 'prod') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -54,6 +71,17 @@ export default function AvatarGeneratorPage() {
   };
 
   const handleGenerate = async () => {
+    if (!client) return;
+    
+    if ((client.imageQuota || 0) < formData.count) {
+      toast({ 
+        title: "Créditos insuficientes", 
+        description: "No tienes suficiente cupo para generar esta cantidad de imágenes.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setGenerating(true);
     setResults([]);
     try {
@@ -65,8 +93,12 @@ export default function AvatarGeneratorPage() {
         referenceImageDataUri: referenceImg || undefined,
         productImageDataUri: productImg || undefined,
       });
+      
+      // Deduct quota
+      await clientService.deductImageQuota(client.id, formData.count);
+      
       setResults(output.images);
-      toast({ title: "¡Avatares generados!", description: "La IA de Nano Banana ha finalizado el diseño." });
+      toast({ title: "¡Avatares generados!", description: `Se han utilizado ${formData.count} créditos de tu cupo.` });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "No se pudo procesar la generación de imágenes.", variant: "destructive" });
@@ -82,17 +114,55 @@ export default function AvatarGeneratorPage() {
     link.click();
   };
 
+  const hasCredits = (client?.imageQuota || 0) > 0;
+
   return (
     <DashboardLayout>
-      <div className="mb-8 flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/workspace"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Generador de Avatares Pro</h1>
-          <p className="text-muted-foreground">Crea personajes hiperrealistas con Nano Banana IA.</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/workspace"><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Generador de Avatares Pro</h1>
+            <p className="text-muted-foreground">Crea personajes hiperrealistas con Nano Banana IA.</p>
+          </div>
         </div>
+
+        <Card className="bg-primary/5 border-primary/20 shadow-sm">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <ImageIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tu Cupo Disponible</p>
+              <p className="text-xl font-black text-primary">{loadingClient ? '...' : (client?.imageQuota || 0)} Imágenes</p>
+            </div>
+            {!hasCredits && !loadingClient && (
+              <Button size="sm" className="bg-[#25D366] hover:bg-[#25D366]/90 text-white font-bold text-xs" asChild>
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-3 w-3 mr-1" /> COMPRAR
+                </a>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {!hasCredits && !loadingClient && (
+        <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="p-2 bg-amber-100 rounded-full">
+            <AlertCircle className="h-6 w-6 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900">Te has quedado sin créditos de IA</p>
+            <p className="text-xs text-amber-800">Cada generación consume créditos de tu cupo. Puedes adquirir más por 2 USD la unidad.</p>
+          </div>
+          <Button size="sm" variant="outline" className="border-amber-300 text-amber-900 hover:bg-amber-100" asChild>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">Solicitar Carga</a>
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Formulario de Configuración */}
@@ -267,11 +337,11 @@ export default function AvatarGeneratorPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6">
+            <CardFooter className="bg-slate-50 border-t p-6 flex flex-col gap-4">
               <Button 
                 className="w-full h-12 text-lg font-bold shadow-xl" 
                 onClick={handleGenerate}
-                disabled={generating}
+                disabled={generating || !hasCredits}
               >
                 {generating ? (
                   <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creando Personajes...</>
@@ -279,6 +349,9 @@ export default function AvatarGeneratorPage() {
                   <><Sparkles className="mr-2 h-5 w-5" /> Generar con Nano Banana Pro</>
                 )}
               </Button>
+              <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-tighter">
+                Costo: {formData.count} Créditos • Valor unitario sugerido: 2 USD
+              </p>
             </CardFooter>
           </Card>
         </div>
@@ -344,8 +417,8 @@ export default function AvatarGeneratorPage() {
                       <Sparkles className="h-10 w-10 text-primary animate-pulse" />
                     </div>
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">DISEÑANDO AVATARES...</h2>
-                  <p className="text-muted-foreground mt-2 animate-pulse font-medium">Nano Banana Pro está procesando tus referencias</p>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase text-center px-6">DISEÑANDO AVATARES...</h2>
+                  <p className="text-muted-foreground mt-2 animate-pulse font-medium text-center">Nano Banana Pro está consumiendo créditos de tu cupo</p>
                   <div className="mt-8 flex gap-1">
                     {[1, 2, 3].map(i => (
                       <div key={i} className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
@@ -364,7 +437,7 @@ export default function AvatarGeneratorPage() {
               <div>
                 <h4 className="font-bold text-lg">Estilo Realista iPhone 11</h4>
                 <p className="text-sm text-slate-400 leading-relaxed max-w-md">
-                  Hemos optimizado el motor para generar fotos con aspecto de "usuario común". Sin bokeh artificial, luz natural y pose frontal para máxima autenticidad.
+                  Generación de personajes optimizada para social media. Cada crédito permite descargar una imagen en alta resolución sin marcas de agua.
                 </p>
               </div>
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-3xl rounded-full -mr-16 -mt-16" />
