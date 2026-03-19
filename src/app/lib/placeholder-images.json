@@ -1,0 +1,41 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "ugc-video-1",
+      "description": "Video UGC AI Avatar 1",
+      "imageUrl": "https://picsum.photos/seed/ugc1/1080/1920",
+      "imageHint": "AI Video"
+    },
+    {
+      "id": "ugc-video-2",
+      "description": "Video UGC AI Avatar 2",
+      "imageUrl": "https://picsum.photos/seed/ugc2/1080/1920",
+      "imageHint": "AI Avatar"
+    },
+    {
+      "id": "ugc-video-3",
+      "description": "Video UGC AI Avatar 3",
+      "imageUrl": "https://picsum.photos/seed/ugc3/1080/1920",
+      "imageHint": "Smartphone Video"
+    },
+    {
+      "id": "ad-static-1",
+      "description": "Static Retargeting Ad 1",
+      "imageUrl": "https://picsum.photos/seed/ad1/800/800",
+      "imageHint": "Product Advertisement"
+    },
+    {
+      "id": "ad-static-2",
+      "description": "Static Retargeting Ad 2",
+      "imageUrl": "https://picsum.photos/seed/ad2/800/800",
+      "imageHint": "Marketing Graphic"
+    },
+    {
+      "id": "ad-static-3",
+      "description": "Static Retargeting Ad 3",
+      "imageUrl": "https://picsum.photos/seed/ad3/800/800",
+      "imageHint": "Social Media"
+    }
+  ]
+}

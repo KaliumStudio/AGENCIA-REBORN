@@ -1,0 +1,239 @@
+
+"use client";
+
+import React from 'react';
+import Link from 'next/link';
+import { 
+  Sparkles, Video, Layout, Image as ImageIcon, 
+  Zap, MessageCircle, ArrowRight, CheckCircle2,
+  Play, MousePointer2, Smartphone, Globe
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from '@/components/ui/carousel';
+import { cn } from '@/lib/utils';
+
+export function AgencyLanding() {
+  const whatsappNumber = "+542645691416";
+  const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
+
+  return (
+    <div className="min-h-screen bg-[#05070A] text-white overflow-hidden selection:bg-primary/30">
+      {/* --- HEADER --- */}
+      <header className="fixed top-0 w-full z-50 bg-black/50 backdrop-blur-md border-b border-white/5">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-xl shadow-[0_0_20px_rgba(41,98,255,0.4)]">
+              AM
+            </div>
+            <span className="font-black text-xl tracking-tighter hidden sm:block">AGENCIA AM</span>
+          </div>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-gray-400">
+            <a href="#servicios" className="hover:text-white transition-colors">SERVICIOS</a>
+            <a href="#videos" className="hover:text-white transition-colors">VIDEOS UGC</a>
+            <a href="#estaticos" className="hover:text-white transition-colors">ANUNCIOS</a>
+          </nav>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" className="font-bold text-gray-400 hover:text-white" asChild>
+              <Link href="/login">ACCESO CLIENTES</Link>
+            </Button>
+            <Button className="font-bold bg-primary hover:bg-primary/90" asChild>
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">EMPEZAR AHORA</a>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* --- HERO --- */}
+      <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-6xl pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-accent/20 rounded-full blur-[100px]" />
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 animate-in fade-in slide-in-from-bottom-4">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-xs font-bold tracking-widest uppercase">TOP 1 AGENCIA DE IA EN ARGENTINA</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8 bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+            CREATIVOS QUE <br /> VENDEN EN AUTO.
+          </h1>
+          
+          <p className="max-w-2xl mx-auto text-gray-400 text-lg md:text-xl mb-12 font-medium">
+            Escalá tu e-commerce con anuncios de alto impacto generados por Inteligencia Artificial. Entregas en tiempo récord para que nunca dejes de vender.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" className="h-14 px-10 text-lg font-black bg-primary hover:bg-primary/90 rounded-2xl shadow-[0_10px_30px_rgba(41,98,255,0.3)] transition-all hover:-translate-y-1" asChild>
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">QUIERO MI PACK DE VIDEOS</a>
+            </Button>
+            <div className="flex items-center gap-2 text-sm text-gray-500 font-bold">
+              <Zap className="h-4 w-4 text-yellow-400" />
+              <span>ENTREGAS EN 24/48 HS</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SERVICES --- */}
+      <section id="servicios" className="py-24 bg-white/5 border-y border-white/5">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-16 tracking-tighter uppercase">Nuestra Factoría de Ventas</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                title: "UGC IA Especializado",
+                desc: "Nuestra especialidad. Avatares humanos hiperrealistas creados con IA que hablan directo a tu cliente.",
+                icon: Video,
+                color: "text-primary",
+                bg: "bg-primary/10"
+              },
+              {
+                title: "Retargeting Ads",
+                desc: "Imágenes estáticas diseñadas para re-impactar y cerrar la venta de los que se fueron sin comprar.",
+                icon: ImageIcon,
+                color: "text-accent",
+                bg: "bg-accent/10"
+              },
+              {
+                title: "Landings de Código",
+                desc: "Páginas de aterrizaje personalizadas en Tienda Nube y Shopify. Optimizadas para velocidad y conversión.",
+                icon: Layout,
+                color: "text-emerald-400",
+                bg: "bg-emerald-400/10"
+              }
+            ].map((s, idx) => (
+              <Card key={idx} className="bg-white/[0.03] border-white/10 hover:border-white/20 transition-all group overflow-hidden">
+                <CardContent className="p-8">
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform", s.bg)}>
+                    <s.icon className={cn("h-7 w-7", s.color)} />
+                  </div>
+                  <h3 className="text-xl font-black mb-4">{s.title}</h3>
+                  <p className="text-gray-400 leading-relaxed font-medium">{s.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- VIDEO CAROUSEL --- */}
+      <section id="videos" className="py-24 overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="flex justify-between items-end mb-12">
+            <div className="max-w-xl">
+              <h2 className="text-4xl font-black tracking-tighter mb-4 uppercase">UGC IA en Acción</h2>
+              <p className="text-gray-400 font-medium italic">Videos 9:16 diseñados para capturar el scroll infinito de TikTok e Instagram.</p>
+            </div>
+          </div>
+
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                  <div className="aspect-[9/16] relative rounded-3xl overflow-hidden bg-white/5 group border border-white/10">
+                    <img 
+                      src={`https://picsum.photos/seed/ugc-${i}/600/1067`} 
+                      alt={`Demo Video ${i}`}
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-primary/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-4 group-hover:translate-y-0 shadow-xl">
+                        <Play className="h-6 w-6 text-white fill-white ml-1" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-6 left-6 right-6">
+                      <div className="bg-black/60 backdrop-blur-md p-3 rounded-xl border border-white/10">
+                        <p className="text-xs font-black uppercase text-primary mb-1">Formato UGC IA</p>
+                        <p className="text-xs font-medium text-white/80">Demo de producto #0{i}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden md:flex justify-end gap-2 mt-8">
+              <CarouselPrevious className="relative static bg-white/5 border-white/10 hover:bg-white/10" />
+              <CarouselNext className="relative static bg-white/5 border-white/10 hover:bg-white/10" />
+            </div>
+          </Carousel>
+        </div>
+      </section>
+
+      {/* --- STATIC ADS CAROUSEL --- */}
+      <section id="estaticos" className="py-24 bg-white/5">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-4xl font-black tracking-tighter mb-4 uppercase">Anuncios de Retargeting</h2>
+          <p className="text-gray-400 font-medium mb-12">Piezas estáticas de alto rendimiento para e-commerce.</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/10 group relative">
+                <img 
+                  src={`https://picsum.photos/seed/static-${i}/800/800`} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  alt={`Static Ad ${i}`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+                  <p className="text-xs font-bold text-primary mb-1 uppercase tracking-widest">Optimización Meta</p>
+                  <p className="text-sm font-black">Ad Variant #0{i}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- CTA BOTTOM --- */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/10 blur-[150px] rounded-full -translate-y-1/2 scale-150" />
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 uppercase">¿Listo para escalar?</h2>
+          <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto font-medium">
+            No pierdas más tiempo testeando creativos mediocres. Empezá hoy con la tecnología que están usando las marcas que facturan millones.
+          </p>
+          <Button size="lg" className="h-16 px-12 text-xl font-black bg-white text-black hover:bg-gray-200 rounded-2xl shadow-2xl transition-all" asChild>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">HABLAR CON UN ASESOR</a>
+          </Button>
+        </div>
+      </section>
+
+      {/* --- FOOTER --- */}
+      <footer className="py-12 border-t border-white/5">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-black text-sm">AM</div>
+            <span className="font-black text-lg tracking-tighter text-gray-400">AGENCIA AM &copy; 2024</span>
+          </div>
+          <div className="flex items-center gap-8 text-xs font-bold text-gray-500 uppercase">
+            <a href="#" className="hover:text-white transition-colors">Términos</a>
+            <a href="#" className="hover:text-white transition-colors">Privacidad</a>
+            <a href="https://instagram.com" target="_blank" className="hover:text-white transition-colors">Instagram</a>
+          </div>
+        </div>
+      </footer>
+
+      {/* --- FLOATING WHATSAPP --- */}
+      <a 
+        href={whatsappUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-[#25D366] rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(37,211,102,0.4)] hover:scale-110 transition-all animate-bounce group"
+      >
+        <MessageCircle className="h-8 w-8 text-white fill-white" />
+        <div className="absolute right-full mr-4 bg-white text-black px-4 py-2 rounded-xl text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">
+          ¿En qué podemos ayudarte?
+        </div>
+      </a>
+    </div>
+  );
+}
