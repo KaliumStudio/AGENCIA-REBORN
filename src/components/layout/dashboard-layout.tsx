@@ -1,3 +1,4 @@
+
 "use client";
 
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -8,16 +9,22 @@ import { PushNotificationPrompt } from './push-notification-prompt';
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex min-h-screen w-full bg-background relative overflow-hidden">
+        {/* Elementos de iluminación ambiental de fondo */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[100px]" />
+        </div>
+
         <SidebarNav />
         <PushNotificationPrompt />
-        <SidebarInset className="flex flex-col">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white px-4 lg:px-6 sticky top-0 z-10">
+        <SidebarInset className="flex flex-col relative z-10 bg-transparent">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white/80 backdrop-blur-md px-4 lg:px-6 sticky top-0 z-20">
             <SidebarTrigger className="lg:hidden" />
             <Separator orientation="vertical" className="mr-2 h-4 lg:hidden" />
             <div className="flex-1 flex items-center justify-between">
               <div className="md:hidden flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-primary/20">
                   AM
                 </div>
                 <span className="font-black text-slate-900 tracking-tighter">AGENCIA AM</span>
