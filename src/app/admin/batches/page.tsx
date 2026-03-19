@@ -30,7 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User, Calendar, Info } from 'lucide-react';
+import { Users, Search, RefreshCw, MessageSquare, Trash2, Eye, Plus, Building2, Layers, User, Calendar, Info, Sparkles } from 'lucide-react';
 import { AssignEditorsDialog } from '@/components/batches/assign-editors-dialog';
 import { EditorCalendarDialog } from '@/components/editors/editor-calendar-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,29 +109,29 @@ export default function AdminBatchesPage() {
       <DashboardLayout>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestión de Tandas</h1>
-            <p className="text-sm md:text-base text-muted-foreground">Supervisión centralizada del flujo creativo.</p>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase">Gestión de Tandas</h1>
+            <p className="text-gray-400 font-medium mt-2">Supervisión centralizada del flujo creativo de elite.</p>
           </div>
-          <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            <Button variant="outline" onClick={() => setIsCalendarOpen(true)} className="h-11 md:h-10 px-4 border-primary text-primary hover:bg-primary/5 font-bold">
-              <Calendar className="mr-2 h-4 w-4" /> Calendario
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            <Button variant="outline" onClick={() => setIsCalendarOpen(true)} className="h-12 border-white/10 text-white hover:bg-white/5 font-black uppercase text-[10px] tracking-widest rounded-xl">
+              <Calendar className="mr-2 h-4 w-4" /> CALENDARIO
             </Button>
-            <Button variant="outline" size="icon" onClick={fetchBatches} disabled={loading} className="h-11 w-11 md:h-10 md:w-10">
-              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="icon" onClick={fetchBatches} disabled={loading} className="h-12 w-12 border-white/10 hover:bg-white/5 rounded-xl">
+              <RefreshCw className={`h-5 w-5 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button asChild className="h-11 md:h-10">
+            <Button asChild className="h-12 bg-primary hover:bg-primary/90 rounded-xl font-black shadow-lg shadow-primary/20 text-[10px] tracking-widest">
               <Link href="/admin/batches/new">
-                <Plus className="mr-2 h-4 w-4" /> Nueva Tanda
+                <Plus className="mr-2 h-4 w-4" /> NUEVA TANDA
               </Link>
             </Button>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="mb-8">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <Input 
-              className="pl-9 h-11 md:h-10" 
+              className="pl-11 h-12 bg-white/[0.03] border-white/10 text-white placeholder:text-gray-600 rounded-2xl focus:border-primary focus:ring-primary/20 transition-all" 
               placeholder="Buscar por título, producto o cliente..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -139,131 +139,133 @@ export default function AdminBatchesPage() {
           </div>
         </div>
 
-        <div className="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="hidden md:block bg-white/[0.02] backdrop-blur-xl rounded-[32px] border border-white/10 overflow-hidden shadow-2xl">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Creación</TableHead>
-                <TableHead>Tanda / Producto</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-center">Piezas</TableHead>
-                <TableHead>Editores</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+              <TableRow className="border-white/5 hover:bg-transparent">
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6 px-6">Creación</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6">Tanda / Producto</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6">Cliente</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6">Estado</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6 text-center">Piezas</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6">Editores</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-gray-500 py-6 text-right px-6">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-10" /></TableCell>
-                    <TableCell><Skeleton className="h-8 w-40 ml-auto" /></TableCell>
+                  <TableRow key={i} className="border-white/5">
+                    <TableCell className="px-6"><Skeleton className="h-4 w-24 bg-white/5" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-40 bg-white/5" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-32 bg-white/5" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20 bg-white/5" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-8 mx-auto bg-white/5" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-10 bg-white/5" /></TableCell>
+                    <TableCell className="px-6"><Skeleton className="h-8 w-40 ml-auto bg-white/5" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredBatches.length === 0 ? (
-                <TableRow>
-                   <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">No se encontraron tandas.</TableCell>
+                <TableRow className="border-none">
+                   <TableCell colSpan={7} className="text-center py-20 text-gray-500 font-medium italic">No se encontraron tandas registradas.</TableCell>
                 </TableRow>
               ) : filteredBatches.map((batch) => (
                 <TableRow 
                   key={batch.id}
                   className={cn(
-                    "transition-colors",
-                    (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 hover:bg-green-100/60",
-                    batch.status === 'pending_review' && "bg-orange-50/60 animate-pulse",
-                    batch.status === 'rejected' && "bg-red-50/60"
+                    "transition-all duration-300 border-white/5 hover:bg-white/[0.04] group",
+                    batch.status === 'pending_review' && "bg-orange-500/[0.03] border-l-4 border-l-orange-500"
                   )}
                 >
-                  <TableCell className="text-xs text-muted-foreground">{formatDate(batch.createdAt)}</TableCell>
+                  <TableCell className="text-[11px] font-mono text-gray-500 px-6">{formatDate(batch.createdAt)}</TableCell>
                   <TableCell>
-                    <div className="font-semibold">{batch.title}</div>
-                    <div className="text-xs text-primary font-medium">{batch.productName}</div>
+                    <div className="font-bold text-white group-hover:text-primary transition-colors">{batch.title}</div>
+                    <div className="text-[10px] text-gray-500 font-black uppercase tracking-tighter mt-0.5">{batch.productName}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Building2 className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm font-medium">{clients[batch.clientId] || 'Cargando...'}</span>
+                      <div className="p-1.5 bg-white/5 rounded-lg">
+                        <Building2 className="h-3 w-3 text-gray-400" />
+                      </div>
+                      <span className="text-sm font-bold text-gray-300">{clients[batch.clientId] || 'Cargando...'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-start gap-1">
-                      <StatusBadge status={batch.status} />
+                      <StatusBadge status={batch.status} className="h-6" />
                       {batch.status === 'pending_review' && (
-                        <span className="text-[9px] font-black text-orange-600 animate-bounce uppercase">¡Requiere Acción!</span>
+                        <span className="text-[8px] font-black text-orange-500 animate-pulse uppercase tracking-widest ml-1">ACCIÓN REQUERIDA</span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center bg-slate-100 rounded-full w-7 h-7 text-xs font-bold text-slate-700">
+                    <span className="inline-flex items-center justify-center bg-white/5 rounded-full w-8 h-8 text-xs font-black text-gray-300 border border-white/10">
                       {batch.creativeCount}
                     </span>
                   </TableCell>
                   <TableCell>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-bold text-primary">{batch.assignedEditorUids?.length || 0}</span>
+                        <button className="flex items-center gap-2 hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all border border-transparent hover:border-white/10 bg-white/[0.02]">
+                          <Users className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-black text-white">{batch.assignedEditorUids?.length || 0}</span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase px-2 mb-2">Editores Asignados</p>
+                      <PopoverContent className="w-64 p-3 bg-slate-900 border-white/10 shadow-2xl rounded-2xl">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1 mb-2">Editores Asignados</p>
                           {batch.assignedEditorUids && batch.assignedEditorUids.length > 0 ? (
                             batch.assignedEditorUids.map(uid => (
-                              <div key={uid} className="flex items-center gap-2 p-1.5 text-xs font-medium bg-slate-50 rounded border">
-                                <User className="h-3 w-3 text-primary" />
+                              <div key={uid} className="flex items-center gap-3 p-2.5 text-xs font-bold text-gray-200 bg-white/5 rounded-xl border border-white/5">
+                                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] text-primary">
+                                  {usersMap[uid]?.substring(0, 1).toUpperCase()}
+                                </div>
                                 {usersMap[uid] || 'Cargando...'}
                               </div>
                             ))
                           ) : (
-                            <p className="text-[10px] text-center italic text-muted-foreground py-2">Sin editores asignados</p>
+                            <div className="text-[10px] text-center italic text-gray-600 py-4 border-2 border-dashed border-white/5 rounded-xl">Sin editores asignados</div>
                           )}
                         </div>
                       </PopoverContent>
                     </Popover>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right px-6">
                     <div className="flex justify-end gap-2">
-                      <Button variant={batch.status === 'pending_review' ? 'default' : 'outline'} size="sm" asChild title="Ver detalles">
+                      <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-xl hover:bg-primary hover:text-white transition-all shadow-lg" title="Ver detalles">
                         <Link href={`/admin/batches/${batch.id}`}>
-                          {batch.status === 'pending_review' ? <><Info className="h-4 w-4 mr-1" /> REVISAR</> : <Eye className="h-4 w-4" />}
+                          <Eye className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button variant="outline" size="sm" asChild title="Supervisar chat">
+                      <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 transition-all" title="Supervisar chat">
                         <Link href={`/admin/batches/${batch.id}/chat`}>
-                          <MessageSquare className="h-4 w-4" />
+                          <MessageSquare className="h-4 w-4 text-gray-400" />
                         </Link>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }} title="Asignar editores">
-                        <Users className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }} className="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 transition-all" title="Asignar editores">
+                        <Users className="h-4 w-4 text-gray-400" />
                       </Button>
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" title="Eliminar tanda">
+                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-red-500/5 hover:bg-red-500 hover:text-white transition-all" title="Eliminar tanda">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="bg-slate-950 border-white/10 text-white rounded-[32px]">
                           <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar esta tanda?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción eliminará permanentemente la tanda "{batch.title}" y todos sus mensajes de chat asociados. El borrado es irreversible.
+                            <AlertDialogTitle className="text-2xl font-black uppercase tracking-tighter">¿Eliminar esta tanda?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-gray-400">
+                              Esta acción eliminará permanentemente la tanda <span className="text-white font-bold">"{batch.title}"</span> y todos sus mensajes de chat asociados. El borrado es irreversible.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogFooter className="mt-6">
+                            <AlertDialogCancel className="bg-transparent border-white/10 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl">Cancelar</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => handleDeleteBatch(batch.id)} 
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              className="bg-red-600 text-white hover:bg-red-700 rounded-xl font-bold"
                             >
-                              Eliminar definitivamente
+                              Confirmar Eliminación
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -276,72 +278,43 @@ export default function AdminBatchesPage() {
           </Table>
         </div>
 
-        <div className="md:hidden space-y-4">
+        <div className="md:hidden space-y-6">
           {loading ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-48 w-full bg-white/5 rounded-3xl" />)
           ) : filteredBatches.map((batch) => (
             <Card 
               key={batch.id} 
               className={cn(
-                "shadow-sm transition-colors",
-                (batch.status === 'delivered' || batch.status === 'approved') && "bg-green-50/60 border-green-100",
-                batch.status === 'pending_review' && "bg-orange-50 border-orange-200",
-                batch.status === 'rejected' && "bg-red-50"
+                "rounded-[32px] border border-white/10 overflow-hidden shadow-2xl transition-all duration-300",
+                batch.status === 'pending_review' ? "bg-orange-500/[0.05] ring-1 ring-orange-500/20" : "bg-white/[0.03] backdrop-blur-xl"
               )}
             >
-              <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start mb-2">
+              <CardHeader className="p-6 pb-2">
+                <div className="flex justify-between items-start mb-4">
                   <StatusBadge status={batch.status} />
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[10px] font-mono text-gray-500">
                     {formatDate(batch.createdAt)}
                   </div>
                 </div>
-                <CardTitle className="text-lg">{batch.title}</CardTitle>
-                <div className="text-xs font-bold text-slate-500 mb-1">{clients[batch.clientId]}</div>
-                <div className="text-xs text-primary font-bold flex items-center justify-between">
-                  <span>{batch.productName}</span>
-                  <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 flex items-center gap-1">
-                    <Layers className="h-3 w-3" /> {batch.creativeCount} piezas
-                  </span>
+                <CardTitle className="text-xl font-black text-white leading-none uppercase tracking-tighter mb-2">{batch.title}</CardTitle>
+                <div className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                  <Building2 className="h-3 w-3" /> {clients[batch.clientId]}
                 </div>
               </CardHeader>
-              <CardContent className="p-4 pt-0 space-y-4">
-                <div className="flex items-center justify-between border-t pt-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant={batch.status === 'pending_review' ? 'default' : 'outline'} size="sm" asChild>
-                      <Link href={`/admin/batches/${batch.id}`}>
-                        {batch.status === 'pending_review' ? 'REVISAR' : <Eye className="h-4 w-4" />}
-                      </Link>
+              <CardContent className="p-6 pt-4 space-y-6">
+                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <div className="text-xs font-bold text-gray-300 uppercase tracking-tighter">{batch.productName}</div>
+                  <div className="bg-primary/20 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                    {batch.creativeCount} PZ
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-white/5 pt-6 gap-3">
+                    <Button variant="outline" className="flex-1 rounded-xl h-11 font-black text-[10px] uppercase tracking-widest border-white/10 hover:bg-white/5" asChild>
+                      <Link href={`/admin/batches/${batch.id}`}>DETALLES</Link>
                     </Button>
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="secondary" className="flex-1 rounded-xl h-11 font-black text-[10px] uppercase tracking-widest bg-white/10 text-white border-none" asChild>
                       <Link href={`/admin/batches/${batch.id}/chat`}><MessageSquare className="h-4 w-4" /></Link>
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => { setEditingBatch(batch); setIsAssignOpen(true); }}>
-                      Asignar
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar tanda?</AlertDialogTitle>
-                          <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>No</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDeleteBatch(batch.id)} 
-                            className="bg-destructive text-white"
-                          >
-                            Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
                 </div>
               </CardContent>
             </Card>
