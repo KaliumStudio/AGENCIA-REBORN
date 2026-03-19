@@ -1,12 +1,12 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   Sparkles, Video, Layout, Image as ImageIcon, 
   Zap, MessageCircle, ArrowRight, CheckCircle2,
-  Play, MousePointer2, Smartphone, Globe, Menu, ExternalLink, Monitor
+  Play, MousePointer2, Smartphone, Globe, Menu, ExternalLink, Monitor, Gift, ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,10 +19,68 @@ import {
 } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function AgencyLanding() {
+  const [activeTab, setActiveTab] = useState('creativos');
   const whatsappNumber = "+542645691416";
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
+
+  const creativePlans = [
+    { 
+      name: "PLAN PRUEBA", 
+      videos: "30 VIDEOS", 
+      price: "$150", 
+      popular: false, 
+      gift: "",
+      desc: "Ideal para marcas que quieren empezar a testear el poder de la IA."
+    },
+    { 
+      name: "PLAN GOLD", 
+      videos: "60 VIDEOS", 
+      price: "$300", 
+      popular: true, 
+      gift: "LANDING PAGE DE REGALO",
+      desc: "Nuestra mejor relación calidad-precio. Impulsa tus ventas hoy mismo."
+    },
+    { 
+      name: "PLAN PRO", 
+      videos: "100 VIDEOS", 
+      price: "$470", 
+      popular: false, 
+      gift: "LANDING PAGE DE REGALO",
+      desc: "Para marcas con alto volumen de inversión que requieren frescura constante."
+    },
+    { 
+      name: "PLAN ULTRA", 
+      videos: "200 VIDEOS", 
+      price: "$900", 
+      popular: false, 
+      gift: "2 LANDINGS DE REGALO",
+      desc: "Escalado masivo. Cobertura total de todos tus ángulos de venta."
+    },
+  ];
+
+  const landingPlans = [
+    { 
+      name: "PLAN BASE", 
+      count: "1 LANDING PAGE", 
+      price: "$100",
+      desc: "Estructura optimizada de alta conversión para un producto ganador."
+    },
+    { 
+      name: "PLAN TRIPLE", 
+      count: "3 LANDINGS PAGE", 
+      price: "$270",
+      desc: "Pack ideal para diversificar tus ofertas o lanzar nuevos nichos."
+    },
+    { 
+      name: "PLAN ESCALA", 
+      count: "5 LANDINGS PAGE", 
+      price: "$400",
+      desc: "Dominio total del mercado. Múltiples páginas para testear masivamente."
+    },
+  ];
 
   const ugcVideos = [
     "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2.mp4?alt=media&token=d6f8ac7c-aece-4b9b-9595-1ce255a1b412",
@@ -127,7 +185,7 @@ export function AgencyLanding() {
             <a href="#servicios" className="hover:text-white transition-colors">SERVICIOS</a>
             <a href="#videos" className="hover:text-white transition-colors">VIDEOS UGC</a>
             <a href="#portafolio" className="hover:text-white transition-colors">LANDINGS</a>
-            <a href="#estaticos" className="hover:text-white transition-colors">ANUNCIOS</a>
+            <a href="#planes" className="hover:text-white transition-colors text-primary font-black">PLANES</a>
           </nav>
           <div className="flex items-center gap-4">
             <Button variant="ghost" className="font-bold text-gray-400 hover:text-white" asChild>
@@ -259,6 +317,118 @@ export function AgencyLanding() {
         </div>
       </section>
 
+      {/* --- PRICING SECTION --- */}
+      <section id="planes" className="py-24 bg-white/5 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 uppercase">Inversión en Crecimiento</h2>
+            <p className="text-gray-400 max-w-xl mx-auto font-medium">Elegí el pack que mejor se adapte a tu escala actual.</p>
+          </div>
+
+          <Tabs defaultValue="creativos" className="w-full max-w-5xl mx-auto" onValueChange={setActiveTab}>
+            <div className="flex justify-center mb-12">
+              <TabsList className="bg-white/5 border border-white/10 h-14 p-1 rounded-2xl">
+                <TabsTrigger value="creativos" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
+                  CREATIVOS (VIDEOS)
+                </TabsTrigger>
+                <TabsTrigger value="landings" className="rounded-xl px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
+                  LANDING PAGES
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="creativos" className="animate-in fade-in zoom-in-95 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {creativePlans.map((plan, idx) => (
+                  <Card key={idx} className={cn(
+                    "bg-white/[0.03] border-white/10 flex flex-col h-full relative group transition-all duration-500",
+                    plan.popular ? "border-primary/50 shadow-[0_0_40px_rgba(41,98,255,0.15)] ring-1 ring-primary/20 scale-105 z-10" : "hover:border-white/20"
+                  )}>
+                    {plan.popular && (
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-[10px] font-black tracking-widest py-1.5 px-4 rounded-full shadow-lg">
+                        EL MÁS POPULAR
+                      </div>
+                    )}
+                    <div className="p-8 flex flex-col h-full">
+                      <div className="mb-6">
+                        <h3 className="text-lg font-black tracking-tighter text-gray-400 mb-2">{plan.name}</h3>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-black text-white">{plan.price}</span>
+                          <span className="text-xs font-bold text-gray-500 uppercase">USD</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 mb-8 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/20 p-1 rounded-full"><CheckCircle2 className="h-4 w-4 text-primary" /></div>
+                          <span className="text-sm font-black text-white">{plan.videos}</span>
+                        </div>
+                        {plan.gift && (
+                          <div className="bg-primary/10 border border-primary/20 p-3 rounded-xl">
+                            <div className="flex items-center gap-2 text-primary">
+                              <Gift className="h-4 w-4" />
+                              <span className="text-xs font-black uppercase tracking-tighter">{plan.gift}</span>
+                            </div>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500 leading-relaxed">{plan.desc}</p>
+                      </div>
+
+                      <Button className={cn(
+                        "w-full h-12 font-black rounded-xl transition-all",
+                        plan.popular ? "bg-primary hover:bg-primary/90" : "bg-white/5 hover:bg-white/10"
+                      )} asChild>
+                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">SELECCIONAR PLAN</a>
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="landings" className="animate-in fade-in zoom-in-95 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                {landingPlans.map((plan, idx) => (
+                  <Card key={idx} className="bg-white/[0.03] border-white/10 flex flex-col h-full hover:border-white/20 transition-all group">
+                    <div className="p-8 flex flex-col h-full">
+                      <div className="mb-6">
+                        <h3 className="text-lg font-black tracking-tighter text-gray-400 mb-2">{plan.name}</h3>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-black text-white">{plan.price}</span>
+                          <span className="text-xs font-bold text-gray-500 uppercase">USD</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 mb-8 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/20 p-1 rounded-full"><CheckCircle2 className="h-4 w-4 text-primary" /></div>
+                          <span className="text-sm font-black text-white">{plan.count}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/20 p-1 rounded-full"><CheckCircle2 className="h-4 w-4 text-primary" /></div>
+                          <span className="text-sm text-gray-300">Diseño Personalizado</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/20 p-1 rounded-full"><CheckCircle2 className="h-4 w-4 text-primary" /></div>
+                          <span className="text-sm text-gray-300">Optimizado para CRO</span>
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mt-4">{plan.desc}</p>
+                      </div>
+
+                      <Button className="w-full h-12 font-black rounded-xl bg-white/5 hover:bg-white/10 transition-all" asChild>
+                        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">SELECCIONAR PLAN</a>
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </section>
+
       {/* --- LANDINGS PORTFOLIO --- */}
       <section id="portafolio" className="py-24 bg-white/[0.02] border-y border-white/5">
         <div className="container mx-auto px-6">
@@ -372,9 +542,14 @@ export function AgencyLanding() {
           <p className="text-xl text-gray-400 mb-12 max-w-xl mx-auto font-medium">
             No pierdas más tiempo testeando creativos mediocres. Empezá hoy con la tecnología que están usando las marcas que facturan millones.
           </p>
-          <Button size="lg" className="h-16 px-12 text-xl font-black bg-white text-black hover:bg-gray-200 rounded-2xl shadow-2xl transition-all" asChild>
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">HABLAR CON UN ASESOR</a>
-          </Button>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <Button size="lg" className="h-16 px-12 text-xl font-black bg-white text-black hover:bg-gray-200 rounded-2xl shadow-2xl transition-all" asChild>
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">HABLAR CON UN ASESOR</a>
+            </Button>
+            <Button size="lg" variant="outline" className="h-16 px-12 text-xl font-black border-white/10 bg-white/5 hover:bg-white/10 rounded-2xl transition-all" asChild>
+              <Link href="/login">ENTRAR AL PORTAL</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
