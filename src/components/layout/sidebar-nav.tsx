@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { chatService } from '@/services/chat.service';
 import { notificationService } from '@/services/notification.service';
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle, Scissors, Sparkles, Plus } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, Bell, BellOff, Loader2, RefreshCw, XCircle, Scissors, Sparkles, Plus, Layout } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarGroup, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { auth } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
@@ -83,6 +83,7 @@ export function SidebarNav() {
     admin: [
       { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
       { label: 'Tandas', icon: FolderKanban, href: '/admin/batches' },
+      { label: 'Solicitudes Landing', icon: Layout, href: '/admin/landings' },
       { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace' },
       { label: 'Clientes', icon: Building2, href: '/admin/clients' },
       { label: 'Editores', icon: Scissors, href: '/admin/editors' },
@@ -96,6 +97,7 @@ export function SidebarNav() {
       { label: 'Mis Tandas', icon: FolderKanban, href: '/client/batches' },
       { label: 'Área de Trabajo', icon: Sparkles, href: '/workspace', badge: 'NUEVO' },
       { label: 'Nueva Solicitud', icon: Plus, href: '/client/batches/new' },
+      { label: 'Solicitar Landing', icon: Layout, href: '/client/landings/new' },
     ]
   };
 
@@ -178,7 +180,7 @@ export function SidebarNav() {
                 disabled={notifLoading}
                 className="text-primary bg-primary/5 border border-primary/10 hover:bg-primary/10 h-9"
               >
-                {notifLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellOff className="w-4 h-4" />}
+                {notifLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BellOff className="w-4 h-4" />}
                 <span className="text-xs font-bold">Activar avisos</span>
               </SidebarMenuButton>
             )}

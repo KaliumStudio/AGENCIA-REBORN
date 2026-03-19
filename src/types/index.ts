@@ -103,3 +103,19 @@ export interface Message {
   memberUids: string[];
   clientId?: string;
 }
+
+export type LandingRequestStatus = 'pending' | 'in_progress' | 'delivered' | 'approved';
+
+export interface LandingRequest {
+  id: string;
+  clientId: string;
+  clientUserUid: string;
+  platform: 'shopify' | 'tiendanube' | 'other';
+  productName: string;
+  bundles?: string;
+  driveLink: string;
+  accessCredentials?: string;
+  deadline: string;
+  status: LandingRequestStatus;
+  createdAt: any;
+}
