@@ -23,6 +23,19 @@ export function AgencyLanding() {
   const whatsappNumber = "+542645691416";
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
 
+  const retargetingAds = [
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpeg?alt=media&token=348375f6-71e2-4e26-b4cd-6212ed4e2caa",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F1%20(1).jpg?alt=media&token=17220032-fe33-454a-b601-05a66e8ed474",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F10.jpg?alt=media&token=d8001968-236e-4fb9-bb4c-e793d9bf70c7",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F13.jpg?alt=media&token=4b2dfd94-9b29-4132-8268-31f81544c0f9",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F2%20(1).jpg?alt=media&token=ce666b98-f70e-4a72-b6e1-53daa40f2b3c",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F2%20(2).jpg?alt=media&token=29619455-7484-4804-886a-629455061885",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F2%20(3).jpg?alt=media&token=72ce6d12-d0a4-42a1-8d9d-4843fdb7499b",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F3%20(1).jpeg?alt=media&token=7d29f650-8514-4606-8e1d-2c584724f2f8",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F5.jpg?alt=media&token=64937132-57c3-4ce4-89df-ef767cf59452",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2F6.jpg?alt=media&token=3a0e3e2e-a823-431c-bfac-6c69108892b1"
+  ];
+
   return (
     <div className="min-h-screen bg-[#05070A] text-white overflow-hidden selection:bg-primary/30">
       {/* --- HEADER --- */}
@@ -170,26 +183,40 @@ export function AgencyLanding() {
       </section>
 
       {/* --- STATIC ADS CAROUSEL --- */}
-      <section id="estaticos" className="py-24 bg-white/5">
+      <section id="estaticos" className="py-24 bg-white/5 overflow-hidden">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-4xl font-black tracking-tighter mb-4 uppercase">Anuncios de Retargeting</h2>
           <p className="text-gray-400 font-medium mb-12">Piezas estáticas de alto rendimiento para e-commerce.</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="aspect-square rounded-2xl overflow-hidden border border-white/10 group relative">
-                <img 
-                  src={`https://picsum.photos/seed/static-${i}/800/800`} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  alt={`Static Ad ${i}`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
-                  <p className="text-xs font-bold text-primary mb-1 uppercase tracking-widest">Optimización Meta</p>
-                  <p className="text-sm font-black">Ad Variant #0{i}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Carousel className="w-full max-w-5xl mx-auto">
+            <CarouselContent className="-ml-4">
+              {retargetingAds.map((url, i) => (
+                <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3">
+                  <div className="aspect-square relative rounded-2xl overflow-hidden border border-white/10 group bg-slate-900 flex items-center justify-center">
+                    {/* Background blurred image for consistent aspect ratio look */}
+                    <img 
+                      src={url} 
+                      className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20"
+                      alt=""
+                    />
+                    <img 
+                      src={url} 
+                      className="relative z-10 w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                      alt={`Retargeting Ad ${i + 1}`}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6 z-20">
+                      <p className="text-xs font-bold text-primary mb-1 uppercase tracking-widest text-left">Optimización Meta</p>
+                      <p className="text-sm font-black text-left">Creative Variant #{i + 1}</p>
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden md:flex justify-center gap-4 mt-12">
+              <CarouselPrevious className="relative static bg-white/5 border-white/10 hover:bg-white/10" />
+              <CarouselNext className="relative static bg-white/5 border-white/10 hover:bg-white/10" />
+            </div>
+          </Carousel>
         </div>
       </section>
 
