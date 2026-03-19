@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, Save, Plus, Trash2, Video, Image as ImageIcon, Info, Clock, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Video, Image as ImageIcon, Info, Clock, Loader2, Sparkles, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { VideoSpecification } from '@/types';
 import { cn } from '@/lib/utils';
@@ -37,7 +37,6 @@ export default function NewBatchPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Evitar problemas de hidratación obteniendo la hora solo en el cliente
     setCurrentHour(new Date().getHours());
   }, []);
 
@@ -86,7 +85,6 @@ export default function NewBatchPage() {
         deliveryDeadlineTime,
         assignedEditorUids: [],
         createdBy: profile.uid,
-        // Fallback for old fields
         brief: `Producto: ${productName}. Landing: ${landingPage}. Referencias: ${referenceLinks}`,
       });
       
@@ -100,7 +98,6 @@ export default function NewBatchPage() {
     }
   };
 
-  // Horarios disponibles desde las 7 PM (19:00) hasta las 11 PM
   const timeOptions = [
     "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
   ];
@@ -108,27 +105,32 @@ export default function NewBatchPage() {
   return (
     <RoleGuard allowedRoles={['client']}>
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto pb-12">
-          <div className="mb-6 flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+        <div className="max-w-4xl mx-auto pb-24">
+          <div className="mb-10 flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-white/10">
               <Link href="/client/batches"><ArrowLeft className="h-5 w-5" /></Link>
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Nueva Solicitud de Producción</h1>
+            <div>
+              <h1 className="text-4xl font-black tracking-tighter text-white uppercase leading-none">Nueva Producción</h1>
+              <p className="text-gray-400 mt-2 font-medium">Define los parámetros de tu próxima campaña ganadora.</p>
+            </div>
           </div>
 
           {currentHour !== null && (
             <Alert className={cn(
-              "mb-8 border-l-4 shadow-sm",
-              currentHour < 10 ? "bg-emerald-50 border-l-emerald-500 text-emerald-900" : "bg-amber-50 border-l-amber-500 text-amber-900"
+              "mb-10 border-white/5 backdrop-blur-xl shadow-2xl rounded-3xl p-6",
+              currentHour < 10 ? "bg-emerald-500/10 border-l-4 border-l-emerald-500" : "bg-amber-500/10 border-l-4 border-l-amber-500"
             )}>
-              <div className="flex items-start gap-3">
-                <Clock className={cn("h-5 w-5 mt-0.5", currentHour < 10 ? "text-emerald-600" : "text-amber-600")} />
+              <div className="flex items-start gap-4">
+                <div className={cn("p-2 rounded-xl", currentHour < 10 ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400")}>
+                  <Clock className="h-6 w-6" />
+                </div>
                 <div>
-                  <AlertTitle className="font-bold mb-1">Información de Tiempos</AlertTitle>
-                  <AlertDescription className="text-sm opacity-90 leading-relaxed">
+                  <AlertTitle className="font-black text-white uppercase tracking-wider mb-1">Cronograma de Entrega</AlertTitle>
+                  <AlertDescription className="text-gray-300 font-medium leading-relaxed">
                     {currentHour < 10 
-                      ? "Tu solicitud ha ingresado antes de las 10 AM: la tanda se comenzará a trabajar en el mismo día y se entregará al día siguiente."
-                      : "Tu solicitud ha ingresado después de las 10 AM: la tanda se va a comenzar a trabajar al día siguiente, y estará lista al otro día siguiente después de comenzarla a trabajar."
+                      ? "Solicitud recibida antes de las 10 AM: Comenzamos hoy y entregamos mañana."
+                      : "Solicitud recibida después de las 10 AM: Comenzamos mañana y entregamos al día siguiente del inicio."
                     }
                   </AlertDescription>
                 </div>
@@ -136,64 +138,69 @@ export default function NewBatchPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <Card className="shadow-lg border-t-4 border-t-primary">
-              <CardHeader>
-                <CardTitle>Información General del Producto</CardTitle>
+          <form onSubmit={handleSubmit} className="space-y-10">
+            <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 rounded-[32px] overflow-hidden shadow-2xl">
+              <CardHeader className="p-8 border-b border-white/5 bg-white/[0.01]">
+                <CardTitle className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-primary" /> Información del Producto
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <Label htmlFor="productName">Nombre del Producto <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="productName" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nombre del Producto *</Label>
                     <Input 
                       id="productName" 
-                      placeholder="Ej: Aspiradora Pro Max" 
+                      placeholder="Ej: Smartwatch Serie 9" 
                       value={productName} 
                       onChange={e => setProductName(e.target.value)}
                       required
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary focus:ring-primary/20"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="title">Título de la Tanda (Opcional)</Label>
+                    <Label htmlFor="title" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Título de la Tanda</Label>
                     <Input 
                       id="title" 
-                      placeholder="Ej: Campaña Mayo - 5 Videos" 
+                      placeholder="Ej: Lanzamiento Invierno" 
                       value={title} 
                       onChange={e => setTitle(e.target.value)}
+                      className="h-12 bg-white/5 border-white/10 rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="landingPage">Link de Landing Page / Info <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="landingPage" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Link de Landing Page / Info *</Label>
                   <Input 
                     id="landingPage" 
-                    placeholder="https://tu-tienda.com/producto" 
+                    placeholder="https://tienda.com/producto" 
                     value={landingPage} 
                     onChange={e => setLandingPage(e.target.value)}
                     required
+                    className="h-12 bg-white/5 border-white/10 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referenceLinks">Videos / Imágenes de Referencia <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="referenceLinks" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Referencias Visuales *</Label>
                   <Textarea 
                     id="referenceLinks" 
-                    placeholder="Link de Drive, Biblioteca de anuncios, TikTok, etc." 
+                    placeholder="Pega links de Drive, TikTok o Ads Library que sirvan de inspiración..." 
                     value={referenceLinks} 
                     onChange={e => setReferenceLinks(e.target.value)}
                     required
-                    className="min-h-[80px]"
+                    className="min-h-[100px] bg-white/5 border-white/10 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="deliveryTime">Horario Límite de Entrega (Post 7 PM)</Label>
+                  <Label htmlFor="deliveryTime" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Horario Límite de Entrega</Label>
                   <Select value={deliveryDeadlineTime} onValueChange={setDeliveryDeadlineTime}>
-                    <SelectTrigger id="deliveryTime">
-                      <SelectValue placeholder="Selecciona un horario" />
+                    <SelectTrigger id="deliveryTime" className="h-12 bg-white/5 border-white/10 rounded-xl">
+                      <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-900 border-white/10">
                       {timeOptions.map(time => (
                         <SelectItem key={time} value={time}>{time} HS</SelectItem>
                       ))}
@@ -203,57 +210,59 @@ export default function NewBatchPage() {
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Video className="h-5 w-5 text-primary" /> Especificaciones de Creativos
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-4">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                  <Video className="h-6 w-6 text-primary" /> Creativos Solicitados
                 </h2>
-                <Badge variant="secondary" className="px-3 py-1">
-                  Total: {videoSpecs.length} Creativos
+                <Badge variant="secondary" className="bg-primary/20 text-primary border-none font-black px-4 py-1 rounded-full">
+                  TOTAL: {videoSpecs.length}
                 </Badge>
               </div>
 
               {videoSpecs.map((spec, index) => (
-                <Card key={index} className="relative overflow-hidden group border-l-4 border-l-accent">
-                  <CardHeader className="py-4 flex flex-row items-center justify-between bg-slate-50/50">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {spec.format === 'IMAGEN' ? <ImageIcon className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-                      Creativo #{index + 1}
+                <Card key={index} className="bg-white/[0.02] border-white/10 rounded-[32px] overflow-hidden shadow-xl border-l-4 border-l-primary group">
+                  <CardHeader className="py-4 px-8 bg-white/[0.04] flex flex-row items-center justify-between border-b border-white/5">
+                    <CardTitle className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                      {spec.format === 'IMAGEN' ? <ImageIcon className="h-4 w-4 text-accent" /> : <Video className="h-4 w-4 text-primary" />}
+                      CREATIVO #{index + 1}
                     </CardTitle>
                     {videoSpecs.length > 1 && (
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         type="button" 
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-red-500 hover:bg-red-500/10 rounded-full"
                         onClick={() => removeVideoSpec(index)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <CardContent className="p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div className="md:col-span-2 space-y-2">
-                        <Label>{spec.format === 'IMAGEN' ? 'Texto / Detalles de Imagen (Opcional)' : 'Guion (Opcional)'}</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">
+                          {spec.format === 'IMAGEN' ? 'Detalles de Imagen (Opcional)' : 'Guion / Estructura (Opcional)'}
+                        </Label>
                         <Textarea 
-                          placeholder={spec.format === 'IMAGEN' ? "Pega aquí el texto, copy o detalles visuales..." : "Pega aquí el guion o estructura..."} 
+                          placeholder={spec.format === 'IMAGEN' ? "Describe el copy o concepto visual..." : "Pega aquí el guion o puntos clave..."} 
                           value={spec.script || ''} 
                           onChange={e => updateVideoSpec(index, 'script', e.target.value)}
-                          className="min-h-[100px]"
+                          className="min-h-[120px] bg-white/5 border-white/10 rounded-xl"
                         />
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="space-y-2">
-                          <Label>Formato</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Formato</Label>
                           <Select 
                             value={spec.format} 
                             onValueChange={(v) => updateVideoSpec(index, 'format', v as any)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-slate-900 border-white/10">
                               <SelectItem value="UGC IA">UGC IA</SelectItem>
                               <SelectItem value="CINEMATICO">CINEMATICO</SelectItem>
                               <SelectItem value="POV">POV</SelectItem>
@@ -265,11 +274,12 @@ export default function NewBatchPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Nota para este creativo</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nota para el Editor</Label>
                           <Input 
-                            placeholder="Ej: Usar colores llamativos" 
+                            placeholder="Ej: Música dinámica" 
                             value={spec.notes || ''} 
                             onChange={e => updateVideoSpec(index, 'notes', e.target.value)}
+                            className="h-12 bg-white/5 border-white/10 rounded-xl"
                           />
                         </div>
                       </div>
@@ -281,30 +291,33 @@ export default function NewBatchPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full border-dashed border-2 py-8 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary transition-all"
+                className="w-full border-dashed border-2 border-white/10 py-10 rounded-[32px] bg-white/[0.01] hover:bg-white/[0.03] hover:border-primary/50 transition-all flex flex-col gap-3 group"
                 onClick={addVideoSpec}
               >
-                <Plus className="h-6 w-6" />
-                <span>Agregar otro anuncio a esta tanda</span>
+                <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 group-hover:bg-primary/20 transition-all">
+                  <Plus className="h-6 w-6 text-gray-400 group-hover:text-primary" />
+                </div>
+                <span className="font-black text-xs uppercase tracking-widest text-gray-500 group-hover:text-white">Agregar otro creativo a la tanda</span>
               </Button>
             </div>
 
-            <Card>
-              <CardContent className="pt-6 space-y-2">
-                <Label htmlFor="additionalNotes">Nota Opcional Final</Label>
+            <Card className="bg-white/[0.02] border-white/10 rounded-[32px] overflow-hidden">
+              <CardContent className="p-8 space-y-4">
+                <Label htmlFor="additionalNotes" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Instrucciones Generales Finales</Label>
                 <Textarea 
                   id="additionalNotes" 
-                  placeholder="Instrucciones generales para toda la tanda..." 
+                  placeholder="Cualquier detalle extra que aplique a toda la tanda..." 
                   value={additionalNotes} 
                   onChange={e => setAdditionalNotes(e.target.value)}
+                  className="min-h-[100px] bg-white/5 border-white/10 rounded-xl"
                 />
               </CardContent>
-              <CardFooter className="flex justify-end gap-3 border-t bg-slate-50 p-6">
-                <Button variant="outline" type="button" asChild disabled={loading}>
+              <CardFooter className="p-8 pt-0 border-t border-white/5 bg-transparent flex flex-col sm:flex-row justify-end gap-4 mt-4">
+                <Button variant="ghost" type="button" asChild disabled={loading} className="h-14 px-10 rounded-2xl font-black text-gray-500 hover:text-white hover:bg-white/5 uppercase tracking-widest text-xs">
                   <Link href="/client/batches">Cancelar</Link>
                 </Button>
-                <Button type="submit" disabled={loading} size="lg" className="px-8">
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" /> Confirmar Solicitud</>}
+                <Button type="submit" disabled={loading} size="lg" className="h-14 px-12 rounded-2xl font-black bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] uppercase tracking-widest text-xs">
+                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <><Save className="mr-2 h-5 w-5" /> Confirmar Pedido de Producción</>}
                 </Button>
               </CardFooter>
             </Card>

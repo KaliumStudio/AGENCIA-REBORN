@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, Trash2, Video, Loader2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Video, Loader2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { VideoSpecification, Batch } from '@/types';
 
@@ -98,7 +98,6 @@ export default function EditBatchPage() {
         landingPage,
         additionalNotes,
         deliveryDeadlineTime,
-        // Fallback for old fields
         brief: `Producto: ${productName}. Landing: ${landingPage}. Referencias: ${referenceLinks}`,
       }, profile.uid, profile.displayName);
       
@@ -112,7 +111,6 @@ export default function EditBatchPage() {
     }
   };
 
-  // Horarios disponibles desde las 7 PM (19:00) hasta las 11 PM
   const timeOptions = [
     "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
   ];
@@ -130,72 +128,76 @@ export default function EditBatchPage() {
   return (
     <RoleGuard allowedRoles={['client']}>
       <DashboardLayout>
-        <div className="max-w-4xl mx-auto pb-12">
-          <div className="mb-6 flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+        <div className="max-w-4xl mx-auto pb-24">
+          <div className="mb-10 flex items-center gap-4">
+            <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-white/10">
               <Link href={`/client/batches/${id}`}><ArrowLeft className="h-5 w-5" /></Link>
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">Editar Solicitud</h1>
+            <div>
+              <h1 className="text-4xl font-black tracking-tighter text-white uppercase leading-none">Editar Solicitud</h1>
+              <p className="text-gray-400 mt-2 font-medium">Actualiza los detalles técnicos de tu tanda.</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <Card className="shadow-lg border-t-4 border-t-primary">
-              <CardHeader>
-                <CardTitle>Información General del Producto</CardTitle>
+          <form onSubmit={handleSubmit} className="space-y-10">
+            <Card className="bg-white/[0.02] backdrop-blur-xl border-white/10 rounded-[32px] overflow-hidden shadow-2xl">
+              <CardHeader className="p-8 border-b border-white/5 bg-white/[0.01]">
+                <CardTitle className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                  <Sparkles className="h-5 w-5 text-primary" /> Información General
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <Label htmlFor="productName">Nombre del Producto <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="productName" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nombre del Producto *</Label>
                     <Input 
                       id="productName" 
-                      placeholder="Ej: Aspiradora Pro Max" 
                       value={productName} 
                       onChange={e => setProductName(e.target.value)}
                       required
+                      className="h-12 bg-white/5 border-white/10 rounded-xl focus:border-primary"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="title">Título de la Tanda (Opcional)</Label>
+                    <Label htmlFor="title" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Título de la Tanda</Label>
                     <Input 
                       id="title" 
-                      placeholder="Ej: Campaña Mayo - 5 Videos" 
                       value={title} 
                       onChange={e => setTitle(e.target.value)}
+                      className="h-12 bg-white/5 border-white/10 rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="landingPage">Link de Landing Page / Info <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="landingPage" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Link de Landing Page *</Label>
                   <Input 
                     id="landingPage" 
-                    placeholder="https://tu-tienda.com/producto" 
                     value={landingPage} 
                     onChange={e => setLandingPage(e.target.value)}
                     required
+                    className="h-12 bg-white/5 border-white/10 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referenceLinks">Videos / Imágenes de Referencia <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="referenceLinks" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Referencias Visuales *</Label>
                   <Textarea 
                     id="referenceLinks" 
-                    placeholder="Link de Drive, Biblioteca de anuncios, TikTok, etc." 
                     value={referenceLinks} 
                     onChange={e => setReferenceLinks(e.target.value)}
                     required
-                    className="min-h-[80px] whitespace-pre-wrap"
+                    className="min-h-[100px] bg-white/5 border-white/10 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="deliveryTime">Horario Límite de Entrega (Post 7 PM)</Label>
+                  <Label htmlFor="deliveryTime" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Horario Límite</Label>
                   <Select value={deliveryDeadlineTime} onValueChange={setDeliveryDeadlineTime}>
-                    <SelectTrigger id="deliveryTime">
-                      <SelectValue placeholder="Selecciona un horario" />
+                    <SelectTrigger id="deliveryTime" className="h-12 bg-white/5 border-white/10 rounded-xl">
+                      <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-900 border-white/10">
                       {timeOptions.map(time => (
                         <SelectItem key={time} value={time}>{time} HS</SelectItem>
                       ))}
@@ -205,57 +207,55 @@ export default function EditBatchPage() {
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Video className="h-5 w-5 text-primary" /> Especificaciones de Creativos
+            <div className="space-y-6">
+              <div className="flex items-center justify-between px-4">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                  <Video className="h-6 w-6 text-primary" /> Creativos
                 </h2>
-                <Badge variant="secondary" className="px-3 py-1">
-                  Total: {videoSpecs.length} Creativos
+                <Badge variant="secondary" className="bg-primary/20 text-primary border-none font-black px-4 py-1 rounded-full">
+                  TOTAL: {videoSpecs.length}
                 </Badge>
               </div>
 
               {videoSpecs.map((spec, index) => (
-                <Card key={index} className="relative overflow-hidden group border-l-4 border-l-accent">
-                  <CardHeader className="py-4 flex flex-row items-center justify-between bg-slate-50/50">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {spec.format === 'IMAGEN' ? <ImageIcon className="h-4 w-4" /> : <Video className="h-4 w-4" />}
-                      Creativo #{index + 1}
+                <Card key={index} className="bg-white/[0.02] border-white/10 rounded-[32px] overflow-hidden shadow-xl border-l-4 border-l-primary">
+                  <CardHeader className="py-4 px-8 bg-white/[0.04] flex flex-row items-center justify-between border-b border-white/5">
+                    <CardTitle className="text-sm font-black text-white uppercase tracking-widest">
+                      ITEM #{index + 1}
                     </CardTitle>
                     {videoSpecs.length > 1 && (
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         type="button" 
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-red-500 hover:bg-red-500/10 rounded-full"
                         onClick={() => removeVideoSpec(index)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <CardContent className="p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div className="md:col-span-2 space-y-2">
-                        <Label>{spec.format === 'IMAGEN' ? 'Texto / Detalles de Imagen (Opcional)' : 'Guion (Opcional)'}</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Detalles / Guion</Label>
                         <Textarea 
-                          placeholder={spec.format === 'IMAGEN' ? "Pega aquí el texto, copy o detalles visuales..." : "Pega aquí el guion o estructura..."} 
                           value={spec.script || ''} 
                           onChange={e => updateVideoSpec(index, 'script', e.target.value)}
-                          className="min-h-[100px] whitespace-pre-wrap"
+                          className="min-h-[120px] bg-white/5 border-white/10 rounded-xl"
                         />
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="space-y-2">
-                          <Label>Formato</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Formato</Label>
                           <Select 
                             value={spec.format} 
                             onValueChange={(v) => updateVideoSpec(index, 'format', v as any)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-slate-900 border-white/10">
                               <SelectItem value="UGC IA">UGC IA</SelectItem>
                               <SelectItem value="CINEMATICO">CINEMATICO</SelectItem>
                               <SelectItem value="POV">POV</SelectItem>
@@ -267,11 +267,11 @@ export default function EditBatchPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Nota para este creativo</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Nota</Label>
                           <Input 
-                            placeholder="Ej: Usar colores llamativos" 
                             value={spec.notes || ''} 
                             onChange={e => updateVideoSpec(index, 'notes', e.target.value)}
+                            className="h-12 bg-white/5 border-white/10 rounded-xl"
                           />
                         </div>
                       </div>
@@ -283,31 +283,32 @@ export default function EditBatchPage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full border-dashed border-2 py-8 flex flex-col gap-2 hover:bg-primary/5 hover:border-primary transition-all"
+                className="w-full border-dashed border-2 border-white/10 py-10 rounded-[32px] bg-white/[0.01] hover:bg-white/[0.03] transition-all flex flex-col gap-3 group"
                 onClick={addVideoSpec}
               >
-                <Plus className="h-6 w-6" />
-                <span>Agregar otro anuncio a esta tanda</span>
+                <div className="p-3 bg-white/5 rounded-full group-hover:scale-110 transition-all">
+                  <Plus className="h-6 w-6 text-gray-400 group-hover:text-primary" />
+                </div>
+                <span className="font-black text-xs uppercase tracking-widest text-gray-500">Añadir otro creativo</span>
               </Button>
             </div>
 
-            <Card>
-              <CardContent className="pt-6 space-y-2">
-                <Label htmlFor="additionalNotes">Nota Opcional Final</Label>
+            <Card className="bg-white/[0.02] border-white/10 rounded-[32px] overflow-hidden">
+              <CardContent className="p-8 space-y-4">
+                <Label htmlFor="additionalNotes" className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Instrucciones Adicionales</Label>
                 <Textarea 
                   id="additionalNotes" 
-                  placeholder="Instrucciones generales para toda la tanda..." 
                   value={additionalNotes} 
                   onChange={e => setAdditionalNotes(e.target.value)}
-                  className="whitespace-pre-wrap"
+                  className="min-h-[100px] bg-white/5 border-white/10 rounded-xl"
                 />
               </CardContent>
-              <CardFooter className="flex justify-end gap-3 border-t bg-slate-50 p-6">
-                <Button variant="outline" type="button" asChild disabled={saving}>
+              <CardFooter className="p-8 pt-0 bg-transparent flex justify-end gap-4 mt-4">
+                <Button variant="ghost" type="button" asChild disabled={saving} className="h-14 px-10 rounded-2xl font-black text-gray-500 hover:text-white uppercase tracking-widest text-xs">
                   <Link href={`/client/batches/${id}`}>Cancelar</Link>
                 </Button>
-                <Button type="submit" disabled={saving} size="lg" className="px-8">
-                  {saving ? "Guardando..." : <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</>}
+                <Button type="submit" disabled={saving} size="lg" className="h-14 px-12 rounded-2xl font-black bg-primary hover:bg-primary/90 shadow-2xl transition-all uppercase tracking-widest text-xs">
+                  {saving ? "Guardando..." : <><Save className="mr-2 h-5 w-5" /> Guardar Cambios</>}
                 </Button>
               </CardFooter>
             </Card>
