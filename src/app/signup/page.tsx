@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, User, Mail, Lock, Loader2, ArrowLeft } from 'lucide-react';
+import { Building2, User, Mail, Lock, Loader2, ArrowLeft, Home } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SignupPage() {
@@ -88,11 +88,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-lg space-y-8">
-        <div className="flex items-center justify-start">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-lg space-y-6">
+        <div className="flex items-center justify-between">
           <Button variant="ghost" asChild className="gap-2 text-muted-foreground hover:text-primary">
-            <Link href="/login"><ArrowLeft className="h-4 w-4" /> Volver al login</Link>
+            <Link href="/login"><ArrowLeft className="h-4 w-4" /> VOLVER AL LOGIN</Link>
+          </Button>
+          <Button variant="ghost" asChild className="gap-2 text-muted-foreground hover:text-primary">
+            <Link href="/"><Home className="h-4 w-4" /> IR AL INICIO</Link>
           </Button>
         </div>
 
