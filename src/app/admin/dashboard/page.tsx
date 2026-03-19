@@ -8,6 +8,7 @@ import { userService } from '@/services/user.service';
 import { RoleGuard } from '@/components/layout/role-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { FolderKanban, Users, Building2, TrendingUp, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
