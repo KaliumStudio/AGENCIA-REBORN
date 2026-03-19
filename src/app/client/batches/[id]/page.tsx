@@ -77,11 +77,11 @@ export default function ClientBatchDetailPage() {
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{batch.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{batch.title}</h1>
               <StatusBadge status={batch.status} />
             </div>
             <p className="text-muted-foreground mt-1">
-              Producto: <span className="font-semibold text-foreground">{batch.productName}</span> • Creado el {formatDate(batch.createdAt, "PPP")}
+              Producto: <span className="font-semibold text-gray-200">{batch.productName}</span> • Creado el {formatDate(batch.createdAt, "PPP")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
@@ -91,13 +91,13 @@ export default function ClientBatchDetailPage() {
               </Button>
             )}
             {isEditable && (
-              <Button variant="outline" asChild className="flex-1 md:flex-none">
+              <Button variant="outline" asChild className="flex-1 md:flex-none border-white/10 text-white hover:bg-white/5">
                 <Link href={`/client/batches/${batch.id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" /> Editar
                 </Link>
               </Button>
             )}
-            <Button variant="secondary" asChild className="flex-1 md:flex-none">
+            <Button variant="secondary" asChild className="flex-1 md:flex-none bg-white/10 text-white hover:bg-white/20 border-none">
               <Link href={`/client/batches/${batch.id}/chat`}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Ir al Chat
               </Link>
@@ -108,15 +108,15 @@ export default function ClientBatchDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             {batch.status === 'delivered' && (
-              <Card className="border-primary bg-primary/5 shadow-md">
+              <Card className="border-primary/50 bg-primary/10 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-primary flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5" /> Revisión Final
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm">El equipo ha realizado una entrega. Revisa el material en el link de abajo y, si estás conforme, pulsa el botón de aprobar.</p>
-                  <Button onClick={handleApprove} className="w-full bg-primary text-white">
+                  <p className="text-sm text-gray-200">El equipo ha realizado una entrega. Revisa el material en el link de abajo y, si estás conforme, pulsa el botón de aprobar.</p>
+                  <Button onClick={handleApprove} className="w-full bg-primary text-white font-bold">
                     Confirmar Aprobación de Tanda
                   </Button>
                 </CardContent>
@@ -124,7 +124,7 @@ export default function ClientBatchDetailPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-primary/5 border-primary/20">
+              <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <LinkIcon className="h-5 w-5 text-primary" />
@@ -137,27 +137,27 @@ export default function ClientBatchDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-accent/5 border-accent/20">
+              <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-accent/10 rounded-lg">
                     <Video className="h-5 w-5 text-accent" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] uppercase font-bold text-muted-foreground">Referencias Visuales</p>
-                    <p className="text-sm font-medium whitespace-pre-wrap break-words">{batch.referenceLinks}</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap break-words text-gray-300">{batch.referenceLinks}</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             <div className="space-y-4">
-              <h2 className="text-xl font-bold">Detalles de los Creativos ({batch.creativeCount})</h2>
+              <h2 className="text-xl font-bold text-white">Detalles de los Creativos ({batch.creativeCount})</h2>
               {batch.videoSpecs && batch.videoSpecs.map((spec, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <CardHeader className="py-3 bg-muted/30">
+                <Card key={index} className="overflow-hidden border-white/10 bg-white/[0.02]">
+                  <CardHeader className="py-3 bg-white/[0.03]">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-bold">Item #{index + 1}</CardTitle>
-                      <Badge variant="outline" className="bg-white">{spec.format}</Badge>
+                      <CardTitle className="text-sm font-bold text-white">Item #{index + 1}</CardTitle>
+                      <Badge variant="outline" className="bg-white/5 border-white/10 text-gray-300">{spec.format}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 space-y-4">
@@ -166,12 +166,12 @@ export default function ClientBatchDetailPage() {
                         <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
                           {spec.format === 'IMAGEN' ? 'Detalles de Imagen' : 'Guion / Estructura'}
                         </p>
-                        <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap break-words">{spec.script}</p>
+                        <p className="text-sm bg-black/20 p-3 rounded-lg border border-white/5 whitespace-pre-wrap break-words text-gray-300">{spec.script}</p>
                       </div>
                     )}
                     {spec.notes && (
-                      <div className="flex items-start gap-2 text-sm text-muted-foreground bg-amber-50/50 p-2 rounded">
-                        <FileText className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground bg-amber-500/5 p-2 rounded border border-amber-500/10">
+                        <FileText className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
                         <span className="break-words"><strong>Nota:</strong> {spec.notes}</span>
                       </div>
                     )}
@@ -181,27 +181,27 @@ export default function ClientBatchDetailPage() {
             </div>
 
             {batch.additionalNotes && (
-              <Card>
+              <Card className="bg-white/[0.02] border-white/10">
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm">Notas Adicionales</CardTitle>
+                  <CardTitle className="text-sm text-white">Notas Adicionales</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                <CardContent className="text-sm text-gray-400 whitespace-pre-wrap break-words">
                   {batch.additionalNotes}
                 </CardContent>
               </Card>
             )}
 
             {batch.driveLink && (
-              <Card className="border-green-200 bg-green-50/30">
+              <Card className="border-green-500/30 bg-green-500/10">
                 <CardHeader className="py-4">
-                  <CardTitle className="text-green-700 flex items-center gap-2 text-base">
+                  <CardTitle className="text-green-400 flex items-center gap-2 text-base">
                     ¡Material Entregado!
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col md:flex-row items-center justify-between bg-white mx-4 mb-4 rounded-lg border p-4 gap-4">
+                <CardContent className="flex flex-col md:flex-row items-center justify-between bg-black/20 mx-4 mb-4 rounded-lg border border-white/5 p-4 gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm">Carpeta de Google Drive</p>
-                    <p className="text-xs text-muted-foreground truncate">{batch.driveLink}</p>
+                    <p className="font-semibold text-sm text-white">Carpeta de Google Drive</p>
+                    <p className="text-xs text-gray-400 truncate">{batch.driveLink}</p>
                   </div>
                   <Button asChild size="sm" className="shrink-0 w-full md:w-auto bg-green-600 hover:bg-green-700">
                     <a href={batch.driveLink} target="_blank" rel="noopener noreferrer">
@@ -214,48 +214,49 @@ export default function ClientBatchDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <Card className="shadow-sm">
+            <Card className="bg-white/[0.03] border-white/10">
               <CardHeader>
-                <CardTitle className="text-lg">Información de Entrega</CardTitle>
+                <CardTitle className="text-lg text-white">Información de Entrega</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 rounded-full">
-                    <Clock className="h-6 w-6 text-orange-600" />
+                  <div className="p-3 bg-orange-500/10 rounded-full border border-orange-500/20">
+                    <Clock className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Horario Límite</p>
-                    <p className="font-bold text-xl">{batch.deliveryDeadlineTime} HS</p>
+                    <p className="font-bold text-xl text-white">{batch.deliveryDeadlineTime} HS</p>
                   </div>
                 </div>
                 
-                <div className="border-t pt-4 space-y-4">
+                <div className="border-t border-white/5 pt-4 space-y-4">
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold">Estado</p>
                     <div className="mt-1"><StatusBadge status={batch.status} /></div>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-bold">Editores</p>
-                    <p className="text-sm font-medium">{batch.assignedEditorUids?.length > 0 ? `${batch.assignedEditorUids.length} Profesional(es) asignado(s)` : 'Pendiente de asignación'}</p>
+                    <p className="text-sm font-medium text-gray-300">{batch.assignedEditorUids?.length > 0 ? `${batch.assignedEditorUids.length} Profesional(es) asignado(s)` : 'Pendiente de asignación'}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-900 text-white">
+            <Card className="bg-slate-900 border-white/10 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -mr-12 -mt-12" />
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <ShoppingBag className="h-5 w-5 text-primary" /> Detalles de Producto
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 relative z-10">
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Producto</p>
                   <p className="font-semibold text-lg text-primary">{batch.productName}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Creativos Solicitados</p>
-                  <p className="text-3xl font-bold">{batch.creativeCount}</p>
+                  <p className="text-3xl font-black">{batch.creativeCount}</p>
                 </div>
               </CardContent>
             </Card>

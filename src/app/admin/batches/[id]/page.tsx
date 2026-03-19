@@ -251,13 +251,13 @@ export default function AdminBatchDetailPage() {
         </div>
 
         {batch.status === 'pending_review' && (
-          <Alert className="mb-8 border-orange-500 bg-orange-50 shadow-md animate-in fade-in slide-in-from-top-2">
+          <Alert className="mb-8 border-orange-500 bg-orange-500/10 shadow-md animate-in fade-in slide-in-from-top-2">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
               <div className="flex items-start gap-3">
-                <Info className="h-6 w-6 text-orange-600 mt-1" />
+                <Info className="h-6 w-6 text-orange-500 mt-1" />
                 <div>
-                  <AlertTitle className="text-orange-900 font-black text-lg uppercase tracking-tighter">REVISIÓN PENDIENTE</AlertTitle>
-                  <AlertDescription className="text-orange-800">
+                  <AlertTitle className="text-orange-500 font-black text-lg uppercase tracking-tighter">REVISIÓN PENDIENTE</AlertTitle>
+                  <AlertDescription className="text-gray-300">
                     Un editor ha enviado material. Revisa el link de Drive y decide si es apto para el cliente.
                   </AlertDescription>
                 </div>
@@ -277,7 +277,7 @@ export default function AdminBatchDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-primary/5 border-primary/20">
+              <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Globe className="h-5 w-5 text-primary" />
@@ -290,7 +290,7 @@ export default function AdminBatchDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-accent/5 border-accent/20">
+              <Card className="bg-white/[0.03] border-white/10">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="p-2 bg-accent/10 rounded-lg">
                     <LinkIcon className="h-5 w-5 text-accent" />
@@ -305,20 +305,20 @@ export default function AdminBatchDetailPage() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">Especificaciones de Creativos</h2>
-                <Badge variant="secondary">{batch.creativeCount} Solicitados</Badge>
+                <h2 className="text-xl font-bold text-white">Especificaciones de Creativos</h2>
+                <Badge variant="secondary" className="bg-primary/20 text-primary border-none">{batch.creativeCount} Solicitados</Badge>
               </div>
               
               <div className="grid gap-4">
                 {batch.videoSpecs && batch.videoSpecs.map((spec, index) => (
-                  <Card key={index} className="overflow-hidden border-l-4 border-l-primary/30">
-                    <CardHeader className="py-3 bg-muted/20">
+                  <Card key={index} className="overflow-hidden border-white/10 bg-white/[0.02] border-l-4 border-l-primary/50">
+                    <CardHeader className="py-3 bg-white/[0.03]">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {spec.format === 'IMAGEN' ? <FileText className="h-4 w-4 text-accent" /> : <Video className="h-4 w-4 text-primary" />}
-                          <CardTitle className="text-sm font-bold">Item #{index + 1}</CardTitle>
+                          <CardTitle className="text-sm font-bold text-white">Item #{index + 1}</CardTitle>
                         </div>
-                        <Badge variant="outline" className="bg-white">{spec.format}</Badge>
+                        <Badge variant="outline" className="bg-white/5 border-white/10 text-gray-300">{spec.format}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 space-y-4">
@@ -327,12 +327,12 @@ export default function AdminBatchDetailPage() {
                           <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
                             {spec.format === 'IMAGEN' ? 'Detalles de Imagen' : 'Guion / Estructura'}
                           </p>
-                          <p className="text-sm bg-slate-50 p-3 rounded-lg border whitespace-pre-wrap break-words">{spec.script}</p>
+                          <p className="text-sm bg-black/20 p-3 rounded-lg border border-white/5 whitespace-pre-wrap break-words text-gray-300">{spec.script}</p>
                         </div>
                       )}
                       {spec.notes && (
-                        <div className="flex items-start gap-2 text-sm text-muted-foreground bg-amber-50/50 p-2 rounded">
-                          <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground bg-amber-500/5 p-2 rounded border border-amber-500/10">
+                          <Info className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
                           <span className="break-words"><strong>Nota:</strong> {spec.notes}</span>
                         </div>
                       )}
@@ -343,46 +343,47 @@ export default function AdminBatchDetailPage() {
             </div>
 
             {batch.additionalNotes && (
-              <Card>
+              <Card className="bg-white/[0.02] border-white/10">
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm">Instrucciones Adicionales</CardTitle>
+                  <CardTitle className="text-sm text-white">Instrucciones Adicionales</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                <CardContent className="text-sm text-gray-400 whitespace-pre-wrap break-words">
                   {batch.additionalNotes}
                 </CardContent>
               </Card>
             )}
 
-            <Card className="border-primary shadow-md">
+            <Card className="border-primary/30 bg-primary/5 shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <ExternalLink className="h-5 w-5 text-primary" /> Gestión de Entrega (Admin)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="drive">Link de Carpeta Google Drive</Label>
+                  <Label htmlFor="drive" className="text-gray-300">Link de Carpeta Google Drive</Label>
                   <Input 
                     id="drive" 
                     placeholder="https://drive.google.com/drive/folders/..." 
                     value={driveLink} 
                     onChange={e => setDriveLink(e.target.value)}
+                    className="bg-black/20 border-white/10 text-white"
                   />
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-blue-50 p-2 rounded">
-                    <Info className="h-3 w-3 text-blue-500" />
+                  <div className="flex items-center gap-2 text-xs text-primary/80 mt-2 bg-primary/5 p-2 rounded border border-primary/10">
+                    <Info className="h-3 w-3 text-primary" />
                     Como administrador, puedes realizar la entrega directamente si es necesario.
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" onClick={handleDeliver} disabled={submitting || batch.status === 'approved'}>
+                <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleDeliver} disabled={submitting || batch.status === 'approved'}>
                   {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   {submitting ? "Procesando..." : "Cargar Entrega y Notificar Cliente"}
                 </Button>
                 {batch.driveLink && (
-                  <div className="w-full p-3 bg-muted/50 rounded-lg text-sm flex justify-between items-center border">
-                    <span className="truncate max-w-[200px] font-mono text-xs">{batch.driveLink}</span>
-                    <Button variant="ghost" size="sm" asChild>
+                  <div className="w-full p-3 bg-black/20 rounded-lg text-sm flex justify-between items-center border border-white/5">
+                    <span className="truncate max-w-[200px] font-mono text-xs text-gray-400">{batch.driveLink}</span>
+                    <Button variant="ghost" size="sm" asChild className="text-primary hover:bg-primary/10">
                       <a href={batch.driveLink} target="_blank" rel="noopener noreferrer">
                         Ver Carpeta <ExternalLink className="ml-2 h-3 w-3" />
                       </a>
@@ -392,33 +393,33 @@ export default function AdminBatchDetailPage() {
               </CardFooter>
             </Card>
 
-            <Card>
+            <Card className="bg-white/[0.02] border-white/10">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <History className="h-5 w-5 text-slate-500" /> Historial de Actividad
+                <CardTitle className="text-lg flex items-center gap-2 text-white">
+                  <History className="h-5 w-5 text-gray-500" /> Historial de Actividad
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {batch.editHistory && batch.editHistory.length > 0 ? (
                     batch.editHistory.slice().reverse().map((entry, idx) => (
-                      <div key={idx} className="flex items-start gap-3 text-sm pb-4 border-b last:border-0 last:pb-0">
-                        <div className="mt-1 p-1 bg-slate-100 rounded-full">
-                          <User className="h-3 w-3 text-slate-500" />
+                      <div key={idx} className="flex items-start gap-3 text-sm pb-4 border-b border-white/5 last:border-0 last:pb-0">
+                        <div className="mt-1 p-1 bg-white/5 rounded-full">
+                          <User className="h-3 w-3 text-gray-400" />
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between">
-                            <span className="font-bold text-slate-900">{entry.userName}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono">
+                            <span className="font-bold text-gray-200">{entry.userName}</span>
+                            <span className="text-[10px] text-gray-500 font-mono">
                               {formatDate(entry.timestamp, "dd/MM HH:mm")}
                             </span>
                           </div>
-                          <p className="text-slate-600 mt-0.5">{entry.action}</p>
+                          <p className="text-gray-400 mt-0.5">{entry.action}</p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">No hay registros de edición todavía.</p>
+                    <p className="text-sm text-gray-500 italic text-center py-4">No hay registros de edición todavía.</p>
                   )}
                 </div>
               </CardContent>
@@ -426,43 +427,43 @@ export default function AdminBatchDetailPage() {
           </div>
 
           <div className="space-y-6">
-            <Card className="shadow-sm border-t-4 border-primary">
+            <Card className="bg-white/[0.03] border-white/10 border-t-4 border-t-primary">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-lg">Gestión de Tanda</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setIsAssignOpen(true)} title="Asignar editores">
-                  <Users className="h-4 w-4 text-primary" />
+                <CardTitle className="text-lg text-white">Gestión de Tanda</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setIsAssignOpen(true)} title="Asignar editores" className="text-primary hover:bg-primary/10">
+                  <Users className="h-4 w-4" />
                 </Button>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-orange-100 rounded-full">
-                    <Clock className="h-6 w-6 text-orange-600" />
+                  <div className="p-3 bg-orange-500/10 rounded-full border border-orange-500/20">
+                    <Clock className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Horario Límite</p>
-                    <p className="font-bold text-xl">{batch.deliveryDeadlineTime} HS</p>
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Horario Límite</p>
+                    <p className="font-bold text-xl text-white">{batch.deliveryDeadlineTime} HS</p>
                   </div>
                 </div>
                 
-                <Separator />
+                <Separator className="bg-white/5" />
 
                 <div className="space-y-4">
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Estado Actual</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Estado Actual</p>
                     <StatusBadge status={batch.status} className="text-sm px-3 py-1" />
                   </div>
                   
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1">Editores Asignados</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Editores Asignados</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm font-medium">
+                        <div className="flex items-center gap-2 text-sm font-medium text-gray-200">
                           <Users className="h-4 w-4 text-primary" />
                           {batch.assignedEditorUids?.length > 0 
                             ? `${batch.assignedEditorUids.length} Profesionales` 
                             : 'Sin asignar'}
                         </div>
-                        <Button variant="link" size="sm" className="h-auto p-0 text-[10px] font-bold uppercase" onClick={() => setIsAssignOpen(true)}>
+                        <Button variant="link" size="sm" className="h-auto p-0 text-[10px] font-bold uppercase text-primary" onClick={() => setIsAssignOpen(true)}>
                           {batch.assignedEditorUids?.length > 0 ? 'Cambiar' : 'Asignar ahora'}
                         </Button>
                       </div>
@@ -470,7 +471,7 @@ export default function AdminBatchDetailPage() {
                       {assignedEditors.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {assignedEditors.map(ed => (
-                            <Badge key={ed.uid} variant="outline" className="text-[9px] h-5 bg-slate-50">
+                            <Badge key={ed.uid} variant="outline" className="text-[9px] h-5 bg-white/10 border-white/10 text-white">
                               {ed.displayName}
                             </Badge>
                           ))}
@@ -479,23 +480,23 @@ export default function AdminBatchDetailPage() {
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator className="bg-white/5" />
 
                   <div>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Cliente y Solicitante</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Cliente y Solicitante</p>
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-slate-400" />
+                        <Building2 className="h-4 w-4 text-gray-500" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold truncate">{loadingExtras ? '...' : (client?.name || 'No encontrado')}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono truncate">{batch.clientId}</p>
+                          <p className="text-sm font-bold truncate text-gray-200">{loadingExtras ? '...' : (client?.name || 'No encontrado')}</p>
+                          <p className="text-[10px] text-gray-500 font-mono truncate">{batch.clientId}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-slate-400" />
+                        <User className="h-4 w-4 text-gray-500" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold truncate">{loadingExtras ? '...' : (clientUser?.displayName || 'No encontrado')}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono truncate">{batch.clientUserUid}</p>
+                          <p className="text-sm font-bold truncate text-gray-200">{loadingExtras ? '...' : (clientUser?.displayName || 'No encontrado')}</p>
+                          <p className="text-[10px] text-gray-500 font-mono truncate">{batch.clientUserUid}</p>
                         </div>
                       </div>
                     </div>
@@ -504,20 +505,21 @@ export default function AdminBatchDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-900 text-white">
+            <Card className="bg-slate-900 border-white/10 text-white overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -mr-12 -mt-12" />
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <ShoppingBag className="h-5 w-5 text-primary" /> Producto
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 relative z-10">
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Nombre del Producto</p>
                   <p className="font-semibold text-lg text-primary">{batch.productName}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-bold">Total Piezas</p>
-                  <p className="text-3xl font-bold">{batch.creativeCount}</p>
+                  <p className="text-3xl font-black">{batch.creativeCount}</p>
                 </div>
               </CardContent>
             </Card>
@@ -530,7 +532,6 @@ export default function AdminBatchDetailPage() {
             open={isAssignOpen}
             onOpenChange={setIsAssignOpen}
             onUpdate={() => {
-              // useDoc se actualiza solo por tiempo real, pero refrescamos extras si es necesario
               toast({ title: "Asignación actualizada" });
             }} 
           />
