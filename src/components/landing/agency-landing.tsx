@@ -83,18 +83,16 @@ export function AgencyLanding() {
   ];
 
   const ugcVideos = [
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2.mp4?alt=media&token=d6f8ac7c-aece-4b9b-9595-1ce255a1b412",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F1%20(1).mp4?alt=media&token=4e384312-a775-4a85-bfd1-8945f0386056",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F1.mp4?alt=media&token=d7a0cfc4-f63e-43dc-8652-43c0d8af5c72",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F10.mp4?alt=media&token=3e95a7df-48bd-42c7-8307-94ba417023b5",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2%20(1).mp4?alt=media&token=b77061f6-e9ef-4ae4-b6f8-bedb9dae4f01",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F3.mp4?alt=media&token=3a7f65d8-885a-4932-a63b-47b270441293",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F4.mp4?alt=media&token=b37e8ec3-f6d1-4a30-b635-b45bb10fbfb9",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F5.mp4?alt=media&token=dd0e163b-9bc8-4e69-924b-683147039af9",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F6.mp4?alt=media&token=187ef28f-0ae5-4da2-9f72-9e85c996f01",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F7.mp4?alt=media&token=ad7ba3a1-c7fe-4dca-b367-e30fed3c3454",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2FCreativo%20n%C2%B08.mp4?alt=media&token=3c929ac1-4194-4a81-a6c5-7886ad92cce8",
-    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2Forden10.mp4?alt=media&token=0cca4e99-e487-42c5-93b1-9351cea6213c"
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F1%20(1).mp4?alt=media&token=ab9515df-c220-4a09-b22f-5c189461d272",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F10.mp4?alt=media&token=5ec827ee-5fff-4469-87f3-9199d7254d1a",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F2%20(1).mp4?alt=media&token=f63f9968-dc21-4877-a137-aa141c088b9a",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F3.mp4?alt=media&token=b5ab746c-68ba-4596-80e2-04bcad086f38",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F3bfb-895c-411d-a0f2-527c97322dbf.mp4?alt=media&token=92a19a86-1741-4e10-9c86-5fb3f7ecf251",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F4.mp4?alt=media&token=7b862b00-0ccd-4caa-b0e2-af4107930be2",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F5.mp4?alt=media&token=dbe5d1fd-7c0b-4a5a-83b0-10a48c95286d",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F6333-7bc5-4fd6-b5d0-78aed24c93a4.mp4?alt=media&token=1981349b-5a25-41b5-b08c-97ebc22e4bf1",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2F76d8-0216-46b0-b8e0-8281e1fe3827.mp4?alt=media&token=ee5f3738-73f1-4430-96b0-cf822944b778",
+    "https://firebasestorage.googleapis.com/v0/b/studio-7837102107-41ca8.firebasestorage.app/o/multimedia%20landing%20page%20agencia%2Fvideos%2FCreativo%20n%C2%B08.mp4?alt=media&token=47e2afae-a3ae-446a-bc14-4ca271454b45"
   ];
 
   const retargetingAds = [
