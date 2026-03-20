@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -23,8 +22,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function AgencyLanding() {
   const [activeTab, setActiveTab] = useState('creativos');
-  const whatsappNumber = "+542645691416";
-  const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
+  const whatsappNumber = "+5491167109123";
+  const whatsappUrl = `https://wa.me/5491167109123?text=Hola! Vengo desde la web y quiero información sobre sus servicios de creativos IA.`;
 
   const creativePlans = [
     { 

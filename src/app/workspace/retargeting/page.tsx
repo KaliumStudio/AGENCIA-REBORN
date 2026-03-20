@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -36,7 +35,7 @@ export default function RetargetingAdPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const whatsappUrl = `https://wa.me/542645691416?text=Hola! Quiero comprar más cupo de imágenes para la herramienta de Retargeting IA.`;
+  const whatsappUrl = `https://wa.me/5491167109123?text=Hola! Quiero comprar más cupo de imágenes para la herramienta de Retargeting IA.`;
 
   // Real-time client data to track image quota
   const clientRef = useMemoFirebase(() => {
